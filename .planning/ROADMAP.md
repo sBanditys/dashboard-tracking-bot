@@ -33,10 +33,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can log out from any page and is redirected to login
   4. Dashboard displays in dark mode with responsive layout on mobile devices
   5. Terms of service and privacy policy pages are accessible
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] TBD during phase planning
+- [ ] 01-01-PLAN.md — Project setup with Next.js, Tailwind, React Query, and theme providers
+- [ ] 01-02-PLAN.md — Terms of Service and Privacy Policy pages
+- [ ] 01-03-PLAN.md — Discord OAuth authentication flow with persistent sessions
+- [ ] 01-04-PLAN.md — Dashboard shell with sidebar, topbar, mobile drawer, and theme toggle
+- [ ] 01-05-PLAN.md — Visual and functional verification checkpoint
 
 ### Phase 2: Guild Management
 **Goal**: Users can view and switch between their accessible Discord guilds
@@ -146,7 +150,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Authentication | 0/TBD | Not started | - |
+| 1. Foundation & Authentication | 0/5 | Ready for execution | - |
 | 2. Guild Management | 0/TBD | Not started | - |
 | 3. Tracking Data Display | 0/TBD | Not started | - |
 | 4. Real-Time Updates | 0/TBD | Not started | - |

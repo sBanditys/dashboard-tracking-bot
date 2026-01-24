@@ -126,10 +126,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LEGAL-02 | Phase 1 | Pending |
 
 **Coverage:**
-- v1 requirements: 22 total
-- Mapped to phases: 22
+- v1 requirements: 26 total
+- Mapped to phases: 26
 - Unmapped: 0
 
 ---
 *Requirements defined: 2025-01-24*
-*Last updated: 2025-01-24 after initial definition*
+*Last updated: 2026-01-24 after roadmap creation*

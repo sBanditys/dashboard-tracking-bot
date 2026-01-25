@@ -3,6 +3,7 @@
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_KEY = process.env.API_KEY;
 
 interface ApiResponse<T> {
   data?: T;
@@ -23,6 +24,11 @@ async function apiRequest<T>(
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
+
+  // Add API key for tracking bot authentication
+  if (API_KEY) {
+    headers['X-API-Key'] = API_KEY;
+  }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;

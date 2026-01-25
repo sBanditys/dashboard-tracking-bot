@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   const authToken = request.cookies.get('auth_token');
 
   // Protected routes under /(dashboard) - redirect to login if no auth_token
-  const isDashboardRoute = pathname.startsWith('/dashboard') || pathname === '/';
+  const isDashboardRoute = pathname.startsWith('/dashboard') || pathname === '/' || pathname.startsWith('/guilds') || pathname.startsWith('/settings');
   const isLoginRoute = pathname === '/login';
 
   if (isDashboardRoute && !authToken) {

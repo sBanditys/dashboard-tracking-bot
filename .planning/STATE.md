@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2025-01-24)
 ## Current Position
 
 Phase: 1 of 8 (Foundation & Authentication)
-Plan: 3 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-25 — Completed 01-03-PLAN.md
+Last activity: 2026-01-25 — Completed 01-04-PLAN.md
 
-Progress: [███░░░░░░░] ~38% (3 plans complete, estimated 8 total)
+Progress: [████░░░░░░] ~50% (4 plans complete, estimated 8 total)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 4m 52s
-- Total execution time: 14m 36s
+- Total plans completed: 4
+- Average duration: 4m 26s
+- Total execution time: 17m 25s
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01 | 3 | 14m 36s | 4m 52s |
+| 01 | 4 | 17m 25s | 4m 26s |
 
 **Recent Trend:**
-- Last 3 plans: 01-01 (4m 20s), 01-02 (5m), 01-03 (5m 16s)
-- Trend: Consistent velocity maintained
+- Last 3 plans: 01-02 (5m), 01-03 (5m 16s), 01-04 (2m 49s)
+- Trend: Improving velocity, recent optimization
 
 *Updated after each plan completion*
 
@@ -62,6 +62,11 @@ Recent decisions affecting current work:
 - DEV-008: 30-day cookie expiry (balances UX and security)
 - DEV-009: Suspense boundary for useSearchParams (Next.js 14 requirement)
 
+**From 01-04 execution:**
+- DEV-010: Always-expanded sidebar (per CONTEXT.md, no collapse to icons)
+- DEV-011: Logout confirmation in dropdown (quick inline confirmation vs modal)
+- DEV-012: Theme toggle in topbar (frequent action, accessible placement)
+
 ### Pending Todos
 
 None yet.
@@ -73,7 +78,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-25
-Stopped at: Completed 01-03-PLAN.md (Discord OAuth Authentication)
+Stopped at: Completed 01-04-PLAN.md (Dashboard Shell UI)
 Resume file: None
 
 ---

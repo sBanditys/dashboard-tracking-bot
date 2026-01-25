@@ -16,27 +16,14 @@ function LoginContent() {
     }
   }, [searchParams]);
 
-  const handleDiscordLogin = async () => {
+  const handleDiscordLogin = () => {
     setIsLoading(true);
     setError(null);
 
-    try {
-      // Fetch Discord OAuth URL from API
-      const response = await fetch('/api/auth/login');
-      const data = await response.json();
-
-      if (data.error) {
-        setError(data.error);
-        setIsLoading(false);
-        return;
-      }
-
-      // Redirect to Discord OAuth URL
-      window.location.href = data.url;
-    } catch {
-      setError('Failed to connect to Discord. Please try again.');
-      setIsLoading(false);
-    }
+    // Redirect directly to backend OAuth endpoint
+    // The backend will redirect to Discord, then back to our callback
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    window.location.href = `${apiUrl}/api/v1/auth/discord`;
   };
 
   return (

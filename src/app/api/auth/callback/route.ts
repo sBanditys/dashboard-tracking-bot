@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     // Redirect to callback URL or dashboard
     const redirectUrl = new URL(callbackUrl, request.url);
     return NextResponse.redirect(redirectUrl);
-  } catch (error) {
+  } catch {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('error', 'callback_failed');
     return NextResponse.redirect(loginUrl);

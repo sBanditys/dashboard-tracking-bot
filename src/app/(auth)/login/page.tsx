@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
+function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
@@ -33,7 +33,7 @@ export default function LoginPage() {
 
       // Redirect to Discord OAuth URL
       window.location.href = data.url;
-    } catch (err) {
+    } catch {
       setError('Failed to connect to Discord. Please try again.');
       setIsLoading(false);
     }
@@ -93,6 +93,14 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="text-white text-center">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
 

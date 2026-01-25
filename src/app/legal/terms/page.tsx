@@ -13,7 +13,7 @@ export default function TermsOfService() {
 
       <h2>1. Acceptance of Terms</h2>
       <p>
-        By accessing and using the Tracking Dashboard service (the "Service"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to these Terms of Service, please do not use the Service.
+        By accessing and using the Tracking Dashboard service (the &quot;Service&quot;), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to these Terms of Service, please do not use the Service.
       </p>
 
       <h2>2. Description of Service</h2>
@@ -27,7 +27,7 @@ export default function TermsOfService() {
         <li>Access audit logs of changes made to your guilds</li>
       </ul>
       <p>
-        The Service is provided "as is" and we reserve the right to modify or discontinue the Service at any time with or without notice.
+        The Service is provided &quot;as is&quot; and we reserve the right to modify or discontinue the Service at any time with or without notice.
       </p>
 
       <h2>3. User Accounts</h2>
@@ -76,7 +76,7 @@ export default function TermsOfService() {
         <li>Unauthorized access, use, or alteration of your transmissions or content</li>
       </ul>
       <p>
-        The Service is provided on an "as is" and "as available" basis without any warranties of any kind, either express or implied.
+        The Service is provided on an &quot;as is&quot; and &quot;as available&quot; basis without any warranties of any kind, either express or implied.
       </p>
 
       <h2>7. Termination</h2>
@@ -84,12 +84,12 @@ export default function TermsOfService() {
         We may terminate or suspend your access to the Service immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms. Upon termination, your right to use the Service will immediately cease.
       </p>
       <p>
-        You may terminate your use of the Service at any time by discontinuing your use of the Service and revoking OAuth access through Discord's settings.
+        You may terminate your use of the Service at any time by discontinuing your use of the Service and revoking OAuth access through Discord&apos;s settings.
       </p>
 
       <h2>8. Changes to Terms</h2>
       <p>
-        We reserve the right to modify or replace these Terms at any time at our sole discretion. If a revision is material, we will provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.
+        We reserve the right to modify or replace these Terms at any time at our sole discretion. If a revision is material, we will provide at least 30 days&apos; notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.
       </p>
       <p>
         By continuing to access or use our Service after those revisions become effective, you agree to be bound by the revised terms. If you do not agree to the new terms, please stop using the Service.

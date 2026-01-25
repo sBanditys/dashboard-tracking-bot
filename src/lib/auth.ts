@@ -29,7 +29,7 @@ export async function getSession(): Promise<Session | null> {
       token: token.value,
       expiresAt: new Date(payload.exp * 1000).toISOString(),
     };
-  } catch (error) {
+  } catch {
     // Invalid token format
     return null;
   }

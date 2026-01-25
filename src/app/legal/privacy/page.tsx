@@ -115,17 +115,17 @@ export default function PrivacyPolicy() {
         To exercise these rights, please contact us at [Contact Email]. We will respond to your request within 30 days.
       </p>
 
-      <h2>7. Children's Privacy</h2>
+      <h2>7. Children&apos;s Privacy</h2>
       <p>
         The Service is not intended for use by children under the age of 13. We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us so we can delete that information.
       </p>
       <p>
-        Discord's Terms of Service require users to be at least 13 years old (or older in some jurisdictions). By using our Service through Discord OAuth, you confirm that you meet Discord's age requirements.
+        Discord&apos;s Terms of Service require users to be at least 13 years old (or older in some jurisdictions). By using our Service through Discord OAuth, you confirm that you meet Discord&apos;s age requirements.
       </p>
 
       <h2>8. Changes to This Policy</h2>
       <p>
-        We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date. For material changes, we will provide at least 30 days' notice.
+        We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the &quot;Last updated&quot; date. For material changes, we will provide at least 30 days&apos; notice.
       </p>
       <p>
         You are advised to review this Privacy Policy periodically for any changes. Continued use of the Service after changes become effective constitutes acceptance of the revised policy.

@@ -87,4 +87,6 @@ export interface PostFilters {
     brand_id?: string
     from?: string
     to?: string
+    sort_by?: 'posted_at' | 'views' | 'likes'
+    sort_order?: 'asc' | 'desc'
 }

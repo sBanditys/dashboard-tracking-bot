@@ -141,11 +141,15 @@ export default function PostsPage({ params }: PageProps) {
     const [groupFilter, setGroupFilter] = useState<string>('')
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'posted_at', direction: 'desc' })
 
-    // Determine if we need all data for client-side sorting
-    const needsAllData = groupFilter || sortConfig.key === 'views' || sortConfig.key === 'likes'
-    const limit = needsAllData ? 500 : 25  // Fetch more when sorting by metrics
+    // Build filters with sorting
+    const filtersWithSort: PostFilters = useMemo(() => ({
+        ...filters,
+        sort_by: sortConfig.key as 'posted_at' | 'views' | 'likes',
+        sort_order: sortConfig.direction || 'desc',
+    }), [filters, sortConfig])
 
-    const { data, isLoading, isError } = usePosts(guildId, page, limit, filters)
+    const limit = 25
+    const { data, isLoading, isError } = usePosts(guildId, page, limit, filtersWithSort)
     const { data: brandsData } = useBrands(guildId)
 
     // Extract unique groups from brands data
@@ -164,9 +168,9 @@ export default function PostsPage({ params }: PageProps) {
     const handleSort = useCallback((key: string) => {
         setSortConfig(prev => {
             if (prev.key === key) {
-                // Cycle through: desc -> asc -> null (default to desc)
+                // Cycle through: desc -> asc -> back to desc
                 if (prev.direction === 'desc') return { key, direction: 'asc' }
-                if (prev.direction === 'asc') return { key: 'posted_at', direction: 'desc' }
+                return { key, direction: 'desc' }
             }
             // Default to descending for new sort key
             return { key, direction: 'desc' }
@@ -174,33 +178,14 @@ export default function PostsPage({ params }: PageProps) {
         setPage(1)
     }, [])
 
-    // Filter and sort posts
+    // Filter posts by group (client-side only for group filter)
     const filteredPosts = useMemo(() => {
         let posts = data?.posts || []
-
-        // Filter by group
         if (groupFilter) {
             posts = posts.filter(post => post.group === groupFilter)
         }
-
-        // Sort posts
-        const sorted = [...posts].sort((a, b) => {
-            const { key, direction } = sortConfig
-            const multiplier = direction === 'asc' ? 1 : -1
-
-            switch (key) {
-                case 'views':
-                    return multiplier * ((a.metrics?.views ?? -1) - (b.metrics?.views ?? -1))
-                case 'likes':
-                    return multiplier * ((a.metrics?.likes ?? -1) - (b.metrics?.likes ?? -1))
-                case 'posted_at':
-                default:
-                    return multiplier * (new Date(a.posted_at || 0).getTime() - new Date(b.posted_at || 0).getTime())
-            }
-        })
-
-        return sorted
-    }, [data?.posts, groupFilter, sortConfig])
+        return posts
+    }, [data?.posts, groupFilter])
 
     const handlePlatformFilter = (platform: string | undefined) => {
         setFilters({ ...filters, platform: platform as PostFilters['platform'] })
@@ -303,7 +288,7 @@ export default function PostsPage({ params }: PageProps) {
                 onSort={handleSort}
             />
 
-            {data && data.pagination.total_pages > 1 && !needsAllData && (
+            {data && data.pagination.total_pages > 1 && (
                 <div className="flex justify-center">
                     <Pagination
                         page={page}

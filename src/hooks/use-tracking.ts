@@ -57,6 +57,8 @@ function buildPostQuery(page: number, limit: number, filters: PostFilters): stri
     if (filters.brand_id) params.set('brand_id', filters.brand_id)
     if (filters.from) params.set('from', filters.from)
     if (filters.to) params.set('to', filters.to)
+    if (filters.sort_by) params.set('sort_by', filters.sort_by)
+    if (filters.sort_order) params.set('sort_order', filters.sort_order)
 
     return params.toString()
 }

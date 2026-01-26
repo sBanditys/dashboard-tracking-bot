@@ -6,6 +6,15 @@ interface Column<T> {
     header: string
     render?: (item: T) => React.ReactNode
     className?: string
+    sortable?: boolean
+    sortKey?: string
+}
+
+type SortDirection = 'asc' | 'desc' | null
+
+interface SortConfig {
+    key: string
+    direction: SortDirection
 }
 
 interface DataTableProps<T> {
@@ -15,6 +24,17 @@ interface DataTableProps<T> {
     emptyMessage?: string
     keyExtractor: (item: T) => string
     className?: string
+    sortConfig?: SortConfig
+    onSort?: (key: string) => void
+}
+
+function SortArrow({ direction }: { direction: SortDirection }) {
+    if (!direction) return <span className="ml-1 text-gray-600">↕</span>
+    return (
+        <span className="ml-1">
+            {direction === 'desc' ? '↓' : '↑'}
+        </span>
+    )
 }
 
 export function DataTable<T>({
@@ -24,7 +44,29 @@ export function DataTable<T>({
     emptyMessage = 'No data found',
     keyExtractor,
     className,
+    sortConfig,
+    onSort,
 }: DataTableProps<T>) {
+    const renderHeader = (col: Column<T>) => {
+        const isSortable = col.sortable && onSort
+        const sortKey = col.sortKey || col.key
+        const isActive = sortConfig?.key === sortKey
+        const direction = isActive ? sortConfig.direction : null
+
+        if (isSortable) {
+            return (
+                <button
+                    onClick={() => onSort(sortKey)}
+                    className="flex items-center hover:text-white transition-colors"
+                >
+                    {col.header}
+                    <SortArrow direction={direction} />
+                </button>
+            )
+        }
+        return col.header
+    }
+
     if (isLoading) {
         return (
             <div className={cn('bg-surface border border-border rounded-sm overflow-hidden', className)}>
@@ -79,10 +121,11 @@ export function DataTable<T>({
                                     key={col.key}
                                     className={cn(
                                         'px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider',
+                                        col.sortable && 'cursor-pointer select-none',
                                         col.className
                                     )}
                                 >
-                                    {col.header}
+                                    {renderHeader(col)}
                                 </th>
                             ))}
                         </tr>

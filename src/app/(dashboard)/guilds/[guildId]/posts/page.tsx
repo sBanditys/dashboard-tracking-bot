@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { usePosts, useBrands } from '@/hooks/use-tracking'
 import { GuildTabs } from '@/components/guild-tabs'
 import { DataTable } from '@/components/ui/data-table'
@@ -24,6 +24,7 @@ const statusColors: Record<string, string> = {
     pending: 'bg-yellow-500/10 text-yellow-400',
     failed: 'bg-red-500/10 text-red-400',
     processing: 'bg-blue-500/10 text-blue-400',
+    done: 'bg-green-500/10 text-green-400',
 }
 
 function formatNumber(num: number | null): string {
@@ -84,8 +85,10 @@ const columns = [
         ),
     },
     {
-        key: 'metrics',
+        key: 'views',
         header: 'Views',
+        sortable: true,
+        sortKey: 'views',
         render: (post: Post) => (
             <span className="text-gray-300">
                 {post.metrics ? formatNumber(post.metrics.views) : '-'}
@@ -95,6 +98,8 @@ const columns = [
     {
         key: 'likes',
         header: 'Likes',
+        sortable: true,
+        sortKey: 'likes',
         render: (post: Post) => (
             <span className="text-gray-300">
                 {post.metrics ? formatNumber(post.metrics.likes) : '-'}
@@ -104,6 +109,8 @@ const columns = [
     {
         key: 'posted_at',
         header: 'Posted',
+        sortable: true,
+        sortKey: 'posted_at',
         render: (post: Post) => (
             <span className="text-gray-400 text-xs">
                 {post.posted_at
@@ -120,17 +127,24 @@ const columns = [
     },
 ]
 
-type SortOption = 'newest' | 'oldest' | 'views_desc' | 'views_asc' | 'likes_desc' | 'likes_asc'
+type SortDirection = 'asc' | 'desc' | null
+
+interface SortConfig {
+    key: string
+    direction: SortDirection
+}
 
 export default function PostsPage({ params }: PageProps) {
     const { guildId } = params
     const [page, setPage] = useState(1)
     const [filters, setFilters] = useState<PostFilters>({})
     const [groupFilter, setGroupFilter] = useState<string>('')
-    const [sortBy, setSortBy] = useState<SortOption>('newest')
+    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'posted_at', direction: 'desc' })
 
-    // Fetch more posts when sorting by metrics (need all data for client-side sort)
-    const limit = (groupFilter || sortBy.includes('views') || sortBy.includes('likes')) ? 100 : 25
+    // Determine if we need all data for client-side sorting
+    const needsAllData = groupFilter || sortConfig.key === 'views' || sortConfig.key === 'likes'
+    const limit = needsAllData ? 500 : 25  // Fetch more when sorting by metrics
+
     const { data, isLoading, isError } = usePosts(guildId, page, limit, filters)
     const { data: brandsData } = useBrands(guildId)
 
@@ -146,6 +160,20 @@ export default function PostsPage({ params }: PageProps) {
         return Array.from(groupSet).sort()
     }, [brandsData])
 
+    // Handle column header click for sorting
+    const handleSort = useCallback((key: string) => {
+        setSortConfig(prev => {
+            if (prev.key === key) {
+                // Cycle through: desc -> asc -> null (default to desc)
+                if (prev.direction === 'desc') return { key, direction: 'asc' }
+                if (prev.direction === 'asc') return { key: 'posted_at', direction: 'desc' }
+            }
+            // Default to descending for new sort key
+            return { key, direction: 'desc' }
+        })
+        setPage(1)
+    }, [])
+
     // Filter and sort posts
     const filteredPosts = useMemo(() => {
         let posts = data?.posts || []
@@ -157,25 +185,22 @@ export default function PostsPage({ params }: PageProps) {
 
         // Sort posts
         const sorted = [...posts].sort((a, b) => {
-            switch (sortBy) {
-                case 'views_desc':
-                    return (b.metrics?.views ?? -1) - (a.metrics?.views ?? -1)
-                case 'views_asc':
-                    return (a.metrics?.views ?? Infinity) - (b.metrics?.views ?? Infinity)
-                case 'likes_desc':
-                    return (b.metrics?.likes ?? -1) - (a.metrics?.likes ?? -1)
-                case 'likes_asc':
-                    return (a.metrics?.likes ?? Infinity) - (b.metrics?.likes ?? Infinity)
-                case 'oldest':
-                    return new Date(a.posted_at || 0).getTime() - new Date(b.posted_at || 0).getTime()
-                case 'newest':
+            const { key, direction } = sortConfig
+            const multiplier = direction === 'asc' ? 1 : -1
+
+            switch (key) {
+                case 'views':
+                    return multiplier * ((a.metrics?.views ?? -1) - (b.metrics?.views ?? -1))
+                case 'likes':
+                    return multiplier * ((a.metrics?.likes ?? -1) - (b.metrics?.likes ?? -1))
+                case 'posted_at':
                 default:
-                    return new Date(b.posted_at || 0).getTime() - new Date(a.posted_at || 0).getTime()
+                    return multiplier * (new Date(a.posted_at || 0).getTime() - new Date(b.posted_at || 0).getTime())
             }
         })
 
         return sorted
-    }, [data?.posts, groupFilter, sortBy])
+    }, [data?.posts, groupFilter, sortConfig])
 
     const handlePlatformFilter = (platform: string | undefined) => {
         setFilters({ ...filters, platform: platform as PostFilters['platform'] })
@@ -186,6 +211,9 @@ export default function PostsPage({ params }: PageProps) {
         setFilters({ ...filters, status })
         setPage(1)
     }
+
+    const hasActiveFilters = filters.platform || filters.status || groupFilter ||
+        (sortConfig.key !== 'posted_at' || sortConfig.direction !== 'desc')
 
     if (isError) {
         return (
@@ -227,6 +255,7 @@ export default function PostsPage({ params }: PageProps) {
                     className="bg-surface border border-border rounded-sm px-3 py-1.5 text-sm text-gray-300 focus:outline-none focus:border-accent-purple"
                 >
                     <option value="">All Statuses</option>
+                    <option value="done">Done</option>
                     <option value="verified">Verified</option>
                     <option value="pending">Pending</option>
                     <option value="processing">Processing</option>
@@ -249,28 +278,12 @@ export default function PostsPage({ params }: PageProps) {
                     ))}
                 </select>
 
-                <select
-                    value={sortBy}
-                    onChange={(e) => {
-                        setSortBy(e.target.value as SortOption)
-                        setPage(1)
-                    }}
-                    className="bg-surface border border-border rounded-sm px-3 py-1.5 text-sm text-gray-300 focus:outline-none focus:border-accent-purple"
-                >
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                    <option value="views_desc">Most Views</option>
-                    <option value="views_asc">Least Views</option>
-                    <option value="likes_desc">Most Likes</option>
-                    <option value="likes_asc">Least Likes</option>
-                </select>
-
-                {(filters.platform || filters.status || groupFilter || sortBy !== 'newest') && (
+                {hasActiveFilters && (
                     <button
                         onClick={() => {
                             setFilters({})
                             setGroupFilter('')
-                            setSortBy('newest')
+                            setSortConfig({ key: 'posted_at', direction: 'desc' })
                             setPage(1)
                         }}
                         className="text-xs text-gray-400 hover:text-white px-2"
@@ -286,9 +299,11 @@ export default function PostsPage({ params }: PageProps) {
                 isLoading={isLoading}
                 keyExtractor={(post) => post.url}
                 emptyMessage="No posts found"
+                sortConfig={sortConfig}
+                onSort={handleSort}
             />
 
-            {data && data.pagination.total_pages > 1 && !groupFilter && (
+            {data && data.pagination.total_pages > 1 && !needsAllData && (
                 <div className="flex justify-center">
                     <Pagination
                         page={page}

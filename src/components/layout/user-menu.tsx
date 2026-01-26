@@ -48,16 +48,29 @@ export function UserMenu() {
     return null
   }
 
+  // Build Discord avatar URL
+  const avatarUrl = user.avatar
+    ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=80`
+    : null
+
   return (
     <div className="relative" ref={menuRef}>
       {/* User Avatar Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="w-10 h-10 rounded-full bg-accent-purple flex items-center justify-center text-white font-semibold hover:bg-accent-purple/90 transition-colors"
+        className="w-10 h-10 rounded-full bg-accent-purple flex items-center justify-center text-white font-semibold hover:ring-2 hover:ring-accent-purple/50 transition-all overflow-hidden"
         aria-label="User menu"
         aria-expanded={open}
       >
-        {user.username.charAt(0).toUpperCase()}
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={user.username}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          user.username.charAt(0).toUpperCase()
+        )}
       </button>
 
       {/* Dropdown Menu */}

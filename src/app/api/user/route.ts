@@ -17,7 +17,7 @@ export async function GET() {
     }
 
     // Forward to backend API with Authorization header
-    const response = await apiClient.get<User>('/auth/me', authToken.value);
+    const response = await apiClient.get<User>('/api/v1/auth/me', authToken.value);
 
     if (response.error || !response.data) {
       return NextResponse.json(

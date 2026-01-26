@@ -48,9 +48,18 @@ const columns = [
         key: 'author_handle',
         header: 'Author',
         render: (post: Post) => (
-            <span className="font-medium text-white">
-                {post.author_handle ? `@${post.author_handle}` : '-'}
-            </span>
+            post.author_handle ? (
+                <a
+                    href={post.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-accent-purple hover:underline"
+                >
+                    @{post.author_handle}
+                </a>
+            ) : (
+                <span className="text-gray-400">-</span>
+            )
         ),
     },
     {

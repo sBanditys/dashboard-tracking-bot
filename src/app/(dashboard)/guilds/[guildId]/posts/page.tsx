@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { usePosts } from '@/hooks/use-tracking'
+import { useState, useMemo } from 'react'
+import { usePosts, useBrands } from '@/hooks/use-tracking'
 import { GuildTabs } from '@/components/guild-tabs'
 import { DataTable } from '@/components/ui/data-table'
 import { Pagination } from '@/components/ui/pagination'
@@ -118,7 +118,27 @@ export default function PostsPage({ params }: PageProps) {
     const { guildId } = params
     const [page, setPage] = useState(1)
     const [filters, setFilters] = useState<PostFilters>({})
+    const [groupFilter, setGroupFilter] = useState<string>('')
     const { data, isLoading, isError } = usePosts(guildId, page, 25, filters)
+    const { data: brandsData } = useBrands(guildId)
+
+    // Extract unique groups from brands data
+    const groups = useMemo(() => {
+        if (!brandsData?.brands) return []
+        const groupSet = new Set<string>()
+        brandsData.brands.forEach(brand => {
+            brand.groups.forEach(group => {
+                groupSet.add(group.label)
+            })
+        })
+        return Array.from(groupSet).sort()
+    }, [brandsData])
+
+    // Filter posts by group
+    const filteredPosts = useMemo(() => {
+        if (!data?.posts || !groupFilter) return data?.posts || []
+        return data.posts.filter(post => post.group === groupFilter)
+    }, [data?.posts, groupFilter])
 
     const handlePlatformFilter = (platform: string | undefined) => {
         setFilters({ ...filters, platform: platform as PostFilters['platform'] })
@@ -176,10 +196,27 @@ export default function PostsPage({ params }: PageProps) {
                     <option value="failed">Failed</option>
                 </select>
 
-                {(filters.platform || filters.status) && (
+                <select
+                    value={groupFilter}
+                    onChange={(e) => {
+                        setGroupFilter(e.target.value)
+                        setPage(1)
+                    }}
+                    className="bg-surface border border-border rounded-sm px-3 py-1.5 text-sm text-gray-300 focus:outline-none focus:border-accent-purple"
+                >
+                    <option value="">All Groups</option>
+                    {groups.map((group) => (
+                        <option key={group} value={group}>
+                            {group}
+                        </option>
+                    ))}
+                </select>
+
+                {(filters.platform || filters.status || groupFilter) && (
                     <button
                         onClick={() => {
                             setFilters({})
+                            setGroupFilter('')
                             setPage(1)
                         }}
                         className="text-xs text-gray-400 hover:text-white px-2"
@@ -191,13 +228,13 @@ export default function PostsPage({ params }: PageProps) {
 
             <DataTable
                 columns={columns}
-                data={data?.posts || []}
+                data={filteredPosts}
                 isLoading={isLoading}
                 keyExtractor={(post) => post.url}
                 emptyMessage="No posts found"
             />
 
-            {data && data.pagination.total_pages > 1 && (
+            {data && data.pagination.total_pages > 1 && !groupFilter && (
                 <div className="flex justify-center">
                     <Pagination
                         page={page}

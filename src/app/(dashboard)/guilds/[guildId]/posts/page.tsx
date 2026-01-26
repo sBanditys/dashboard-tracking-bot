@@ -102,12 +102,12 @@ const columns = [
         ),
     },
     {
-        key: 'submitted_at',
-        header: 'Submitted',
+        key: 'posted_at',
+        header: 'Posted',
         render: (post: Post) => (
             <span className="text-gray-400 text-xs">
-                {post.submitted_at
-                    ? new Date(post.submitted_at).toLocaleDateString()
+                {post.posted_at
+                    ? new Date(post.posted_at).toLocaleDateString()
                     : '-'}
             </span>
         ),
@@ -119,7 +119,10 @@ export default function PostsPage({ params }: PageProps) {
     const [page, setPage] = useState(1)
     const [filters, setFilters] = useState<PostFilters>({})
     const [groupFilter, setGroupFilter] = useState<string>('')
-    const { data, isLoading, isError } = usePosts(guildId, page, 25, filters)
+
+    // Fetch more posts when filtering by group
+    const limit = groupFilter ? 100 : 25
+    const { data, isLoading, isError } = usePosts(guildId, page, limit, filters)
     const { data: brandsData } = useBrands(guildId)
 
     // Extract unique groups from brands data

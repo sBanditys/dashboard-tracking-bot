@@ -120,14 +120,17 @@ const columns = [
     },
 ]
 
+type SortOption = 'newest' | 'oldest' | 'views_desc' | 'views_asc' | 'likes_desc' | 'likes_asc'
+
 export default function PostsPage({ params }: PageProps) {
     const { guildId } = params
     const [page, setPage] = useState(1)
     const [filters, setFilters] = useState<PostFilters>({})
     const [groupFilter, setGroupFilter] = useState<string>('')
+    const [sortBy, setSortBy] = useState<SortOption>('newest')
 
-    // Fetch more posts when filtering by group
-    const limit = groupFilter ? 100 : 25
+    // Fetch more posts when sorting by metrics (need all data for client-side sort)
+    const limit = (groupFilter || sortBy.includes('views') || sortBy.includes('likes')) ? 100 : 25
     const { data, isLoading, isError } = usePosts(guildId, page, limit, filters)
     const { data: brandsData } = useBrands(guildId)
 
@@ -143,11 +146,36 @@ export default function PostsPage({ params }: PageProps) {
         return Array.from(groupSet).sort()
     }, [brandsData])
 
-    // Filter posts by group
+    // Filter and sort posts
     const filteredPosts = useMemo(() => {
-        if (!data?.posts || !groupFilter) return data?.posts || []
-        return data.posts.filter(post => post.group === groupFilter)
-    }, [data?.posts, groupFilter])
+        let posts = data?.posts || []
+
+        // Filter by group
+        if (groupFilter) {
+            posts = posts.filter(post => post.group === groupFilter)
+        }
+
+        // Sort posts
+        const sorted = [...posts].sort((a, b) => {
+            switch (sortBy) {
+                case 'views_desc':
+                    return (b.metrics?.views ?? -1) - (a.metrics?.views ?? -1)
+                case 'views_asc':
+                    return (a.metrics?.views ?? Infinity) - (b.metrics?.views ?? Infinity)
+                case 'likes_desc':
+                    return (b.metrics?.likes ?? -1) - (a.metrics?.likes ?? -1)
+                case 'likes_asc':
+                    return (a.metrics?.likes ?? Infinity) - (b.metrics?.likes ?? Infinity)
+                case 'oldest':
+                    return new Date(a.posted_at || 0).getTime() - new Date(b.posted_at || 0).getTime()
+                case 'newest':
+                default:
+                    return new Date(b.posted_at || 0).getTime() - new Date(a.posted_at || 0).getTime()
+            }
+        })
+
+        return sorted
+    }, [data?.posts, groupFilter, sortBy])
 
     const handlePlatformFilter = (platform: string | undefined) => {
         setFilters({ ...filters, platform: platform as PostFilters['platform'] })
@@ -221,11 +249,28 @@ export default function PostsPage({ params }: PageProps) {
                     ))}
                 </select>
 
-                {(filters.platform || filters.status || groupFilter) && (
+                <select
+                    value={sortBy}
+                    onChange={(e) => {
+                        setSortBy(e.target.value as SortOption)
+                        setPage(1)
+                    }}
+                    className="bg-surface border border-border rounded-sm px-3 py-1.5 text-sm text-gray-300 focus:outline-none focus:border-accent-purple"
+                >
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="views_desc">Most Views</option>
+                    <option value="views_asc">Least Views</option>
+                    <option value="likes_desc">Most Likes</option>
+                    <option value="likes_asc">Least Likes</option>
+                </select>
+
+                {(filters.platform || filters.status || groupFilter || sortBy !== 'newest') && (
                     <button
                         onClick={() => {
                             setFilters({})
                             setGroupFilter('')
+                            setSortBy('newest')
                             setPage(1)
                         }}
                         className="text-xs text-gray-400 hover:text-white px-2"

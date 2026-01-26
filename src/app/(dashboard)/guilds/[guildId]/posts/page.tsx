@@ -107,7 +107,13 @@ const columns = [
         render: (post: Post) => (
             <span className="text-gray-400 text-xs">
                 {post.posted_at
-                    ? new Date(post.posted_at).toLocaleDateString()
+                    ? new Date(post.posted_at).toLocaleString(undefined, {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
                     : '-'}
             </span>
         ),

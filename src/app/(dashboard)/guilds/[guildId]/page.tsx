@@ -1,6 +1,5 @@
 'use client'
 
-import { use } from 'react'
 import { useGuild, useGuildStatus, useGuildUsage } from '@/hooks/use-guilds'
 import { StatCard } from '@/components/stat-card'
 import { BotStatus } from '@/components/bot-status'
@@ -9,11 +8,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import Link from 'next/link'
 
 interface PageProps {
-    params: Promise<{ guildId: string }>
+    params: { guildId: string }
 }
 
 export default function GuildDetailPage({ params }: PageProps) {
-    const { guildId } = use(params)
+    const { guildId } = params
     const { data: guild, isLoading } = useGuild(guildId)
     const { data: status } = useGuildStatus(guildId)
     const { data: usage } = useGuildUsage(guildId)

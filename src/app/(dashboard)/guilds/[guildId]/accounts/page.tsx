@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useAccounts } from '@/hooks/use-tracking'
 import { GuildTabs } from '@/components/guild-tabs'
 import { DataTable } from '@/components/ui/data-table'
@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 import type { Account } from '@/types/tracking'
 
 interface PageProps {
-    params: Promise<{ guildId: string }>
+    params: { guildId: string }
 }
 
 const platformIcons: Record<string, string> = {
@@ -76,7 +76,7 @@ const columns = [
 ]
 
 export default function AccountsPage({ params }: PageProps) {
-    const { guildId } = use(params)
+    const { guildId } = params
     const [page, setPage] = useState(1)
     const { data, isLoading, isError } = useAccounts(guildId, page)
 

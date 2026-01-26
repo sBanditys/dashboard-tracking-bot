@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { usePosts } from '@/hooks/use-tracking'
 import { GuildTabs } from '@/components/guild-tabs'
 import { DataTable } from '@/components/ui/data-table'
@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 import type { Post, PostFilters } from '@/types/tracking'
 
 interface PageProps {
-    params: Promise<{ guildId: string }>
+    params: { guildId: string }
 }
 
 const platformIcons: Record<string, string> = {
@@ -106,7 +106,7 @@ const columns = [
 ]
 
 export default function PostsPage({ params }: PageProps) {
-    const { guildId } = use(params)
+    const { guildId } = params
     const [page, setPage] = useState(1)
     const [filters, setFilters] = useState<PostFilters>({})
     const { data, isLoading, isError } = usePosts(guildId, page, 25, filters)

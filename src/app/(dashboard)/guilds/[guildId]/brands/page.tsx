@@ -1,17 +1,17 @@
 'use client'
 
-import { use, useState } from 'react'
+import { useState } from 'react'
 import { useBrands } from '@/hooks/use-tracking'
 import { GuildTabs } from '@/components/guild-tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
 interface PageProps {
-    params: Promise<{ guildId: string }>
+    params: { guildId: string }
 }
 
 export default function BrandsPage({ params }: PageProps) {
-    const { guildId } = use(params)
+    const { guildId } = params
     const { data, isLoading, isError } = useBrands(guildId)
     const [expandedBrand, setExpandedBrand] = useState<string | null>(null)
 

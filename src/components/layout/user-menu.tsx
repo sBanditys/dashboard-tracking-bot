@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Image from 'next/image'
 import { useUser, useLogout } from '@/hooks/use-user'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -63,9 +64,11 @@ export function UserMenu() {
         aria-expanded={open}
       >
         {avatarUrl ? (
-          <img
+          <Image
             src={avatarUrl}
             alt={user.username}
+            width={40}
+            height={40}
             className="w-full h-full object-cover"
           />
         ) : (

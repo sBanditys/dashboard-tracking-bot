@@ -98,10 +98,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| AUTH-04 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
+| AUTH-03 | Phase 1 | Complete |
+| AUTH-04 | Phase 1 | Complete |
 | GUILD-01 | Phase 2 | Pending |
 | GUILD-02 | Phase 2 | Pending |
 | GUILD-03 | Phase 2 | Pending |
@@ -120,10 +120,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ANAL-03 | Phase 6 | Pending |
 | DATA-01 | Phase 7 | Pending |
 | DATA-02 | Phase 7 | Pending |
-| UX-01 | Phase 1 | Pending |
-| UX-02 | Phase 1 | Pending |
-| LEGAL-01 | Phase 1 | Pending |
-| LEGAL-02 | Phase 1 | Pending |
+| UX-01 | Phase 1 | Complete |
+| UX-02 | Phase 1 | Complete |
+| LEGAL-01 | Phase 1 | Complete |
+| LEGAL-02 | Phase 1 | Complete |
 
 **Coverage:**
 - v1 requirements: 26 total
@@ -132,4 +132,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2025-01-24*
-*Last updated: 2026-01-24 after roadmap creation*
+*Last updated: 2026-01-29 after Phase 1 completion*

@@ -12,7 +12,7 @@ This roadmap transforms an API-backed Discord tracking bot into a standalone web
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation & Authentication** - Secure login, session management, base UI structure
+- [x] **Phase 1: Foundation & Authentication** - Secure login, session management, base UI structure
 - [ ] **Phase 2: Guild Management** - Guild list, detail views, multi-tenant data model
 - [ ] **Phase 3: Tracking Data Display** - View tracked accounts, posts, brands with pagination
 - [ ] **Phase 4: Real-Time Updates** - Bot status indicators with live updates
@@ -36,11 +36,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 5 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Project setup with Next.js, Tailwind, React Query, and theme providers
-- [ ] 01-02-PLAN.md — Terms of Service and Privacy Policy pages
-- [ ] 01-03-PLAN.md — Discord OAuth authentication flow with persistent sessions
-- [ ] 01-04-PLAN.md — Dashboard shell with sidebar, topbar, mobile drawer, and theme toggle
-- [ ] 01-05-PLAN.md — Visual and functional verification checkpoint
+- [x] 01-01-PLAN.md — Project setup with Next.js, Tailwind, React Query, and theme providers
+- [x] 01-02-PLAN.md — Terms of Service and Privacy Policy pages
+- [x] 01-03-PLAN.md — Discord OAuth authentication flow with persistent sessions
+- [x] 01-04-PLAN.md — Dashboard shell with sidebar, topbar, mobile drawer, and theme toggle
+- [x] 01-05-PLAN.md — Visual and functional verification checkpoint
 
 ### Phase 2: Guild Management
 **Goal**: Users can view and switch between their accessible Discord guilds
@@ -150,7 +150,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Authentication | 0/5 | Ready for execution | - |
+| 1. Foundation & Authentication | 5/5 | ✓ Complete | 2026-01-29 |
 | 2. Guild Management | 0/TBD | Not started | - |
 | 3. Tracking Data Display | 0/TBD | Not started | - |
 | 4. Real-Time Updates | 0/TBD | Not started | - |
@@ -161,4 +161,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 ---
 *Created: 2026-01-24*
-*Last updated: 2026-01-24*
+*Last updated: 2026-01-29*

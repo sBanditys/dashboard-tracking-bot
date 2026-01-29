@@ -51,10 +51,11 @@ Plans:
   2. User can select a guild and view its details (settings, usage stats)
   3. User can switch between guilds via a guild switcher without page reload
   4. Guild list shows only guilds user currently has access to (no stale permissions)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] TBD during phase planning
+- [ ] 02-01-PLAN.md — Guild switcher component with Headless UI integration
+- [ ] 02-02-PLAN.md — Visual and functional verification checkpoint
 
 ### Phase 3: Tracking Data Display
 **Goal**: Users can view all tracked content within their selected guild
@@ -151,7 +152,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Authentication | 5/5 | ✓ Complete | 2026-01-29 |
-| 2. Guild Management | 0/TBD | Not started | - |
+| 2. Guild Management | 0/2 | In Progress | - |
 | 3. Tracking Data Display | 0/TBD | Not started | - |
 | 4. Real-Time Updates | 0/TBD | Not started | - |
 | 5. Configuration & Mutations | 0/TBD | Not started | - |

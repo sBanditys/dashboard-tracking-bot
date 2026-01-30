@@ -67,10 +67,15 @@ Plans:
   3. User can view brands configured within the guild
   4. User can search and filter tracked items by name, platform, or date
   5. Empty states guide users to add their first tracked item
-**Plans**: TBD
+**Plans**: 6 plans
 
 Plans:
-- [ ] TBD during phase planning
+- [ ] 03-01-PLAN.md — Foundation setup (deps, useDebounce, PlatformIcon, EmptyState)
+- [ ] 03-02-PLAN.md — Filter components (FilterBar, SearchInput, PlatformSelect, DateRangePicker)
+- [ ] 03-03-PLAN.md — Infinite scroll hooks and ScrollToTop component
+- [ ] 03-04-PLAN.md — Card components (AccountCard, PostCard with skeletons)
+- [ ] 03-05-PLAN.md — Refactor tracking pages to cards and infinite scroll
+- [ ] 03-06-PLAN.md — Visual and functional verification checkpoint
 
 ### Phase 4: Real-Time Updates
 **Goal**: Users can see bot health status that updates automatically
@@ -153,7 +158,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 |-------|----------------|--------|-----------|
 | 1. Foundation & Authentication | 5/5 | ✓ Complete | 2026-01-29 |
 | 2. Guild Management | 2/2 | ✓ Complete | 2026-01-30 |
-| 3. Tracking Data Display | 0/TBD | Not started | - |
+| 3. Tracking Data Display | 0/6 | In Progress | - |
 | 4. Real-Time Updates | 0/TBD | Not started | - |
 | 5. Configuration & Mutations | 0/TBD | Not started | - |
 | 6. Analytics | 0/TBD | Not started | - |

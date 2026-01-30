@@ -138,3 +138,60 @@ export function useAccountsInfinite(
         enabled: !!guildId,
     })
 }
+
+/**
+ * Extended post filters for infinite query (adds search)
+ */
+export interface PostFiltersExtended extends PostFilters {
+    search?: string
+}
+
+/**
+ * Build query string from extended post filters
+ */
+function buildPostQueryExtended(page: number, limit: number, filters: PostFiltersExtended): string {
+    const params = new URLSearchParams()
+    params.set('page', page.toString())
+    params.set('limit', limit.toString())
+
+    if (filters.search) params.set('search', filters.search)
+    if (filters.platform) params.set('platform', filters.platform)
+    if (filters.status) params.set('status', filters.status)
+    if (filters.brand_id) params.set('brand_id', filters.brand_id)
+    if (filters.from) params.set('from', filters.from)
+    if (filters.to) params.set('to', filters.to)
+    if (filters.sort_by) params.set('sort_by', filters.sort_by)
+    if (filters.sort_order) params.set('sort_order', filters.sort_order)
+
+    return params.toString()
+}
+
+/**
+ * Fetch paginated posts with infinite scroll
+ */
+export function usePostsInfinite(
+    guildId: string,
+    limit: number = 50,
+    filters: PostFiltersExtended = {}
+) {
+    return useInfiniteQuery({
+        queryKey: ['guild', guildId, 'posts', 'infinite', limit, filters],
+        queryFn: async ({ pageParam }) => {
+            const query = buildPostQueryExtended(pageParam, limit, filters)
+            const response = await fetch(`/api/guilds/${guildId}/posts?${query}`)
+            if (!response.ok) {
+                throw new Error('Failed to fetch posts')
+            }
+            return response.json() as Promise<PostsResponse>
+        },
+        initialPageParam: 1,
+        getNextPageParam: (lastPage) => {
+            if (lastPage.pagination.page >= lastPage.pagination.total_pages) {
+                return undefined
+            }
+            return lastPage.pagination.page + 1
+        },
+        staleTime: 60 * 1000, // 1 minute (posts update more frequently)
+        enabled: !!guildId,
+    })
+}

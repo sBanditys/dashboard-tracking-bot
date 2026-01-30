@@ -1,6 +1,6 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
 import type {
     BrandsResponse,
     AccountsResponse,
@@ -83,6 +83,58 @@ export function usePosts(
             return response.json()
         },
         staleTime: 60 * 1000, // 1 minute
+        enabled: !!guildId,
+    })
+}
+
+/**
+ * Account filters for infinite query
+ */
+export interface AccountFilters {
+    search?: string
+    platform?: string
+}
+
+/**
+ * Build query string from account filters
+ */
+function buildAccountQuery(page: number, limit: number, filters: AccountFilters): string {
+    const params = new URLSearchParams()
+    params.set('page', page.toString())
+    params.set('limit', limit.toString())
+
+    if (filters.search) params.set('search', filters.search)
+    if (filters.platform) params.set('platform', filters.platform)
+
+    return params.toString()
+}
+
+/**
+ * Fetch paginated accounts with infinite scroll
+ */
+export function useAccountsInfinite(
+    guildId: string,
+    limit: number = 50,
+    filters: AccountFilters = {}
+) {
+    return useInfiniteQuery({
+        queryKey: ['guild', guildId, 'accounts', 'infinite', limit, filters],
+        queryFn: async ({ pageParam }) => {
+            const query = buildAccountQuery(pageParam, limit, filters)
+            const response = await fetch(`/api/guilds/${guildId}/accounts?${query}`)
+            if (!response.ok) {
+                throw new Error('Failed to fetch accounts')
+            }
+            return response.json() as Promise<AccountsResponse>
+        },
+        initialPageParam: 1,
+        getNextPageParam: (lastPage) => {
+            if (lastPage.pagination.page >= lastPage.pagination.total_pages) {
+                return undefined
+            }
+            return lastPage.pagination.page + 1
+        },
+        staleTime: 2 * 60 * 1000, // 2 minutes per DEV-002
         enabled: !!guildId,
     })
 }

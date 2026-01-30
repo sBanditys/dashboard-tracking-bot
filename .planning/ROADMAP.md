@@ -13,7 +13,7 @@ This roadmap transforms an API-backed Discord tracking bot into a standalone web
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Authentication** - Secure login, session management, base UI structure
-- [ ] **Phase 2: Guild Management** - Guild list, detail views, multi-tenant data model
+- [x] **Phase 2: Guild Management** - Guild list, detail views, multi-tenant data model
 - [ ] **Phase 3: Tracking Data Display** - View tracked accounts, posts, brands with pagination
 - [ ] **Phase 4: Real-Time Updates** - Bot status indicators with live updates
 - [ ] **Phase 5: Configuration & Mutations** - Add/edit/remove tracked items and settings
@@ -55,7 +55,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Guild switcher component with Headless UI integration
-- [ ] 02-02-PLAN.md — Visual and functional verification checkpoint
+- [x] 02-02-PLAN.md — Visual and functional verification checkpoint
 
 ### Phase 3: Tracking Data Display
 **Goal**: Users can view all tracked content within their selected guild
@@ -152,7 +152,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Authentication | 5/5 | ✓ Complete | 2026-01-29 |
-| 2. Guild Management | 1/2 | In Progress | - |
+| 2. Guild Management | 2/2 | Complete | 2026-01-30 |
 | 3. Tracking Data Display | 0/TBD | Not started | - |
 | 4. Real-Time Updates | 0/TBD | Not started | - |
 | 5. Configuration & Mutations | 0/TBD | Not started | - |

@@ -93,6 +93,7 @@ export function usePosts(
 export interface AccountFilters {
     search?: string
     platform?: string
+    group?: string
 }
 
 /**
@@ -105,6 +106,7 @@ function buildAccountQuery(page: number, limit: number, filters: AccountFilters)
 
     if (filters.search) params.set('search', filters.search)
     if (filters.platform) params.set('platform', filters.platform)
+    if (filters.group) params.set('group', filters.group)
 
     return params.toString()
 }

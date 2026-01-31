@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useInView } from 'react-intersection-observer'
-import { useAccountsInfinite, type AccountFilters } from '@/hooks/use-tracking'
+import { useAccountsInfinite, useBrands, type AccountFilters } from '@/hooks/use-tracking'
 import { GuildTabs } from '@/components/guild-tabs'
-import { FilterBar, SearchInput, PlatformSelect, PageSizeSelect } from '@/components/filters'
+import { FilterBar, SearchInput, PlatformSelect, GroupSelect, PageSizeSelect } from '@/components/filters'
 import { AccountCard, AccountCardSkeleton } from '@/components/tracking'
 import { EmptyState, NoResults } from '@/components/empty-state'
 import { ScrollToTop } from '@/components/scroll-to-top'
@@ -19,12 +19,23 @@ export default function AccountsPage({ params }: PageProps) {
     // Filter state
     const [search, setSearch] = useState('')
     const [platform, setPlatform] = useState('')
+    const [group, setGroup] = useState('')
     const [pageSize, setPageSize] = useState(50)
+
+    // Fetch brands to get groups for the filter
+    const { data: brandsData, isLoading: brandsLoading } = useBrands(guildId)
+
+    // Extract all groups from brands
+    const groups = useMemo(() => {
+        if (!brandsData?.brands) return []
+        return brandsData.brands.flatMap(brand => brand.groups)
+    }, [brandsData])
 
     // Build filters object
     const filters: AccountFilters = {
         search: search || undefined,
         platform: platform || undefined,
+        group: group || undefined,
     }
 
     // Infinite query
@@ -51,12 +62,13 @@ export default function AccountsPage({ params }: PageProps) {
     const totalCount = data?.pages[0]?.pagination.total ?? 0
 
     // Check if any filters are active
-    const hasActiveFilters = search || platform
+    const hasActiveFilters = search || platform || group
 
     // Clear all filters
     const handleClearFilters = useCallback(() => {
         setSearch('')
         setPlatform('')
+        setGroup('')
     }, [])
 
     if (isError) {
@@ -88,6 +100,12 @@ export default function AccountsPage({ params }: PageProps) {
                 <PlatformSelect
                     value={platform}
                     onChange={setPlatform}
+                />
+                <GroupSelect
+                    value={group}
+                    onChange={setGroup}
+                    groups={groups}
+                    isLoading={brandsLoading}
                 />
                 <PageSizeSelect
                     value={pageSize}

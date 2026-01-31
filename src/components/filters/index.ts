@@ -1,6 +1,7 @@
 export { FilterBar } from './filter-bar'
 export { SearchInput } from './search-input'
 export { PlatformSelect } from './platform-select'
+export { GroupSelect } from './group-select'
 export { StatusSelect } from './status-select'
 export { DateRangePicker } from './date-range-picker'
 export { PageSizeSelect, getInitialPageSize } from './page-size-select'

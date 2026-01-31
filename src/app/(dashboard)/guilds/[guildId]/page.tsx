@@ -1,6 +1,6 @@
 'use client'
 
-import { useGuild, useGuildStatus, useGuildUsage } from '@/hooks/use-guilds'
+import { useGuild, useGuildStatusRealtime, useGuildUsage } from '@/hooks/use-guilds'
 import { StatCard } from '@/components/stat-card'
 import { BotStatus } from '@/components/bot-status'
 import { GuildTabs } from '@/components/guild-tabs'
@@ -14,7 +14,7 @@ interface PageProps {
 export default function GuildDetailPage({ params }: PageProps) {
     const { guildId } = params
     const { data: guild, isLoading } = useGuild(guildId)
-    const { data: status } = useGuildStatus(guildId)
+    const { data: status, connectionState, reconnect } = useGuildStatusRealtime(guildId)
     const { data: usage } = useGuildUsage(guildId)
 
     if (isLoading) {
@@ -54,6 +54,8 @@ export default function GuildDetailPage({ params }: PageProps) {
                         healthy={status.bot_healthy}
                         lastHeartbeat={status.bot?.last_heartbeat}
                         version={status.bot?.version}
+                        connectionState={connectionState}
+                        onReconnect={reconnect}
                     />
                 )}
             </div>

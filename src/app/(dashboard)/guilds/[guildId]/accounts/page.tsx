@@ -58,7 +58,26 @@ export default function AccountsPage({ params }: PageProps) {
     }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
     // Flatten paginated data
-    const accounts = data?.pages.flatMap(page => page.accounts) ?? []
+    const allAccounts = data?.pages.flatMap(page => page.accounts) ?? []
+
+    // Client-side filtering (backend may not support all filters)
+    const accounts = useMemo(() => {
+        return allAccounts.filter(account => {
+            // Search filter - match username or brand
+            if (search) {
+                const searchLower = search.toLowerCase()
+                const matchesUsername = account.username.toLowerCase().includes(searchLower)
+                const matchesBrand = account.brand?.toLowerCase().includes(searchLower)
+                if (!matchesUsername && !matchesBrand) return false
+            }
+            // Platform filter
+            if (platform && account.platform !== platform) return false
+            // Group filter
+            if (group && account.group !== group) return false
+            return true
+        })
+    }, [allAccounts, search, platform, group])
+
     const totalCount = data?.pages[0]?.pagination.total ?? 0
 
     // Check if any filters are active
@@ -115,7 +134,7 @@ export default function AccountsPage({ params }: PageProps) {
 
             {/* Loading state */}
             {isLoading && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
                     <AccountCardSkeleton count={6} />
                 </div>
             )}
@@ -147,7 +166,7 @@ export default function AccountsPage({ params }: PageProps) {
 
             {/* Accounts grid */}
             {!isLoading && accounts.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
                     {accounts.map(account => (
                         <AccountCard key={account.id} account={account} />
                     ))}
@@ -159,7 +178,7 @@ export default function AccountsPage({ params }: PageProps) {
 
             {/* Loading more indicator */}
             {isFetchingNextPage && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
                     <AccountCardSkeleton count={3} />
                 </div>
             )}

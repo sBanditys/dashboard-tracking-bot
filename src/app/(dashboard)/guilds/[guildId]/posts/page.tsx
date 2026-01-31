@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useInView } from 'react-intersection-observer'
 import type { DateRange } from 'react-day-picker'
 import { usePostsInfinite, type PostFiltersExtended } from '@/hooks/use-tracking'
@@ -60,7 +60,33 @@ export default function PostsPage({ params }: PageProps) {
     }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
     // Flatten paginated data
-    const posts = data?.pages.flatMap(page => page.posts) ?? []
+    const allPosts = data?.pages.flatMap(page => page.posts) ?? []
+
+    // Client-side filtering (backend may not support all filters)
+    const posts = useMemo(() => {
+        return allPosts.filter(post => {
+            // Search filter - match author handle, brand, or group
+            if (search) {
+                const searchLower = search.toLowerCase()
+                const matchesAuthor = post.author_handle?.toLowerCase().includes(searchLower)
+                const matchesBrand = post.brand?.toLowerCase().includes(searchLower)
+                const matchesGroup = post.group?.toLowerCase().includes(searchLower)
+                if (!matchesAuthor && !matchesBrand && !matchesGroup) return false
+            }
+            // Platform filter
+            if (platform && post.platform !== platform) return false
+            // Status filter
+            if (status && post.status.toLowerCase() !== status.toLowerCase()) return false
+            // Date range filter
+            if (dateRange?.from) {
+                const postDate = new Date(post.posted_at || post.submitted_at || '')
+                if (postDate < dateRange.from) return false
+                if (dateRange.to && postDate > dateRange.to) return false
+            }
+            return true
+        })
+    }, [allPosts, search, platform, status, dateRange])
+
     const totalCount = data?.pages[0]?.pagination.total ?? 0
 
     // Check if any filters are active
@@ -120,7 +146,7 @@ export default function PostsPage({ params }: PageProps) {
 
             {/* Loading state */}
             {isLoading && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                     <PostCardSkeleton count={6} />
                 </div>
             )}
@@ -152,7 +178,7 @@ export default function PostsPage({ params }: PageProps) {
 
             {/* Posts grid */}
             {!isLoading && posts.length > 0 && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                     {posts.map(post => (
                         <PostCard key={post.url} post={post} />
                     ))}
@@ -164,7 +190,7 @@ export default function PostsPage({ params }: PageProps) {
 
             {/* Loading more indicator */}
             {isFetchingNextPage && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                     <PostCardSkeleton count={4} />
                 </div>
             )}

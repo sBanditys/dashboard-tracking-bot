@@ -1,33 +1,60 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 /**
  * Floating button that appears when user scrolls down past 300px.
- * Clicking it smoothly scrolls back to the top of the page.
+ * Works with both window scroll and scrollable containers (like dashboard main).
  */
 export function ScrollToTop() {
     const [isVisible, setIsVisible] = useState(false)
+    const [scrollContainer, setScrollContainer] = useState<Element | Window | null>(null)
 
+    // Find the scrollable container on mount
     useEffect(() => {
-        const toggleVisibility = () => {
-            setIsVisible(window.scrollY > 300)
+        // Look for the main scrollable container (dashboard layout uses overflow-auto on main)
+        const mainElement = document.querySelector('main')
+        if (mainElement) {
+            setScrollContainer(mainElement)
+        } else {
+            setScrollContainer(window)
         }
-
-        window.addEventListener('scroll', toggleVisibility)
-        return () => window.removeEventListener('scroll', toggleVisibility)
     }, [])
 
-    const scrollToTop = () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
+    useEffect(() => {
+        if (!scrollContainer) return
+
+        const toggleVisibility = () => {
+            if (scrollContainer instanceof Window) {
+                setIsVisible(window.scrollY > 300)
+            } else {
+                setIsVisible(scrollContainer.scrollTop > 300)
+            }
+        }
+
+        scrollContainer.addEventListener('scroll', toggleVisibility)
+        // Check initial scroll position
+        toggleVisibility()
+
+        return () => scrollContainer.removeEventListener('scroll', toggleVisibility)
+    }, [scrollContainer])
+
+    const scrollToTop = useCallback(() => {
+        if (!scrollContainer) return
+
+        if (scrollContainer instanceof Window) {
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+        } else {
+            scrollContainer.scrollTo({ top: 0, behavior: 'smooth' })
+        }
+    }, [scrollContainer])
 
     if (!isVisible) return null
 
     return (
         <button
             onClick={scrollToTop}
-            className="fixed bottom-6 right-6 p-3 bg-surface border border-border rounded-full shadow-lg hover:bg-background transition-colors focus:outline-none focus:ring-2 focus:ring-accent-purple"
+            className="fixed bottom-6 right-6 p-3 bg-surface border border-border rounded-full shadow-lg hover:bg-background transition-colors focus:outline-none focus:ring-2 focus:ring-accent-purple z-50"
             aria-label="Scroll to top"
         >
             {/* Arrow up icon */}

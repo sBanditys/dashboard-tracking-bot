@@ -1,6 +1,8 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSSE, type ConnectionState } from '@/hooks/use-sse'
+import { useCallback } from 'react'
 import type {
     GuildsResponse,
     GuildDetails,
@@ -79,3 +81,51 @@ export function useGuildUsage(guildId: string, days: number = 30) {
         enabled: !!guildId,
     })
 }
+
+/**
+ * Real-time guild bot status with SSE integration
+ *
+ * Enhances polling with Server-Sent Events for push-based updates.
+ * Falls back to polling when SSE is disconnected.
+ */
+export function useGuildStatusRealtime(guildId: string) {
+    const queryClient = useQueryClient()
+
+    const onMessage = useCallback(
+        (data: unknown) => {
+            queryClient.setQueryData(['guild', guildId, 'status'], data as GuildStatus)
+        },
+        [queryClient, guildId]
+    )
+
+    const { connectionState, reconnect } = useSSE(
+        guildId ? `/api/guilds/${guildId}/status/stream` : null,
+        { onMessage }
+    )
+
+    const isSSEConnected = connectionState === 'connected'
+
+    const query = useQuery<GuildStatus>({
+        queryKey: ['guild', guildId, 'status'],
+        queryFn: async () => {
+            const response = await fetch(`/api/guilds/${guildId}/status`)
+            if (!response.ok) {
+                throw new Error('Failed to fetch guild status')
+            }
+            return response.json()
+        },
+        staleTime: 30 * 1000, // 30 seconds
+        // Enable fallback polling when SSE is not connected
+        refetchInterval: isSSEConnected ? false : 60 * 1000,
+        enabled: !!guildId,
+    })
+
+    return {
+        ...query,
+        connectionState,
+        reconnect,
+    }
+}
+
+// Re-export ConnectionState type for convenience
+export type { ConnectionState }

@@ -8,6 +8,7 @@ import { FilterBar, SearchInput, PlatformSelect, GroupSelect, PageSizeSelect } f
 import { AccountCard, AccountCardSkeleton } from '@/components/tracking'
 import { EmptyState, NoResults } from '@/components/empty-state'
 import { ScrollToTop } from '@/components/scroll-to-top'
+import { ScrollToBottom } from '@/components/scroll-to-bottom'
 
 interface PageProps {
     params: { guildId: string }
@@ -182,6 +183,7 @@ export default function AccountsPage({ params }: PageProps) {
             )}
 
             <ScrollToTop />
+            <ScrollToBottom />
         </div>
     )
 }

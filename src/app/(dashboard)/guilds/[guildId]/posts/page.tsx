@@ -3,12 +3,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useInView } from 'react-intersection-observer'
 import type { DateRange } from 'react-day-picker'
-import { usePostsInfinite, type PostFiltersExtended } from '@/hooks/use-tracking'
+import { usePostsInfinite, useBrands, type PostFiltersExtended } from '@/hooks/use-tracking'
 import { GuildTabs } from '@/components/guild-tabs'
 import {
     FilterBar,
     SearchInput,
     PlatformSelect,
+    GroupSelect,
     StatusSelect,
     DateRangePicker,
     PageSizeSelect
@@ -16,6 +17,7 @@ import {
 import { PostCard, PostCardSkeleton } from '@/components/tracking'
 import { EmptyState, NoResults } from '@/components/empty-state'
 import { ScrollToTop } from '@/components/scroll-to-top'
+import { ScrollToBottom } from '@/components/scroll-to-bottom'
 
 interface PageProps {
     params: { guildId: string }
@@ -27,9 +29,19 @@ export default function PostsPage({ params }: PageProps) {
     // Filter state
     const [search, setSearch] = useState('')
     const [platform, setPlatform] = useState('')
+    const [group, setGroup] = useState('')
     const [status, setStatus] = useState('')
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
     const [pageSize, setPageSize] = useState(50)
+
+    // Fetch brands to get groups for the filter
+    const { data: brandsData, isLoading: brandsLoading } = useBrands(guildId)
+
+    // Extract all groups from brands
+    const groups = useMemo(() => {
+        if (!brandsData?.brands) return []
+        return brandsData.brands.flatMap(brand => brand.groups)
+    }, [brandsData])
 
     // Build filters object
     const filters: PostFiltersExtended = {
@@ -73,6 +85,8 @@ export default function PostsPage({ params }: PageProps) {
             }
             // Platform filter
             if (platform && post.platform !== platform) return false
+            // Group filter
+            if (group && post.group !== group) return false
             // Status filter
             if (status && post.status.toLowerCase() !== status.toLowerCase()) return false
             // Date range filter
@@ -83,17 +97,18 @@ export default function PostsPage({ params }: PageProps) {
             }
             return true
         })
-    }, [data, search, platform, status, dateRange])
+    }, [data, search, platform, group, status, dateRange])
 
     const totalCount = data?.pages[0]?.pagination.total ?? 0
 
     // Check if any filters are active
-    const hasActiveFilters = search || platform || status || dateRange?.from
+    const hasActiveFilters = search || platform || group || status || dateRange?.from
 
     // Clear all filters
     const handleClearFilters = useCallback(() => {
         setSearch('')
         setPlatform('')
+        setGroup('')
         setStatus('')
         setDateRange(undefined)
     }, [])
@@ -127,6 +142,12 @@ export default function PostsPage({ params }: PageProps) {
                 <PlatformSelect
                     value={platform}
                     onChange={setPlatform}
+                />
+                <GroupSelect
+                    value={group}
+                    onChange={setGroup}
+                    groups={groups}
+                    isLoading={brandsLoading}
                 />
                 <StatusSelect
                     value={status}
@@ -194,6 +215,7 @@ export default function PostsPage({ params }: PageProps) {
             )}
 
             <ScrollToTop />
+            <ScrollToBottom />
         </div>
     )
 }

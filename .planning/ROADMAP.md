@@ -86,10 +86,12 @@ Plans:
   2. Bot status changes reflect within 5 seconds without manual refresh
   3. User sees last seen timestamp when bot is offline
   4. Dashboard remains functional when bot is down (independent uptime)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD during phase planning
+- [ ] 04-01-PLAN.md — SSE infrastructure (proxy route and useSSE hook)
+- [ ] 04-02-PLAN.md — Integrate SSE with status display
+- [ ] 04-03-PLAN.md — Visual and functional verification checkpoint
 
 ### Phase 5: Configuration & Mutations
 **Goal**: Users can modify guild settings and manage tracked items
@@ -159,7 +161,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 1. Foundation & Authentication | 5/5 | ✓ Complete | 2026-01-29 |
 | 2. Guild Management | 2/2 | ✓ Complete | 2026-01-30 |
 | 3. Tracking Data Display | 1/6 | In Progress | - |
-| 4. Real-Time Updates | 0/TBD | Not started | - |
+| 4. Real-Time Updates | 0/3 | Not started | - |
 | 5. Configuration & Mutations | 0/TBD | Not started | - |
 | 6. Analytics | 0/TBD | Not started | - |
 | 7. Data Management | 0/TBD | Not started | - |
@@ -167,4 +169,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 ---
 *Created: 2026-01-24*
-*Last updated: 2026-01-30*
+*Last updated: 2026-01-31*

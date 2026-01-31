@@ -57,11 +57,9 @@ export default function AccountsPage({ params }: PageProps) {
         }
     }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
-    // Flatten paginated data
-    const allAccounts = data?.pages.flatMap(page => page.accounts) ?? []
-
     // Client-side filtering (backend may not support all filters)
     const accounts = useMemo(() => {
+        const allAccounts = data?.pages.flatMap(page => page.accounts) ?? []
         return allAccounts.filter(account => {
             // Search filter - match username or brand
             if (search) {
@@ -76,7 +74,7 @@ export default function AccountsPage({ params }: PageProps) {
             if (group && account.group !== group) return false
             return true
         })
-    }, [allAccounts, search, platform, group])
+    }, [data, search, platform, group])
 
     const totalCount = data?.pages[0]?.pagination.total ?? 0
 

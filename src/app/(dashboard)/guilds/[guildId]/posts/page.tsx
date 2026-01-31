@@ -59,11 +59,9 @@ export default function PostsPage({ params }: PageProps) {
         }
     }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
-    // Flatten paginated data
-    const allPosts = data?.pages.flatMap(page => page.posts) ?? []
-
     // Client-side filtering (backend may not support all filters)
     const posts = useMemo(() => {
+        const allPosts = data?.pages.flatMap(page => page.posts) ?? []
         return allPosts.filter(post => {
             // Search filter - match author handle, brand, or group
             if (search) {
@@ -85,7 +83,7 @@ export default function PostsPage({ params }: PageProps) {
             }
             return true
         })
-    }, [allPosts, search, platform, status, dateRange])
+    }, [data, search, platform, status, dateRange])
 
     const totalCount = data?.pages[0]?.pagination.total ?? 0
 

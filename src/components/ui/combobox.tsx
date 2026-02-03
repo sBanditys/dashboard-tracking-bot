@@ -27,10 +27,8 @@ export function ChannelSelect({ channels, value, onChange }: ChannelSelectProps)
   const filtered = query === ''
     ? textChannels
     : textChannels.filter(c =>
-        c.name.toLowerCase().includes(query.toLowerCase())
-      )
-
-  const selected = textChannels.find(c => c.id === value)
+      c.name.toLowerCase().includes(query.toLowerCase())
+    )
 
   return (
     <Combobox value={value} onChange={onChange}>

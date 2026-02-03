@@ -162,7 +162,7 @@ export function useUpdateGuildSettings(guildId: string) {
         },
         onSuccess: (data) => {
             // Update the guild query cache with new settings
-            queryClient.setQueryData(['guild', guildId], (old: any) => ({
+            queryClient.setQueryData(['guild', guildId], (old: GuildDetails | undefined) => ({
                 ...old,
                 settings: data.settings,
             }))

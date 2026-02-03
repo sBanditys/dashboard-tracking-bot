@@ -1,7 +1,6 @@
 
 import { useGuild, useUpdateGuildSettings } from '@/hooks/use-guilds';
 import { InlineEditField } from './inline-edit-field';
-import { ChannelSelect } from '../ui/combobox';
 
 interface GuildSettingsFormProps {
     guildId: string;

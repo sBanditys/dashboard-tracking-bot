@@ -19,7 +19,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **GUILD-01**: User can see list of their accessible guilds with status indicators
 - [x] **GUILD-02**: User can view guild details (settings, usage stats, bot health)
 - [x] **GUILD-03**: User can switch between guilds quickly via guild switcher
-- [ ] **GUILD-04**: Bot status updates in real-time via SSE
+- [x] **GUILD-04**: Bot status updates in real-time via SSE
 
 ### Tracking Data
 
@@ -105,7 +105,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GUILD-01 | Phase 2 | Complete |
 | GUILD-02 | Phase 2 | Complete |
 | GUILD-03 | Phase 2 | Complete |
-| GUILD-04 | Phase 4 | Pending |
+| GUILD-04 | Phase 4 | Complete |
 | TRACK-01 | Phase 3 | Pending |
 | TRACK-02 | Phase 3 | Pending |
 | TRACK-03 | Phase 3 | Pending |
@@ -132,4 +132,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2025-01-24*
-*Last updated: 2026-01-30 after Phase 2 completion*
+*Last updated: 2026-02-03 after Phase 4 completion*

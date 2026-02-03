@@ -129,3 +129,47 @@ export function useGuildStatusRealtime(guildId: string) {
 
 // Re-export ConnectionState type for convenience
 export type { ConnectionState }
+
+// Source: Codebase use-guilds.ts pattern + TanStack docs
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import type { GuildSettings } from '@/types/guild'
+
+interface UpdateSettingsRequest {
+  logs_channel_id?: string | null
+  watch_category_id?: string | null
+  pause_category_id?: string | null
+  updates_channel_id?: string | null
+  updates_role_id?: string | null
+  allowed_platforms?: string[]
+}
+
+export function useUpdateGuildSettings(guildId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (settings: UpdateSettingsRequest) => {
+      const response = await fetch(`/api/guilds/${guildId}/settings`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to update settings')
+      }
+
+      return response.json() as Promise<{ settings: GuildSettings }>
+    },
+    onSuccess: (data) => {
+      // Update the guild query cache with new settings
+      queryClient.setQueryData(['guild', guildId], (old: any) => ({
+        ...old,
+        settings: data.settings,
+      }))
+    },
+    onError: (error) => {
+      console.error('Settings update failed:', error)
+    },
+  })
+}

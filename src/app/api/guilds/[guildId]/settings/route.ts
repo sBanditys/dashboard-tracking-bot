@@ -1,3 +1,6 @@
+// Source: Codebase src/app/api/guilds/[guildId]/route.ts pattern
+// File: src/app/api/guilds/[guildId]/settings/route.ts
+
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
@@ -5,7 +8,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 type RouteParams = { params: Promise<{ guildId: string }> }
 
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const { guildId } = await params
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
@@ -16,8 +19,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
   try {
     const body = await request.json()
-    const response = await fetch(`${API_URL}/api/v1/guilds/${guildId}/brands`, {
-      method: 'POST',
+
+    const response = await fetch(`${API_URL}/api/v1/guilds/${guildId}/settings`, {
+      method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -28,6 +32,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const data = await response.json()
     return NextResponse.json(data, { status: response.status })
   } catch {
-    return NextResponse.json({ error: 'Failed to add brand' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 })
   }
 }

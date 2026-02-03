@@ -171,6 +171,9 @@ function buildPostQueryExtended(page: number, limit: number, filters: PostFilter
 /**
  * Fetch paginated posts with infinite scroll
  */
+
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+
 export function usePostsInfinite(
     guildId: string,
     limit: number = 50,
@@ -196,4 +199,82 @@ export function usePostsInfinite(
         staleTime: 60 * 1000, // 1 minute (posts update more frequently)
         enabled: !!guildId,
     })
+}
+
+// Source: Pattern combining Headless UI Dialog + React Query mutation
+export function useDeleteAccount(guildId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (accountId: string) => {
+      const response = await fetch(`/api/guilds/${guildId}/accounts/${accountId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to delete account')
+      }
+
+      return response.json()
+    },
+    onSuccess: () => {
+      // Invalidate accounts list and guild details (account_count)
+      queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] })
+      queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
+    },
+  })
+}
+
+export function useAddAccount(guildId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ username }: { username: string }) => {
+            const response = await fetch(`/api/guilds/${guildId}/accounts`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to add account');
+            }
+
+            return response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] });
+            queryClient.invalidateQueries({ queryKey: ['guild', guildId] });
+        },
+    });
+}
+
+export function useAddBrand(guildId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ name }: { name: string }) => {
+            const response = await fetch(`/api/guilds/${guildId}/brands`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to add brand');
+            }
+
+            return response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'brands'] });
+        },
+    });
 }

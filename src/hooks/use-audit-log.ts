@@ -9,7 +9,7 @@ interface AuditLogFilters {
   limit?: number
 }
 
-interface AuditLogEntry {
+export interface AuditLogEntry {
   id: string
   created_at: string
   actor: {

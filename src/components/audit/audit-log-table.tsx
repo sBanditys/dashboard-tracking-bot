@@ -1,5 +1,5 @@
 
-import { useAuditLog } from '@/hooks/use-audit-log';
+import { useAuditLog, type AuditLogEntry } from '@/hooks/use-audit-log';
 import { DataTable } from '@/components/ui/data-table';
 
 interface AuditLogTableProps {
@@ -11,20 +11,22 @@ export function AuditLogTable({ guildId }: AuditLogTableProps) {
 
     const columns = [
         {
+            key: 'actor',
             header: 'User',
-            accessorKey: 'actor.name',
+            render: (item: AuditLogEntry) => item.actor?.name ?? '-',
         },
         {
+            key: 'action',
             header: 'Action',
-            accessorKey: 'action',
         },
         {
+            key: 'target_type',
             header: 'Target',
-            accessorKey: 'target_type',
         },
         {
+            key: 'created_at',
             header: 'Date',
-            accessorKey: 'created_at',
+            render: (item: AuditLogEntry) => new Date(item.created_at).toLocaleString(),
         },
     ];
 
@@ -33,6 +35,7 @@ export function AuditLogTable({ guildId }: AuditLogTableProps) {
             columns={columns}
             data={data?.entries ?? []}
             isLoading={isLoading}
+            keyExtractor={(item) => item.id}
         />
     );
 }

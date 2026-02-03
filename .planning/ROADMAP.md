@@ -103,10 +103,16 @@ Plans:
   3. User can remove tracked items with confirmation dialog
   4. User can select Discord channels for notifications via dropdown
   5. User can view audit log showing who changed what and when
-**Plans**: TBD
+**Plans**: 7 plans
 
 Plans:
-- [ ] TBD during phase planning
+- [ ] 05-01-PLAN.md — Confirmation modal and delete mutations for accounts/brands
+- [ ] 05-02-PLAN.md — Searchable channel combobox component and API
+- [ ] 05-03-PLAN.md — Audit log system (types, hook, table, Activity page)
+- [ ] 05-04-PLAN.md — Guild settings form with channel selection
+- [ ] 05-05-PLAN.md — Add account and brand modals with validation
+- [ ] 05-06-PLAN.md — Wire add/delete to tracking pages
+- [ ] 05-07-PLAN.md — Visual and functional verification checkpoint
 
 ### Phase 6: Analytics
 **Goal**: Users can see usage metrics and activity insights
@@ -162,7 +168,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 2. Guild Management | 2/2 | ✓ Complete | 2026-01-30 |
 | 3. Tracking Data Display | 5/6 | In Progress | - |
 | 4. Real-Time Updates | 3/3 | ✓ Complete | 2026-02-03 |
-| 5. Configuration & Mutations | 0/TBD | Not started | - |
+| 5. Configuration & Mutations | 0/7 | Not started | - |
 | 6. Analytics | 0/TBD | Not started | - |
 | 7. Data Management | 0/TBD | Not started | - |
 | 8. Polish & Optimization | 0/TBD | Not started | - |

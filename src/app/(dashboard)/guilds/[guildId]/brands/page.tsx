@@ -42,7 +42,7 @@ export default function BrandsPage({ params }: PageProps) {
         try {
             await deleteMutation.mutateAsync(brandToDelete.id)
             setBrandToDelete(null)
-        } catch (_error) {
+        } catch {
             // Error is handled by the mutation
         }
     }

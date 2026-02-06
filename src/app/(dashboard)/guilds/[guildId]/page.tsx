@@ -4,6 +4,7 @@ import { useGuild, useGuildStatusRealtime, useGuildUsage } from '@/hooks/use-gui
 import { StatCard } from '@/components/stat-card'
 import { BotStatus } from '@/components/bot-status'
 import { GuildTabs } from '@/components/guild-tabs'
+import { GuildSettingsForm } from '@/components/forms/guild-settings-form'
 import { Skeleton } from '@/components/ui/skeleton'
 import Link from 'next/link'
 
@@ -85,6 +86,11 @@ export default function GuildDetailPage({ params }: PageProps) {
                     icon="⏳"
                 />
             </div>
+
+            {/* Guild Settings */}
+            {guild.settings && (
+                <GuildSettingsForm guildId={guildId} settings={guild.settings} />
+            )}
 
             {/* Quick Access Cards */}
             <div className="grid gap-4 md:grid-cols-3">

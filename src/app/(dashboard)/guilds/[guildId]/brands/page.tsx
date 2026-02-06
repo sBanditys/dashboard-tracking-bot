@@ -42,7 +42,7 @@ export default function BrandsPage({ params }: PageProps) {
         try {
             await deleteMutation.mutateAsync(brandToDelete.id)
             setBrandToDelete(null)
-        } catch (error) {
+        } catch (_error) {
             // Error is handled by the mutation
         }
     }
@@ -107,13 +107,13 @@ export default function BrandsPage({ params }: PageProps) {
                                         {brand.is_paused ? (
                                             <span className="text-yellow-500">
                                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                                                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
                                                 </svg>
                                             </span>
                                         ) : (
                                             <span className="text-green-500">
                                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                                    <path d="M8 5v14l11-7z"/>
+                                                    <path d="M8 5v14l11-7z" />
                                                 </svg>
                                             </span>
                                         )}

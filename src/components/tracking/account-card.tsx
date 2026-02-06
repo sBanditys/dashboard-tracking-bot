@@ -55,7 +55,7 @@ export function AccountCard({ account, guildId }: AccountCardProps) {
     try {
       await deleteMutation.mutateAsync(account.id)
       setShowDeleteModal(false)
-    } catch (error) {
+    } catch (_error) {
       // Error is handled by the mutation
     }
   }

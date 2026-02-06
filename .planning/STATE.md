@@ -114,6 +114,11 @@ Recent decisions affecting current work:
 - DEV-034: Action humanization strategy (account.create → Created account)
 - DEV-035: Diff display color scheme (red strikethrough → green)
 
+**From 05-04 execution:**
+- DEV-039: Auto-save on channel change instead of save button (immediate feedback, better UX)
+- DEV-040: Inline status indicators with 3-second auto-clear (saving/success/error)
+- DEV-041: Settings component receives data as props (parent handles fetching, avoids duplicate queries)
+
 **From 05-05 execution:**
 - DEV-036: Purple submit buttons for modals (bg-accent-purple for primary actions)
 - DEV-037: Username @ prefix stripping (handles both formats automatically)
@@ -165,7 +170,7 @@ Configuration mutations and settings UI:
 - **Delete Mutations (05-01):** useDeleteAccount, useDeleteBrand hooks with confirmation modal, cache invalidation
 - **Channel Selection (05-02):** ChannelSelect combobox with search, text-channel filtering, permission warnings
 - **Audit Log (05-03):** Complete vertical slice with types, hook, API, table with filters, Activity page
-- **Guild Settings (05-04):** useUpdateGuild mutation, validation, partial updates
+- **Guild Settings (05-04):** GuildSettingsForm with ChannelSelect dropdowns, auto-save, useUpdateGuildSettings mutation
 - **Create Modals (05-05):** AddAccountModal, AddBrandModal with validation, cache invalidation
 - **Type Infrastructure:** Channel and ChannelsResponse types, useGuildChannels hook, audit types
 
@@ -180,10 +185,10 @@ None - execution proceeding smoothly.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 05-05-PLAN.md
+Stopped at: Completed 05-04-PLAN.md, 05-05-PLAN.md (parallel execution)
 Resume file: None
 
-**Next action:** Continue Phase 5 (remaining plans in wave 2)
+**Next action:** Continue Phase 5 (remaining plans)
 
 ---
 *Last updated: 2026-02-06*

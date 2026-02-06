@@ -6,6 +6,9 @@ import { GuildTabs } from '@/components/guild-tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/empty-state'
 import { ScrollToTop } from '@/components/scroll-to-top'
+import { AddBrandModal } from '@/components/forms/add-brand-modal'
+import { ConfirmationModal } from '@/components/ui/confirmation-modal'
+import { useDeleteBrand } from '@/hooks/use-guilds'
 import { cn } from '@/lib/utils'
 
 interface PageProps {
@@ -30,6 +33,19 @@ export default function BrandsPage({ params }: PageProps) {
     const { guildId } = params
     const { data, isLoading, isError } = useBrands(guildId)
     const [expandedBrand, setExpandedBrand] = useState<string | null>(null)
+    const [showAddModal, setShowAddModal] = useState(false)
+    const [brandToDelete, setBrandToDelete] = useState<{ id: string, label: string } | null>(null)
+    const deleteMutation = useDeleteBrand(guildId)
+
+    const handleDelete = async () => {
+        if (!brandToDelete) return
+        try {
+            await deleteMutation.mutateAsync(brandToDelete.id)
+            setBrandToDelete(null)
+        } catch (error) {
+            // Error is handled by the mutation
+        }
+    }
 
     if (isError) {
         return (
@@ -41,11 +57,20 @@ export default function BrandsPage({ params }: PageProps) {
 
     return (
         <div className="space-y-6">
-            <header>
-                <h1 className="text-3xl font-bold text-white mb-2">Brands</h1>
-                <p className="text-gray-400">
-                    Manage brands and their account groups
-                </p>
+            <header className="flex items-start justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-white mb-2">Brands</h1>
+                    <p className="text-gray-400">
+                        Manage brands and their account groups
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setShowAddModal(true)}
+                    className="bg-accent-purple text-white rounded-lg px-4 py-2 hover:bg-accent-purple/90 transition-colors"
+                >
+                    Add Brand
+                </button>
             </header>
 
             <GuildTabs guildId={guildId} />
@@ -108,6 +133,19 @@ export default function BrandsPage({ params }: PageProps) {
                                         <p className="text-gray-400">{brand.groups.length} groups</p>
                                         <p className="text-gray-400">{brand.account_count} accounts</p>
                                     </div>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setBrandToDelete({ id: brand.id, label: brand.label })
+                                        }}
+                                        className="text-red-500 hover:text-red-400 transition-colors"
+                                        aria-label="Delete brand"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
                                     <svg
                                         className={cn(
                                             'w-4 h-4 text-gray-400 transition-transform',
@@ -172,6 +210,22 @@ export default function BrandsPage({ params }: PageProps) {
             )}
 
             <ScrollToTop />
+
+            <AddBrandModal
+                open={showAddModal}
+                onClose={() => setShowAddModal(false)}
+                guildId={guildId}
+            />
+
+            <ConfirmationModal
+                open={brandToDelete !== null}
+                onClose={() => setBrandToDelete(null)}
+                onConfirm={handleDelete}
+                title="Delete Brand"
+                itemName={brandToDelete?.label ?? ''}
+                isLoading={deleteMutation.isPending}
+                confirmLabel="Delete"
+            />
         </div>
     )
 }

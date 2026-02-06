@@ -1,37 +1,7 @@
+'use client'
 
-import { useQuery } from '@tanstack/react-query';
-
-// Source: Pattern based on codebase use-tracking.ts
-interface AuditLogFilters {
-  user?: string
-  action?: string
-  page?: number
-  limit?: number
-}
-
-export interface AuditLogEntry {
-  id: string
-  created_at: string
-  actor: {
-    id: string
-    type: 'user' | 'system' | 'bot'
-    name?: string
-  }
-  action: string
-  target_type: string
-  target_id: string | null
-  changes: Record<string, { old: unknown; new: unknown }> | null
-}
-
-interface AuditLogResponse {
-  entries: AuditLogEntry[]
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    total_pages: number
-  }
-}
+import { useQuery } from '@tanstack/react-query'
+import type { AuditLogResponse, AuditLogFilters } from '@/types/audit'
 
 export function useAuditLog(guildId: string, filters: AuditLogFilters = {}) {
   return useQuery<AuditLogResponse>({
@@ -49,7 +19,7 @@ export function useAuditLog(guildId: string, filters: AuditLogFilters = {}) {
       }
       return response.json()
     },
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 30 * 1000,
     enabled: !!guildId,
   })
 }

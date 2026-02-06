@@ -123,10 +123,15 @@ Plans:
   2. User sees time-series graph of posts per day/week over last 30 days
   3. User sees activity timeline of recent events (posts added, settings changed)
   4. Graphs render correctly with zero data (empty state message)
-**Plans**: TBD
+**Plans**: 6 plans
 
 Plans:
-- [ ] TBD during phase planning
+- [ ] 06-01-PLAN.md — Install Recharts, analytics types, API proxy routes, data hooks
+- [ ] 06-02-PLAN.md — Counter cards and time range selector components
+- [ ] 06-03-PLAN.md — Area chart and mini sparkline components
+- [ ] 06-04-PLAN.md — Leaderboard and activity timeline components
+- [ ] 06-05-PLAN.md — Full analytics page, sidebar link, guild overview enhancement
+- [ ] 06-06-PLAN.md — Visual and functional verification checkpoint
 
 ### Phase 7: Data Management
 **Goal**: Users can export and bulk-manage their tracking data

@@ -7,27 +7,44 @@ interface AddBrandFormProps {
 }
 
 export function AddBrandForm({ guildId }: AddBrandFormProps) {
-    const [name, setName] = useState('');
+    const [label, setLabel] = useState('');
+    const [slug, setSlug] = useState('');
     const addBrand = useAddBrand(guildId);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        addBrand.mutate({ name });
-        setName('');
+        addBrand.mutate({
+            label,
+            slug: slug || undefined
+        });
+        setLabel('');
+        setSlug('');
     };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <h2 className="text-xl font-semibold">Add Brand</h2>
             <div>
-                <label htmlFor="name" className="block text-sm font-medium">
-                    Brand Name
+                <label htmlFor="label" className="block text-sm font-medium">
+                    Brand Label
                 </label>
                 <input
                     type="text"
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    id="label"
+                    value={label}
+                    onChange={(e) => setLabel(e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                />
+            </div>
+            <div>
+                <label htmlFor="slug" className="block text-sm font-medium">
+                    Slug (optional)
+                </label>
+                <input
+                    type="text"
+                    id="slug"
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value)}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
             </div>

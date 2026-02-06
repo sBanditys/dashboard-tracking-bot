@@ -226,17 +226,32 @@ export function useDeleteAccount(guildId: string) {
   })
 }
 
+/**
+ * Request types for create mutations
+ */
+interface AddAccountRequest {
+  platform: 'instagram' | 'tiktok' | 'youtube' | 'x'
+  username: string
+  brand_id: string
+  group_id?: string
+}
+
+interface AddBrandRequest {
+  label: string
+  slug?: string
+}
+
 export function useAddAccount(guildId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ username }: { username: string }) => {
+        mutationFn: async (data: AddAccountRequest) => {
             const response = await fetch(`/api/guilds/${guildId}/accounts`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ username }),
+                body: JSON.stringify(data),
             });
 
             if (!response.ok) {
@@ -247,8 +262,10 @@ export function useAddAccount(guildId: string) {
             return response.json();
         },
         onSuccess: () => {
+            // Invalidate accounts list, guild details, and brands (account_count updates)
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] });
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] });
+            queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'brands'] });
         },
     });
 }
@@ -257,13 +274,13 @@ export function useAddBrand(guildId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ name }: { name: string }) => {
+        mutationFn: async (data: AddBrandRequest) => {
             const response = await fetch(`/api/guilds/${guildId}/brands`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ name }),
+                body: JSON.stringify(data),
             });
 
             if (!response.ok) {
@@ -274,7 +291,9 @@ export function useAddBrand(guildId: string) {
             return response.json();
         },
         onSuccess: () => {
+            // Invalidate brands list and guild details (brand_count updates)
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'brands'] });
+            queryClient.invalidateQueries({ queryKey: ['guild', guildId] });
         },
     });
 }

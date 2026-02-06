@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2025-01-24)
 ## Current Position
 
 Phase: 5 of 8 (Configuration Mutations)
-Plan: Completed 05-01, 05-02, 05-03, 05-04, 05-05 (wave 2 complete)
+Plan: Completed 05-01, 05-02, 05-03, 05-04, 05-05, 05-06 (wave 3 complete)
 Status: In progress
-Last activity: 2026-02-06 — Completed 05-05-PLAN.md
+Last activity: 2026-02-06 — Completed 05-06-PLAN.md
 
-Progress: [████████░░] ~65% (22 plans complete across 5 phases)
+Progress: [████████░░] ~67% (23 plans complete across 5 phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 22
-- Average duration: 2m 12s (code plans only, excluding verification)
-- Total execution time: ~47m 21s
+- Total plans completed: 23
+- Average duration: 2m 11s (code plans only, excluding verification)
+- Total execution time: ~50m 10s
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [████████░░] ~65% (22 plans complete across 5 phas
 | 02 | 2 | 1m 35s | 48s |
 | 03 | 5 | 10m 44s | 2m 09s |
 | 04 | 3 | 4m 24s | 1m 28s |
-| 05 | 5 | 10m 35s | 2m 07s |
+| 05 | 6 | 13m 04s | 2m 11s |
 
 **Recent Trend:**
-- Last 5 plans: 05-01 (3m 07s), 05-02 (1m 57s), 05-03 (3m 06s), 05-04 (58s), 05-05 (2m 25s)
-- Trend: Wave 2 complete, fast execution continues, modal pattern established
+- Last 5 plans: 05-02 (1m 57s), 05-03 (3m 06s), 05-04 (58s), 05-05 (2m 25s), 05-06 (2m 29s)
+- Trend: Wave 3 complete, CRUD UI wired up, consistent sub-3min execution
 
 *Updated after each plan completion*
 
@@ -124,6 +124,11 @@ Recent decisions affecting current work:
 - DEV-037: Username @ prefix stripping (handles both formats automatically)
 - DEV-038: Slug auto-generation (optional field, backend generates from label)
 
+**From 05-06 execution:**
+- DEV-042: Delete button placement varies by context (card header for accounts, next to expand for brands)
+- DEV-043: Delete buttons use red color scheme (text-red-500 hover:text-red-400)
+- DEV-044: Modal integration pattern: state → button → modal at component end
+
 ### Phase 1 Deliverables
 
 Completed foundation ready for Phase 2:
@@ -172,6 +177,7 @@ Configuration mutations and settings UI:
 - **Audit Log (05-03):** Complete vertical slice with types, hook, API, table with filters, Activity page
 - **Guild Settings (05-04):** GuildSettingsForm with ChannelSelect dropdowns, auto-save, useUpdateGuildSettings mutation
 - **Create Modals (05-05):** AddAccountModal, AddBrandModal with validation, cache invalidation
+- **UI Integration (05-06):** Accounts and Brands pages with Add/Delete buttons, modal wiring, complete CRUD flow
 - **Type Infrastructure:** Channel and ChannelsResponse types, useGuildChannels hook, audit types
 
 ### Pending Todos
@@ -185,10 +191,10 @@ None - execution proceeding smoothly.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 05-04-PLAN.md, 05-05-PLAN.md (parallel execution)
+Stopped at: Completed 05-06-PLAN.md
 Resume file: None
 
-**Next action:** Continue Phase 5 (remaining plans)
+**Next action:** Continue Phase 5 (remaining plans if any) or proceed to Phase 6
 
 ---
 *Last updated: 2026-02-06*

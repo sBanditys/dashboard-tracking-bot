@@ -9,6 +9,7 @@ import { AccountCard, AccountCardSkeleton } from '@/components/tracking'
 import { EmptyState, NoResults } from '@/components/empty-state'
 import { ScrollToTop } from '@/components/scroll-to-top'
 import { ScrollToBottom } from '@/components/scroll-to-bottom'
+import { AddAccountModal } from '@/components/forms/add-account-modal'
 
 interface PageProps {
     params: { guildId: string }
@@ -22,6 +23,7 @@ export default function AccountsPage({ params }: PageProps) {
     const [platform, setPlatform] = useState('')
     const [group, setGroup] = useState('')
     const [pageSize, setPageSize] = useState(50)
+    const [showAddModal, setShowAddModal] = useState(false)
 
     // Fetch brands to get groups for the filter
     const { data: brandsData, isLoading: brandsLoading } = useBrands(guildId)
@@ -99,12 +101,21 @@ export default function AccountsPage({ params }: PageProps) {
 
     return (
         <div className="space-y-6">
-            <header>
-                <h1 className="text-3xl font-bold text-white mb-2">Accounts</h1>
-                <p className="text-gray-400">
-                    All tracked social media accounts
-                    {!isLoading && <span className="ml-2">({totalCount} total)</span>}
-                </p>
+            <header className="flex items-start justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-white mb-2">Accounts</h1>
+                    <p className="text-gray-400">
+                        All tracked social media accounts
+                        {!isLoading && <span className="ml-2">({totalCount} total)</span>}
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setShowAddModal(true)}
+                    className="bg-accent-purple text-white rounded-lg px-4 py-2 hover:bg-accent-purple/90 transition-colors"
+                >
+                    Add Account
+                </button>
             </header>
 
             <GuildTabs guildId={guildId} />
@@ -167,7 +178,7 @@ export default function AccountsPage({ params }: PageProps) {
             {!isLoading && accounts.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
                     {accounts.map(account => (
-                        <AccountCard key={account.id} account={account} />
+                        <AccountCard key={account.id} account={account} guildId={guildId} />
                     ))}
                 </div>
             )}
@@ -184,6 +195,12 @@ export default function AccountsPage({ params }: PageProps) {
 
             <ScrollToTop />
             <ScrollToBottom />
+
+            <AddAccountModal
+                open={showAddModal}
+                onClose={() => setShowAddModal(false)}
+                guildId={guildId}
+            />
         </div>
     )
 }

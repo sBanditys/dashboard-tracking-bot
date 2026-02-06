@@ -192,3 +192,51 @@ export function useGuildChannels(guildId: string) {
         enabled: !!guildId,
     })
 }
+
+/**
+ * Delete a tracking account
+ */
+export function useDeleteAccount(guildId: string) {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async (accountId: string) => {
+            const response = await fetch(`/api/guilds/${guildId}/accounts/${accountId}`, {
+                method: 'DELETE',
+            })
+            if (!response.ok) {
+                const error = await response.json()
+                throw new Error(error.message || 'Failed to delete account')
+            }
+            return response.json()
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] })
+            queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
+        },
+    })
+}
+
+/**
+ * Delete a brand
+ */
+export function useDeleteBrand(guildId: string) {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async (brandId: string) => {
+            const response = await fetch(`/api/guilds/${guildId}/brands/${brandId}`, {
+                method: 'DELETE',
+            })
+            if (!response.ok) {
+                const error = await response.json()
+                throw new Error(error.message || 'Failed to delete brand')
+            }
+            return response.json()
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'brands'] })
+            queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
+        },
+    })
+}

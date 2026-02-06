@@ -1,7 +1,10 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import type { AuditLogResponse, AuditLogFilters } from '@/types/audit'
+import type { AuditLogResponse, AuditLogFilters, AuditLogEntry } from '@/types/audit'
+
+// Re-export for convenience
+export type { AuditLogEntry }
 
 export function useAuditLog(guildId: string, filters: AuditLogFilters = {}) {
   return useQuery<AuditLogResponse>({

@@ -172,3 +172,23 @@ export function useUpdateGuildSettings(guildId: string) {
         },
     })
 }
+
+import type { ChannelsResponse } from '@/types/guild'
+
+/**
+ * Fetch Discord channels for a guild
+ */
+export function useGuildChannels(guildId: string) {
+    return useQuery<ChannelsResponse>({
+        queryKey: ['guild', guildId, 'channels'],
+        queryFn: async () => {
+            const response = await fetch(`/api/guilds/${guildId}/channels`)
+            if (!response.ok) {
+                throw new Error('Failed to fetch channels')
+            }
+            return response.json()
+        },
+        staleTime: 5 * 60 * 1000,
+        enabled: !!guildId,
+    })
+}

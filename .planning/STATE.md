@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2025-01-24)
 ## Current Position
 
 Phase: 5 of 8 (Configuration Mutations)
-Plan: Completed 05-01, 05-02, 05-03 (parallel execution)
+Plan: Completed 05-01, 05-02, 05-03, 05-04, 05-05 (wave 2 complete)
 Status: In progress
-Last activity: 2026-02-06 — Completed 05-03-PLAN.md
+Last activity: 2026-02-06 — Completed 05-05-PLAN.md
 
-Progress: [████████░░] ~59% (20 plans complete across 5 phases)
+Progress: [████████░░] ~65% (22 plans complete across 5 phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
-- Average duration: 2m 13s (code plans only, excluding verification)
-- Total execution time: ~42m 18s
+- Total plans completed: 22
+- Average duration: 2m 12s (code plans only, excluding verification)
+- Total execution time: ~47m 21s
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [████████░░] ~59% (20 plans complete across 5 phas
 | 02 | 2 | 1m 35s | 48s |
 | 03 | 5 | 10m 44s | 2m 09s |
 | 04 | 3 | 4m 24s | 1m 28s |
-| 05 | 3 | 8m 10s | 2m 43s |
+| 05 | 5 | 10m 35s | 2m 07s |
 
 **Recent Trend:**
-- Last 5 plans: 04-03 (~10m verification), 05-02 (1m 57s), 05-01 (3m 07s), 05-03 (3m 06s)
-- Trend: Consistent fast execution, parallel execution reducing calendar time
+- Last 5 plans: 05-01 (3m 07s), 05-02 (1m 57s), 05-03 (3m 06s), 05-04 (58s), 05-05 (2m 25s)
+- Trend: Wave 2 complete, fast execution continues, modal pattern established
 
 *Updated after each plan completion*
 
@@ -114,6 +114,11 @@ Recent decisions affecting current work:
 - DEV-034: Action humanization strategy (account.create → Created account)
 - DEV-035: Diff display color scheme (red strikethrough → green)
 
+**From 05-05 execution:**
+- DEV-036: Purple submit buttons for modals (bg-accent-purple for primary actions)
+- DEV-037: Username @ prefix stripping (handles both formats automatically)
+- DEV-038: Slug auto-generation (optional field, backend generates from label)
+
 ### Phase 1 Deliverables
 
 Completed foundation ready for Phase 2:
@@ -160,6 +165,8 @@ Configuration mutations and settings UI:
 - **Delete Mutations (05-01):** useDeleteAccount, useDeleteBrand hooks with confirmation modal, cache invalidation
 - **Channel Selection (05-02):** ChannelSelect combobox with search, text-channel filtering, permission warnings
 - **Audit Log (05-03):** Complete vertical slice with types, hook, API, table with filters, Activity page
+- **Guild Settings (05-04):** useUpdateGuild mutation, validation, partial updates
+- **Create Modals (05-05):** AddAccountModal, AddBrandModal with validation, cache invalidation
 - **Type Infrastructure:** Channel and ChannelsResponse types, useGuildChannels hook, audit types
 
 ### Pending Todos
@@ -173,10 +180,10 @@ None - execution proceeding smoothly.
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed 05-03-PLAN.md
+Stopped at: Completed 05-05-PLAN.md
 Resume file: None
 
-**Next action:** Continue Phase 5 (05-04, 05-05, etc.)
+**Next action:** Continue Phase 5 (remaining plans in wave 2)
 
 ---
 *Last updated: 2026-02-06*

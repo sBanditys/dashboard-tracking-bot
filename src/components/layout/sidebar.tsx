@@ -11,6 +11,10 @@ interface SidebarProps {
 export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname()
 
+  // Detect if we're on a guild page to show guild-specific nav
+  const guildMatch = pathname.match(/\/guilds\/([^\/]+)/)
+  const guildId = guildMatch?.[1]
+
   const navItems = [
     {
       name: 'Home',
@@ -71,6 +75,26 @@ export function Sidebar({ onNavigate }: SidebarProps) {
               </Link>
             )
           })}
+
+          {/* Guild-specific navigation */}
+          {guildId && (
+            <>
+              <div className="my-3 border-t border-border" />
+              <Link
+                href={`/guilds/${guildId}/activity`}
+                onClick={onNavigate}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-colors',
+                  pathname.includes('/activity')
+                    ? 'bg-accent-purple text-white'
+                    : 'text-gray-300 hover:bg-surface/50 hover:text-white'
+                )}
+              >
+                <span className="text-lg">📋</span>
+                Activity
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 

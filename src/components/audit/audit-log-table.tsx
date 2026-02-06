@@ -16,7 +16,7 @@ export function AuditLogTable({ guildId }: AuditLogTableProps) {
   const [actionFilter, setActionFilter] = useState('')
   const [page, setPage] = useState(1)
 
-  const { data, isLoading } = useAuditLog(guildId, {
+  const { data, isLoading, isError } = useAuditLog(guildId, {
     user: userFilter || undefined,
     action: actionFilter || undefined,
     page,
@@ -49,6 +49,14 @@ export function AuditLogTable({ guildId }: AuditLogTableProps) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-gray-400">Loading audit log...</div>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-red-400">Failed to load audit log</div>
       </div>
     )
   }

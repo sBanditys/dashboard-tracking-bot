@@ -15,6 +15,7 @@ export async function GET(_request: NextRequest) {
         const response = await fetch(`${API_URL}/api/v1/guilds`, {
             headers: {
                 Authorization: `Bearer ${token}`,
+                ...(process.env.API_KEY && { 'X-API-Key': process.env.API_KEY }),
             },
         })
 

@@ -18,6 +18,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         const response = await fetch(`${API_URL}/api/v1/guilds/${guildId}/status`, {
             headers: {
                 Authorization: `Bearer ${token}`,
+                ...(process.env.API_KEY && { 'X-API-Key': process.env.API_KEY }),
             },
         })
 

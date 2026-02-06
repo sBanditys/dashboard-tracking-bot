@@ -19,6 +19,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,
+        ...(process.env.API_KEY && { 'X-API-Key': process.env.API_KEY }),
       },
     })
 

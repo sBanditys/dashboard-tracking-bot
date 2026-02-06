@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2025-01-24)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface — independent of bot uptime.
-**Current focus:** Phase 4 Complete - Next: Phase 3 verification or Phase 5 planning
+**Current focus:** Phase 5 Configuration Mutations - In Progress
 
 ## Current Position
 
-Phase: 4 of 8 (Real-Time Updates) - COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase complete, verified
-Last activity: 2026-02-03 — Completed 04-03-PLAN.md (verification)
+Phase: 5 of 8 (Configuration Mutations)
+Plan: Completed 05-02 (parallel execution with 05-01, 05-03)
+Status: In progress
+Last activity: 2026-02-06 — Completed 05-02-PLAN.md
 
-Progress: [████████░░] ~50% (17 plans complete across 4 phases)
+Progress: [████████░░] ~53% (18 plans complete across 5 phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
-- Average duration: 2m 15s (code plans only, excluding verification)
-- Total execution time: ~34m 08s
+- Total plans completed: 18
+- Average duration: 2m 11s (code plans only, excluding verification)
+- Total execution time: ~36m 05s
 
 **By Phase:**
 
@@ -31,10 +31,11 @@ Progress: [████████░░] ~50% (17 plans complete across 4 phas
 | 02 | 2 | 1m 35s | 48s |
 | 03 | 5 | 10m 44s | 2m 09s |
 | 04 | 3 | 4m 24s | 1m 28s |
+| 05 | 1 | 1m 57s | 1m 57s |
 
 **Recent Trend:**
-- Last 5 plans: 03-05 (3m 24s), 04-01 (1m 24s), 04-02 (48s), 04-03 (~10m verification)
-- Trend: Consistent fast execution
+- Last 5 plans: 04-01 (1m 24s), 04-02 (48s), 04-03 (~10m verification), 05-02 (1m 57s)
+- Trend: Consistent fast execution, parallel execution reducing calendar time
 
 *Updated after each plan completion*
 
@@ -100,6 +101,10 @@ Recent decisions affecting current work:
 **From 04-03 execution:**
 - DEV-028: Backend SSE endpoint added to API (GET /guilds/:guildId/status/stream)
 
+**From 05-02 execution:**
+- DEV-029: Channel combobox filters to text channels only (type === 0)
+- DEV-030: Show permission warning inline for channels without bot access
+
 ### Phase 1 Deliverables
 
 Completed foundation ready for Phase 2:
@@ -139,6 +144,13 @@ Completed real-time updates:
 - **Backend SSE:** GET /guilds/:guildId/status/stream endpoint added to API
 - **Verified:** All 4 success criteria met (real-time indicator, 5s updates, last seen, independent uptime)
 
+### Phase 5 Deliverables (In Progress)
+
+Configuration mutations and settings UI:
+
+- **Channel Selection (05-02):** ChannelSelect combobox with search, text-channel filtering, permission warnings
+- **Type Infrastructure:** Channel and ChannelsResponse types, useGuildChannels hook
+
 ### Pending Todos
 
 None yet.
@@ -149,11 +161,11 @@ None - execution proceeding smoothly.
 
 ## Session Continuity
 
-Last session: 2026-02-03
-Stopped at: Phase 4 complete and verified
+Last session: 2026-02-06
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
 
-**Next action:** Complete Phase 3 verification (03-06) or plan Phase 5
+**Next action:** Continue Phase 5 parallel execution (05-01, 05-03) or plan 05-04
 
 ---
-*Last updated: 2026-02-03*
+*Last updated: 2026-02-06*

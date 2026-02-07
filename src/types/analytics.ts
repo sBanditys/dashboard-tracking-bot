@@ -34,6 +34,8 @@ export interface LeaderboardEntry {
   tiktok_views: number
   youtube_views: number
   week_count: number
+  owner_username: string | null
+  owner_discord_id: string | null
 }
 
 export interface LeaderboardResponse {

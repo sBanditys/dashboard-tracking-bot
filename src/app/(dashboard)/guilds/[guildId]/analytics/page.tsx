@@ -133,6 +133,19 @@ export default function AnalyticsPage() {
       {/* Chart + Account Groups leaderboard - 2/3 + 1/3 split */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
+          {/* Daily Post Submissions (at top) */}
+          {analyticsLoading ? (
+            <AnalyticsChartSkeleton />
+          ) : analytics ? (
+            <AnalyticsChart
+              data={submissionsChartData}
+              title="Daily Post Submissions"
+              totalValue={totalSubmissions}
+              tooltipLabel="posts"
+              granularity={analytics.granularity}
+            />
+          ) : null}
+
           {/* Weekly Submission Views (from /sendlast7days) */}
           {weeklyLoading ? (
             <AnalyticsChartSkeleton />
@@ -146,35 +159,26 @@ export default function AnalyticsPage() {
             />
           ) : null}
 
-          {/* Daily Views from post metrics + Daily Post Submissions */}
+          {/* Daily Views from post metrics */}
           {analyticsLoading ? (
             <AnalyticsChartSkeleton />
           ) : analytics ? (
-            <>
-              <AnalyticsChart
-                data={chartData}
-                title="Daily Views"
-                totalValue={totalDailyViews}
-                tooltipLabel="views"
-                granularity={analytics.granularity}
-                statusBadge={
-                  <span className={`text-sm font-medium px-3 py-1 rounded-full ${
-                    refreshEnabled
-                      ? 'bg-green-500/10 text-green-400'
-                      : 'bg-red-500/10 text-red-400'
-                  }`}>
-                    Refresh Tracking {refreshEnabled ? 'On' : 'Off'}
-                  </span>
-                }
-              />
-              <AnalyticsChart
-                data={submissionsChartData}
-                title="Daily Post Submissions"
-                totalValue={totalSubmissions}
-                tooltipLabel="posts"
-                granularity={analytics.granularity}
-              />
-            </>
+            <AnalyticsChart
+              data={chartData}
+              title="Daily Views"
+              totalValue={totalDailyViews}
+              tooltipLabel="views"
+              granularity={analytics.granularity}
+              statusBadge={
+                <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+                  refreshEnabled
+                    ? 'bg-green-500/10 text-green-400'
+                    : 'bg-red-500/10 text-red-400'
+                }`}>
+                  Refresh Tracking {refreshEnabled ? 'On' : 'Off'}
+                </span>
+              }
+            />
           ) : null}
         </div>
 

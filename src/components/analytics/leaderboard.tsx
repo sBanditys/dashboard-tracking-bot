@@ -11,6 +11,25 @@ interface LeaderboardProps {
   className?: string
 }
 
+const AVATAR_COLORS = [
+  'bg-purple-500',
+  'bg-blue-500',
+  'bg-green-500',
+  'bg-yellow-500',
+  'bg-pink-500',
+  'bg-cyan-500',
+  'bg-orange-500',
+  'bg-red-500',
+]
+
+function getAvatarColor(name: string): string {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
+
 export function Leaderboard({
   entries,
   guildId,
@@ -32,14 +51,14 @@ export function Leaderboard({
       ) : (
         <>
           {/* Column headers */}
-          <div className="grid grid-cols-[auto_1fr_auto] gap-4 pb-3 border-b border-border mb-2">
-            <div className="text-xs text-gray-500 uppercase tracking-wider">Rank</div>
+          <div className="grid grid-cols-[auto_1fr_auto] gap-3 pb-2 border-b border-border">
+            <div className="text-xs text-gray-500 uppercase tracking-wider w-8">Rank</div>
             <div className="text-xs text-gray-500 uppercase tracking-wider">Group</div>
             <div className="text-xs text-gray-500 uppercase tracking-wider text-right">Total Views</div>
           </div>
 
           {/* Leaderboard rows */}
-          <div className="space-y-0">
+          <div>
             {displayedEntries.map((entry, index) => {
               const rank = index + 1
               const rankColor =
@@ -55,6 +74,10 @@ export function Leaderboard({
                 ? `/guilds/${guildId}/accounts?group=${encodeURIComponent(entry.group_label)}`
                 : undefined
 
+              const ownerInitial = entry.owner_username
+                ? entry.owner_username.charAt(0).toUpperCase()
+                : null
+
               const content = (
                 <>
                   <div className={cn('text-lg font-bold w-8', rankColor)}>
@@ -62,8 +85,24 @@ export function Leaderboard({
                   </div>
 
                   <div className="min-w-0">
-                    <span className="text-white truncate block">{entry.group_label}</span>
-                    <div className="flex gap-2 mt-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white truncate">{entry.group_label}</span>
+                      {entry.owner_username && (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-gray-500">-</span>
+                          <div className={cn(
+                            'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0',
+                            getAvatarColor(entry.owner_username)
+                          )}>
+                            {ownerInitial}
+                          </div>
+                          <span className="text-xs text-gray-400 truncate max-w-[80px]">
+                            {entry.owner_username}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2 mt-0.5">
                       {entry.instagram_views > 0 && (
                         <span className="text-xs text-gray-500">IG: {entry.instagram_views.toLocaleString()}</span>
                       )}
@@ -82,18 +121,18 @@ export function Leaderboard({
                 </>
               )
 
-              const gridClass = 'grid grid-cols-[auto_1fr_auto] gap-4 py-3 border-b border-border last:border-0 items-center'
+              const rowClass = 'grid grid-cols-[auto_1fr_auto] gap-3 py-2.5 border-b border-border items-center'
 
               return href ? (
                 <Link
                   key={entry.group_id}
                   href={href}
-                  className={cn(gridClass, 'pl-2 border-l-2 border-l-transparent hover:bg-surface-hover hover:border-l-accent-purple transition-all duration-150 cursor-pointer rounded-sm')}
+                  className={cn(rowClass, 'pl-2 border-l-2 border-l-transparent hover:bg-surface-hover hover:border-l-accent-purple transition-all duration-150 cursor-pointer rounded-sm')}
                 >
                   {content}
                 </Link>
               ) : (
-                <div key={entry.group_id} className={gridClass}>
+                <div key={entry.group_id} className={rowClass}>
                   {content}
                 </div>
               )
@@ -101,7 +140,7 @@ export function Leaderboard({
           </div>
 
           {showViewAll && viewAllHref && entries.length > 0 && (
-            <div className="mt-4 text-center">
+            <div className="mt-3 text-center">
               <Link
                 href={viewAllHref}
                 className="text-sm text-accent-purple hover:underline"

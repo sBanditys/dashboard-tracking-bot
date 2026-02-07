@@ -7,7 +7,6 @@ import { BotStatus } from '@/components/bot-status'
 import { GuildTabs } from '@/components/guild-tabs'
 import { GuildSettingsForm } from '@/components/forms/guild-settings-form'
 import { Skeleton } from '@/components/ui/skeleton'
-import { MiniSparkline } from '@/components/analytics/mini-sparkline'
 import { Leaderboard } from '@/components/analytics/leaderboard'
 import Link from 'next/link'
 
@@ -147,7 +146,7 @@ export default function GuildDetailPage({ params }: PageProps) {
                     </div>
                     {weeklyData?.weeks && weeklyData.weeks.length > 1 ? (
                         <div className="flex items-end gap-1 h-[60px]">
-                            {[...weeklyData.weeks].reverse().map((w, i) => {
+                            {[...weeklyData.weeks].reverse().map((w) => {
                                 const max = Math.max(...weeklyData.weeks.map(wk => wk.total_views))
                                 const pct = max > 0 ? (w.total_views / max) * 100 : 0
                                 return (

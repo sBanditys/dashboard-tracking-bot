@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
 import {
   useAnalytics,
@@ -23,7 +23,6 @@ import type { TimeRange, ChartDataPoint } from '@/types/analytics'
 
 export default function AnalyticsPage() {
   const params = useParams()
-  const router = useRouter()
   const guildId = params.guildId as string
 
   const [range, setRange] = useState<TimeRange>(30)
@@ -45,12 +44,6 @@ export default function AnalyticsPage() {
         rawDate: point.period,
       }))
     : []
-
-  // Handle click on chart data point - navigate to posts filtered by that date
-  function handleDateClick(rawDate: string) {
-    const dateStr = rawDate.split('T')[0]
-    router.push(`/guilds/${guildId}/posts?from=${dateStr}&to=${dateStr}`)
-  }
 
   // Calculate platform split total
   const platformSplitValue = analytics?.counters.by_platform

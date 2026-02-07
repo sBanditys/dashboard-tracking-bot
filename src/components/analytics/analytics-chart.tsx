@@ -22,7 +22,7 @@ interface AnalyticsChartProps {
   title?: string
   totalValue?: number
   tooltipLabel?: string
-  granularity: 'day' | 'week'
+  granularity?: 'day' | 'week'
   onDataPointClick?: (rawDate: string) => void
   className?: string
 }
@@ -63,7 +63,6 @@ export function AnalyticsChart({
   title = 'Views',
   totalValue,
   tooltipLabel = 'views',
-  granularity,
   onDataPointClick,
   className,
 }: AnalyticsChartProps) {

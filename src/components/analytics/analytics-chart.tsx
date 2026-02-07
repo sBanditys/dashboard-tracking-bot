@@ -45,7 +45,7 @@ function CustomTooltip({ active, payload, granularity }: CustomTooltipProps) {
 export function AnalyticsChart({ data, granularity, onDataPointClick, className }: AnalyticsChartProps) {
   const isEmpty = !data || data.length === 0 || data.every(d => d.count === 0)
 
-  const handleClick = (e: any) => {
+  const handleClick = (e: { activeLabel?: string | number } | null) => {
     if (e && e.activeLabel !== undefined && onDataPointClick) {
       const clickedItem = data.find(d => d.date === e.activeLabel)
       if (clickedItem) {

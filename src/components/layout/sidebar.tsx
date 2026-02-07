@@ -106,6 +106,19 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                 <span className="text-lg">📊</span>
                 Analytics
               </Link>
+              <Link
+                href={`/guilds/${guildId}/exports`}
+                onClick={onNavigate}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-colors',
+                  pathname.includes('/exports')
+                    ? 'bg-accent-purple text-white'
+                    : 'text-gray-300 hover:bg-surface/50 hover:text-white'
+                )}
+              >
+                <span className="text-lg">📥</span>
+                Exports
+              </Link>
             </>
           )}
         </div>

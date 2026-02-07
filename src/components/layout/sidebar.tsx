@@ -119,6 +119,19 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                 <span className="text-lg">📥</span>
                 Exports
               </Link>
+              <Link
+                href={`/guilds/${guildId}/settings/trash`}
+                onClick={onNavigate}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-colors',
+                  pathname.includes('/settings/trash')
+                    ? 'bg-accent-purple text-white'
+                    : 'text-gray-300 hover:bg-surface/50 hover:text-white'
+                )}
+              >
+                <span className="text-lg">🗑️</span>
+                Deleted Items
+              </Link>
             </>
           )}
         </div>

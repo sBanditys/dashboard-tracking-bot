@@ -145,6 +145,29 @@ export default function GuildDetailPage({ params }: PageProps) {
                 </Link>
             </div>
 
+            {/* Data Management */}
+            <div className="grid gap-4 md:grid-cols-2">
+                <Link
+                    href={`/guilds/${guildId}/exports`}
+                    className="bg-surface border border-border rounded-sm p-6 hover:border-accent-purple/50 transition-colors"
+                >
+                    <h3 className="text-lg font-semibold text-white mb-2">Exports</h3>
+                    <p className="text-sm text-gray-400">
+                        Download your tracking data in CSV, JSON, or XLSX format
+                    </p>
+                </Link>
+
+                <Link
+                    href={`/guilds/${guildId}/settings/trash`}
+                    className="bg-surface border border-border rounded-sm p-6 hover:border-accent-purple/50 transition-colors"
+                >
+                    <h3 className="text-lg font-semibold text-white mb-2">Deleted Items</h3>
+                    <p className="text-sm text-gray-400">
+                        View and restore recently deleted accounts and posts
+                    </p>
+                </Link>
+            </div>
+
             {/* Analytics Preview */}
             <div className="grid gap-4 md:grid-cols-3 items-start">
                 {/* Analytics Sparkline Card - takes 2 columns */}

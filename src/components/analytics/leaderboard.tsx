@@ -41,9 +41,51 @@ export function Leaderboard({
 }: LeaderboardProps) {
   const displayedEntries = limit ? entries.slice(0, limit) : entries
 
+  // Compute platform totals from all entries (not just displayed)
+  const totals = entries.reduce(
+    (acc, e) => ({
+      total: acc.total + e.total_views,
+      ig: acc.ig + e.instagram_views,
+      tt: acc.tt + e.tiktok_views,
+      yt: acc.yt + e.youtube_views,
+      fb: acc.fb + e.facebook_views,
+      x: acc.x + e.x_views,
+    }),
+    { total: 0, ig: 0, tt: 0, yt: 0, fb: 0, x: 0 }
+  )
+
+  const pct = (v: number) => totals.total > 0 ? ((v / totals.total) * 100).toFixed(1) : '0'
+
+  const platformCounters = [
+    { label: 'IG', value: totals.ig, color: 'text-pink-400' },
+    { label: 'TT', value: totals.tt, color: 'text-cyan-400' },
+    { label: 'YT', value: totals.yt, color: 'text-red-400' },
+    { label: 'FB', value: totals.fb, color: 'text-blue-400' },
+    { label: 'X', value: totals.x, color: 'text-gray-300' },
+  ].filter((p) => p.value > 0)
+
   return (
     <div className={cn('bg-surface border border-border rounded-sm p-6', className)}>
       <h3 className="text-lg font-semibold text-white mb-4">Top Account Groups</h3>
+
+      {/* Platform view counters */}
+      {entries.length > 0 && (
+        <div className="flex flex-wrap gap-3 mb-4">
+          <div className="bg-surface-hover border border-border rounded-sm px-3 py-2 min-w-[80px]">
+            <div className="text-xs text-gray-500 uppercase tracking-wider">Total</div>
+            <div className="text-sm font-semibold text-white">{totals.total.toLocaleString()}</div>
+          </div>
+          {platformCounters.map((p) => (
+            <div key={p.label} className="bg-surface-hover border border-border rounded-sm px-3 py-2 min-w-[80px]">
+              <div className={cn('text-xs uppercase tracking-wider', p.color)}>{p.label}</div>
+              <div className="text-sm font-semibold text-white">
+                {p.value.toLocaleString()}
+                <span className="text-xs text-gray-500 ml-1">{pct(p.value)}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {entries.length === 0 ? (
         <div className="flex items-center justify-center min-h-[200px]">

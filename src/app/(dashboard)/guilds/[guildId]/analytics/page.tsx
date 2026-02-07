@@ -146,6 +146,19 @@ export default function AnalyticsPage() {
             />
           ) : null}
 
+          {/* Daily Post Submissions */}
+          {analyticsLoading ? (
+            <AnalyticsChartSkeleton />
+          ) : analytics ? (
+            <AnalyticsChart
+              data={submissionsChartData}
+              title="Daily Post Submissions"
+              totalValue={totalSubmissions}
+              tooltipLabel="posts"
+              granularity={analytics.granularity}
+            />
+          ) : null}
+
           {/* Daily Views from post metrics */}
           {analyticsLoading ? (
             <AnalyticsChartSkeleton />
@@ -165,19 +178,6 @@ export default function AnalyticsPage() {
                   Refresh Tracking {refreshEnabled ? 'On' : 'Off'}
                 </span>
               }
-            />
-          ) : null}
-
-          {/* Daily Post Submissions */}
-          {analyticsLoading ? (
-            <AnalyticsChartSkeleton />
-          ) : analytics ? (
-            <AnalyticsChart
-              data={submissionsChartData}
-              title="Daily Post Submissions"
-              totalValue={totalSubmissions}
-              tooltipLabel="posts"
-              granularity={analytics.granularity}
             />
           ) : null}
         </div>

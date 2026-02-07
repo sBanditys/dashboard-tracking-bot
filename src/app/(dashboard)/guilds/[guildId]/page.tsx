@@ -130,7 +130,7 @@ export default function GuildDetailPage({ params }: PageProps) {
             </div>
 
             {/* Analytics Preview */}
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-3 items-start">
                 {/* Mini Sparkline Card - takes 2 columns */}
                 <Link
                     href={`/guilds/${guildId}/analytics`}

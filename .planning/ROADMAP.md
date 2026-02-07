@@ -165,10 +165,18 @@ Plans:
   3. Large guilds (1000+ tracked items) render without performance degradation
   4. Error boundaries gracefully handle API failures with actionable messages
   5. All edge cases (empty states, network errors, permission changes) have clear UX
-**Plans**: TBD
+**Plans**: 9 plans
 
 Plans:
-- [ ] TBD during phase planning
+- [ ] 08-01-PLAN.md — Install deps, fetchWithRetry, progress bar, toast, gcTime
+- [ ] 08-02-PLAN.md — Error boundaries, offline banner, keyboard shortcuts
+- [ ] 08-03-PLAN.md — Persistent state, unsaved changes, SSE tab visibility
+- [ ] 08-04-PLAN.md — Optimistic updates, toast notifications, fetchWithRetry integration
+- [ ] 08-05-PLAN.md — State preservation on data pages, skeleton flash fix, loaded count
+- [ ] 08-06-PLAN.md — Code splitting, avatar optimization, bulk operation cap
+- [ ] 08-07-PLAN.md — Expired exports, zero-guild state, concurrent edit detection
+- [ ] 08-08-PLAN.md — Keyboard shortcut wiring, unsaved changes wiring, CSS transitions
+- [ ] 08-09-PLAN.md — Build verification and visual verification checkpoint
 
 ## Progress
 
@@ -184,7 +192,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Configuration & Mutations | 0/7 | Not started | - |
 | 6. Analytics | 6/6 | ✓ Complete | 2026-02-07 |
 | 7. Data Management | 9/9 | ✓ Complete | 2026-02-07 |
-| 8. Polish & Optimization | 0/TBD | Not started | - |
+| 8. Polish & Optimization | 0/9 | Not started | - |
 
 ---
 *Created: 2026-01-24*

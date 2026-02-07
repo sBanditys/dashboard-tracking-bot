@@ -10,20 +10,37 @@ export interface AnalyticsData {
   counters: {
     total_accounts: number
     total_posts: number
+    total_views: number
     total_brands: number
     by_platform: Record<string, number>
   }
   previous_period: {
     total_accounts: number
     total_posts: number
+    total_views: number
     total_brands: number
   }
   time_series: Array<{ period: string; count: number }>
   granularity: 'day' | 'week'
 }
 
-// Leaderboard entry
+// Leaderboard entry (account group)
 export interface LeaderboardEntry {
+  group_id: string
+  group_label: string
+  total_views: number
+  instagram_views: number
+  tiktok_views: number
+  youtube_views: number
+  week_count: number
+}
+
+export interface LeaderboardResponse {
+  leaderboard: LeaderboardEntry[]
+}
+
+// Top accounts (individual accounts by post metrics)
+export interface TopAccountEntry {
   account_id: string
   username: string
   platform: string
@@ -32,8 +49,30 @@ export interface LeaderboardEntry {
   post_count: number
 }
 
-export interface LeaderboardResponse {
-  leaderboard: LeaderboardEntry[]
+export interface TopAccountsResponse {
+  accounts: TopAccountEntry[]
+}
+
+// Weekly submissions
+export interface WeeklySubmissionWeek {
+  week_start: string
+  total_views: number
+  instagram_views: number
+  tiktok_views: number
+  youtube_views: number
+  x_views: number
+  facebook_views: number
+  groups: Array<{
+    group_label: string
+    total_views: number
+    instagram_views: number | null
+    tiktok_views: number | null
+    youtube_views: number | null
+  }>
+}
+
+export interface WeeklySubmissionsResponse {
+  weeks: WeeklySubmissionWeek[]
 }
 
 // Activity timeline event

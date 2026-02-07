@@ -3,7 +3,12 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
-import { useAnalytics, useAnalyticsLeaderboard } from '@/hooks/use-analytics'
+import {
+  useAnalytics,
+  useAnalyticsLeaderboard,
+  useTopAccounts,
+  useWeeklySubmissions,
+} from '@/hooks/use-analytics'
 import { TimeRangeSelector } from '@/components/analytics/time-range-selector'
 import { CounterCard } from '@/components/analytics/counter-card'
 import { CounterCardSkeleton } from '@/components/analytics/counter-card-skeleton'
@@ -11,6 +16,8 @@ import { AnalyticsChart } from '@/components/analytics/analytics-chart'
 import { AnalyticsChartSkeleton } from '@/components/analytics/analytics-chart-skeleton'
 import { Leaderboard } from '@/components/analytics/leaderboard'
 import { LeaderboardSkeleton } from '@/components/analytics/leaderboard-skeleton'
+import { TopAccounts, TopAccountsSkeleton } from '@/components/analytics/top-accounts'
+import { WeeklySubmissions, WeeklySubmissionsSkeleton } from '@/components/analytics/weekly-submissions'
 import { ActivityTimeline } from '@/components/analytics/activity-timeline'
 import type { TimeRange, ChartDataPoint } from '@/types/analytics'
 
@@ -27,6 +34,8 @@ export default function AnalyticsPage() {
     range,
     10
   )
+  const { data: topAccounts, isLoading: topAccountsLoading } = useTopAccounts(guildId, range, 10)
+  const { data: weeklyData, isLoading: weeklyLoading } = useWeeklySubmissions(guildId, 8)
 
   // Transform time series data for chart
   const chartData: ChartDataPoint[] = analytics?.time_series
@@ -39,7 +48,7 @@ export default function AnalyticsPage() {
 
   // Handle click on chart data point - navigate to posts filtered by that date
   function handleDateClick(rawDate: string) {
-    const dateStr = rawDate.split('T')[0] // Extract YYYY-MM-DD
+    const dateStr = rawDate.split('T')[0]
     router.push(`/guilds/${guildId}/posts?from=${dateStr}&to=${dateStr}`)
   }
 
@@ -58,10 +67,10 @@ export default function AnalyticsPage() {
         <TimeRangeSelector value={range} onChange={setRange} />
       </div>
 
-      {/* Counter cards - 4 across on large screens */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+      {/* Counter cards - 5 across on large screens */}
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
         {analyticsLoading ? (
-          <CounterCardSkeleton count={4} />
+          <CounterCardSkeleton count={5} />
         ) : analytics ? (
           <>
             <CounterCard
@@ -70,9 +79,14 @@ export default function AnalyticsPage() {
               previousValue={analytics.previous_period.total_accounts}
             />
             <CounterCard
-              label="Total Posts"
+              label="Posts This Period"
               value={analytics.counters.total_posts}
               previousValue={analytics.previous_period.total_posts}
+            />
+            <CounterCard
+              label="Total Views"
+              value={analytics.counters.total_views}
+              previousValue={analytics.previous_period.total_views}
             />
             <CounterCard
               label="Total Brands"
@@ -94,9 +108,8 @@ export default function AnalyticsPage() {
         ) : null}
       </div>
 
-      {/* Chart + Leaderboard row - 2/3 + 1/3 split */}
+      {/* Chart + Account Groups leaderboard - 2/3 + 1/3 split */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Analytics Chart - takes 2 columns */}
         <div className="lg:col-span-2">
           {analyticsLoading ? (
             <AnalyticsChartSkeleton />
@@ -109,12 +122,30 @@ export default function AnalyticsPage() {
           ) : null}
         </div>
 
-        {/* Leaderboard - takes 1 column */}
         <div className="lg:col-span-1">
           {leaderboardLoading ? (
             <LeaderboardSkeleton count={5} />
           ) : leaderboard ? (
             <Leaderboard entries={leaderboard.leaderboard} limit={10} />
+          ) : null}
+        </div>
+      </div>
+
+      {/* Top Accounts (by post metrics) + Weekly Submissions side by side */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div>
+          {topAccountsLoading ? (
+            <TopAccountsSkeleton />
+          ) : topAccounts ? (
+            <TopAccounts accounts={topAccounts.accounts} />
+          ) : null}
+        </div>
+
+        <div>
+          {weeklyLoading ? (
+            <WeeklySubmissionsSkeleton />
+          ) : weeklyData ? (
+            <WeeklySubmissions weeks={weeklyData.weeks} />
           ) : null}
         </div>
       </div>

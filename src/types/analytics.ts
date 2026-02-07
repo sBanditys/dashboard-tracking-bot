@@ -3,7 +3,7 @@
  */
 
 // Time range type used across all analytics
-export type TimeRange = 7 | 30 | 90
+export type TimeRange = 7 | 14 | 30 | 90
 
 // Main analytics response (counters + time-series)
 export interface AnalyticsData {

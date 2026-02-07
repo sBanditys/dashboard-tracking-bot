@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils'
 
 // Define TimeRange locally since types file may not exist yet (Wave 1 parallel execution)
-export type TimeRange = 7 | 30 | 90
+export type TimeRange = 7 | 14 | 30 | 90
 
 interface TimeRangeSelectorProps {
   value: TimeRange
@@ -14,6 +14,7 @@ interface TimeRangeSelectorProps {
 export function TimeRangeSelector({ value, onChange, className }: TimeRangeSelectorProps) {
   const ranges: Array<{ value: TimeRange; label: string }> = [
     { value: 7, label: '7d' },
+    { value: 14, label: '14d' },
     { value: 30, label: '30d' },
     { value: 90, label: '90d' },
   ]

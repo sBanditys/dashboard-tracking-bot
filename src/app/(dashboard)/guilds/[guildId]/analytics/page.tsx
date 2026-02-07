@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
+import { useGuild } from '@/hooks/use-guilds'
 import {
   useAnalytics,
   useAnalyticsLeaderboard,
@@ -27,6 +28,7 @@ export default function AnalyticsPage() {
 
   const [range, setRange] = useState<TimeRange>(30)
 
+  const { data: guild } = useGuild(guildId)
   const { data: analytics, isLoading: analyticsLoading } = useAnalytics(guildId, range)
   const { data: leaderboard, isLoading: leaderboardLoading } = useAnalyticsLeaderboard(
     guildId,
@@ -36,7 +38,18 @@ export default function AnalyticsPage() {
   const { data: topAccounts, isLoading: topAccountsLoading } = useTopAccounts(guildId, range, 10)
   const { data: weeklyData, isLoading: weeklyLoading } = useWeeklySubmissions(guildId, 8)
 
-  // Transform views series data for chart
+  // Transform weekly submissions data for chart (from /sendlast7days)
+  const weeklyViewsChartData: ChartDataPoint[] = weeklyData?.weeks
+    ? [...weeklyData.weeks].reverse().map((week) => ({
+        date: format(parseISO(week.week_start), 'MMM d'),
+        value: week.total_views,
+        rawDate: week.week_start,
+      }))
+    : []
+
+  const totalWeeklyViews = weeklyViewsChartData.reduce((sum, d) => sum + d.value, 0)
+
+  // Transform views series data for chart (daily VideoMetrics)
   const chartData: ChartDataPoint[] = analytics?.views_series
     ? analytics.views_series.map((point) => ({
         date: format(parseISO(point.period), 'MMM d'),
@@ -44,6 +57,8 @@ export default function AnalyticsPage() {
         rawDate: point.period,
       }))
     : []
+
+  const totalDailyViews = chartData.reduce((sum, d) => sum + d.value, 0)
 
   // Transform time series data for submissions count chart
   const submissionsChartData: ChartDataPoint[] = analytics?.time_series
@@ -55,6 +70,9 @@ export default function AnalyticsPage() {
     : []
 
   const totalSubmissions = submissionsChartData.reduce((sum, d) => sum + d.value, 0)
+
+  // Refresh tracking status
+  const refreshEnabled = guild?.auto_refresh?.enabled ?? false
 
   // Calculate platform split total
   const platformSplitValue = analytics?.counters.by_platform
@@ -115,6 +133,20 @@ export default function AnalyticsPage() {
       {/* Chart + Account Groups leaderboard - 2/3 + 1/3 split */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
+          {/* Weekly Submission Views (from /sendlast7days) */}
+          {weeklyLoading ? (
+            <AnalyticsChartSkeleton />
+          ) : weeklyData ? (
+            <AnalyticsChart
+              data={weeklyViewsChartData}
+              title="Weekly Submission Views"
+              totalValue={totalWeeklyViews}
+              tooltipLabel="views"
+              granularity="week"
+            />
+          ) : null}
+
+          {/* Daily Views from post metrics + Daily Post Submissions */}
           {analyticsLoading ? (
             <AnalyticsChartSkeleton />
           ) : analytics ? (
@@ -122,9 +154,18 @@ export default function AnalyticsPage() {
               <AnalyticsChart
                 data={chartData}
                 title="Daily Views"
-                totalValue={analytics.counters.total_views}
+                totalValue={totalDailyViews}
                 tooltipLabel="views"
                 granularity={analytics.granularity}
+                statusBadge={
+                  <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+                    refreshEnabled
+                      ? 'bg-green-500/10 text-green-400'
+                      : 'bg-red-500/10 text-red-400'
+                  }`}>
+                    Refresh Tracking {refreshEnabled ? 'On' : 'Off'}
+                  </span>
+                }
               />
               <AnalyticsChart
                 data={submissionsChartData}

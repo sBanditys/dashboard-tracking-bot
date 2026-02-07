@@ -24,6 +24,7 @@ interface AnalyticsChartProps {
   tooltipLabel?: string
   granularity?: 'day' | 'week'
   onDataPointClick?: (rawDate: string) => void
+  statusBadge?: React.ReactNode
   className?: string
 }
 
@@ -64,6 +65,7 @@ export function AnalyticsChart({
   totalValue,
   tooltipLabel = 'views',
   onDataPointClick,
+  statusBadge,
   className,
 }: AnalyticsChartProps) {
   const isEmpty = !data || data.length === 0 || data.every(d => d.value === 0)
@@ -81,6 +83,7 @@ export function AnalyticsChart({
     <div className={cn('bg-surface border border-border rounded-sm p-6', className)}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-white">{title}</h3>
+        {statusBadge}
         {totalValue !== undefined && (
           <span className="text-2xl font-bold text-white">{formatCompact(totalValue)}</span>
         )}

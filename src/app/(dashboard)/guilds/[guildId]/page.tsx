@@ -1,13 +1,15 @@
 'use client'
 
 import { useGuild, useGuildStatusRealtime, useGuildUsage } from '@/hooks/use-guilds'
-import { useWeeklySubmissions, useAnalyticsLeaderboard } from '@/hooks/use-analytics'
+import { useAnalytics, useWeeklySubmissions, useAnalyticsLeaderboard } from '@/hooks/use-analytics'
 import { StatCard } from '@/components/stat-card'
 import { BotStatus } from '@/components/bot-status'
 import { GuildTabs } from '@/components/guild-tabs'
 import { GuildSettingsForm } from '@/components/forms/guild-settings-form'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Leaderboard } from '@/components/analytics/leaderboard'
+import { MiniSparkline } from '@/components/analytics/mini-sparkline'
+import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
 
 interface PageProps {
@@ -19,8 +21,22 @@ export default function GuildDetailPage({ params }: PageProps) {
     const { data: guild, isLoading } = useGuild(guildId)
     const { data: status, connectionState, reconnect } = useGuildStatusRealtime(guildId)
     const { data: usage } = useGuildUsage(guildId)
+    const { data: analytics } = useAnalytics(guildId, 14)
     const { data: weeklyData } = useWeeklySubmissions(guildId, 8)
     const { data: leaderboardData } = useAnalyticsLeaderboard(guildId, 7, 5)
+
+    // Daily post submissions for sparkline (last 14 days)
+    const sparklineData = analytics?.time_series
+        ? analytics.time_series.map((point) => ({
+            label: format(parseISO(point.period), 'MMM d'),
+            value: point.count,
+        }))
+        : []
+
+    // Total weekly submission views (latest week)
+    const totalWeeklyViews = weeklyData?.weeks && weeklyData.weeks.length > 0
+        ? weeklyData.weeks[0].total_views
+        : 0
 
     if (isLoading) {
         return (
@@ -131,36 +147,25 @@ export default function GuildDetailPage({ params }: PageProps) {
 
             {/* Analytics Preview */}
             <div className="grid gap-4 md:grid-cols-3 items-start">
-                {/* Mini Sparkline Card - takes 2 columns */}
+                {/* Analytics Sparkline Card - takes 2 columns */}
                 <Link
                     href={`/guilds/${guildId}/analytics`}
                     className="md:col-span-2 bg-surface border border-border rounded-sm p-6 hover:border-accent-purple/50 transition-colors"
                 >
-                    <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-lg font-semibold text-white">Weekly Views</h3>
-                        {weeklyData?.weeks && weeklyData.weeks.length > 0 && (
+                    <div className="flex items-center justify-between mb-1">
+                        <h3 className="text-lg font-semibold text-white">Daily Post Submissions</h3>
+                        <div className="text-right">
                             <span className="text-2xl font-bold text-white">
-                                {weeklyData.weeks[0].total_views.toLocaleString()}
+                                {totalWeeklyViews.toLocaleString()}
                             </span>
-                        )}
-                    </div>
-                    {weeklyData?.weeks && weeklyData.weeks.length > 1 ? (
-                        <div className="flex items-end gap-1.5 h-[48px]">
-                            {[...weeklyData.weeks].reverse().map((w) => {
-                                const max = Math.max(...weeklyData.weeks.map(wk => wk.total_views))
-                                const pct = max > 0 ? (w.total_views / max) * 100 : 0
-                                return (
-                                    <div
-                                        key={w.week_start}
-                                        className="flex-1 bg-accent-purple hover:bg-accent-purple/80 transition-colors rounded-t-sm"
-                                        style={{ height: `${Math.max(pct, 6)}%` }}
-                                    />
-                                )
-                            })}
+                            <p className="text-xs text-gray-400">weekly views</p>
                         </div>
-                    ) : (
-                        <div className="h-[48px] bg-surface-hover rounded animate-pulse" />
-                    )}
+                    </div>
+                    <MiniSparkline
+                        data={sparklineData}
+                        height={64}
+                        tooltipLabel="posts"
+                    />
                     <p className="text-sm text-accent-purple mt-3">View full analytics →</p>
                 </Link>
 

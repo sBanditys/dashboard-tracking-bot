@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { LeaderboardEntry } from '@/types/analytics'
@@ -90,12 +91,22 @@ export function Leaderboard({
                       {entry.owner_username && (
                         <div className="flex items-center gap-1.5 shrink-0">
                           <span className="text-gray-500">-</span>
-                          <div className={cn(
-                            'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0',
-                            getAvatarColor(entry.owner_username)
-                          )}>
-                            {ownerInitial}
-                          </div>
+                          {entry.owner_avatar_url ? (
+                            <Image
+                              src={entry.owner_avatar_url}
+                              alt={entry.owner_username}
+                              width={20}
+                              height={20}
+                              className="w-5 h-5 rounded-full shrink-0"
+                            />
+                          ) : (
+                            <div className={cn(
+                              'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0',
+                              getAvatarColor(entry.owner_username)
+                            )}>
+                              {ownerInitial}
+                            </div>
+                          )}
                           <span className="text-xs text-gray-400 truncate max-w-[80px]">
                             {entry.owner_username}
                           </span>

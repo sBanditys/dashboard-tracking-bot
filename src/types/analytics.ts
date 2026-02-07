@@ -36,6 +36,7 @@ export interface LeaderboardEntry {
   week_count: number
   owner_username: string | null
   owner_discord_id: string | null
+  owner_avatar_url: string | null
 }
 
 export interface LeaderboardResponse {

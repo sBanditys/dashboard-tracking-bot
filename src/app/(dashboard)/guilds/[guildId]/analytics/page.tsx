@@ -133,19 +133,6 @@ export default function AnalyticsPage() {
       {/* Chart + Account Groups leaderboard - 2/3 + 1/3 split */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          {/* Daily Post Submissions (at top) */}
-          {analyticsLoading ? (
-            <AnalyticsChartSkeleton />
-          ) : analytics ? (
-            <AnalyticsChart
-              data={submissionsChartData}
-              title="Daily Post Submissions"
-              totalValue={totalSubmissions}
-              tooltipLabel="posts"
-              granularity={analytics.granularity}
-            />
-          ) : null}
-
           {/* Weekly Submission Views (from /sendlast7days) */}
           {weeklyLoading ? (
             <AnalyticsChartSkeleton />
@@ -178,6 +165,19 @@ export default function AnalyticsPage() {
                   Refresh Tracking {refreshEnabled ? 'On' : 'Off'}
                 </span>
               }
+            />
+          ) : null}
+
+          {/* Daily Post Submissions */}
+          {analyticsLoading ? (
+            <AnalyticsChartSkeleton />
+          ) : analytics ? (
+            <AnalyticsChart
+              data={submissionsChartData}
+              title="Daily Post Submissions"
+              totalValue={totalSubmissions}
+              tooltipLabel="posts"
+              granularity={analytics.granularity}
             />
           ) : null}
         </div>

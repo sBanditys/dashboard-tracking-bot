@@ -1,11 +1,14 @@
 'use client'
 
 import { useGuild, useGuildStatusRealtime, useGuildUsage } from '@/hooks/use-guilds'
+import { useAnalytics, useAnalyticsLeaderboard } from '@/hooks/use-analytics'
 import { StatCard } from '@/components/stat-card'
 import { BotStatus } from '@/components/bot-status'
 import { GuildTabs } from '@/components/guild-tabs'
 import { GuildSettingsForm } from '@/components/forms/guild-settings-form'
 import { Skeleton } from '@/components/ui/skeleton'
+import { MiniSparkline } from '@/components/analytics/mini-sparkline'
+import { Leaderboard } from '@/components/analytics/leaderboard'
 import Link from 'next/link'
 
 interface PageProps {
@@ -17,6 +20,8 @@ export default function GuildDetailPage({ params }: PageProps) {
     const { data: guild, isLoading } = useGuild(guildId)
     const { data: status, connectionState, reconnect } = useGuildStatusRealtime(guildId)
     const { data: usage } = useGuildUsage(guildId)
+    const { data: analytics } = useAnalytics(guildId, 7)
+    const { data: leaderboardData } = useAnalyticsLeaderboard(guildId, 7, 5)
 
     if (isLoading) {
         return (
@@ -123,6 +128,31 @@ export default function GuildDetailPage({ params }: PageProps) {
                         View submitted posts and their performance metrics
                     </p>
                 </Link>
+            </div>
+
+            {/* Analytics Preview */}
+            <div className="grid gap-4 md:grid-cols-3">
+                {/* Mini Sparkline Card - takes 2 columns */}
+                <Link
+                    href={`/guilds/${guildId}/analytics`}
+                    className="md:col-span-2 bg-surface border border-border rounded-sm p-6 hover:border-accent-purple/50 transition-colors"
+                >
+                    <h3 className="text-lg font-semibold text-white mb-2">Submissions This Week</h3>
+                    {analytics?.time_series ? (
+                        <MiniSparkline data={analytics.time_series.map(p => ({ value: p.count }))} />
+                    ) : (
+                        <div className="h-[40px] bg-surface-hover rounded animate-pulse" />
+                    )}
+                    <p className="text-sm text-accent-purple mt-2">View full analytics →</p>
+                </Link>
+
+                {/* Top 5 Leaderboard Preview - takes 1 column */}
+                <Leaderboard
+                    entries={leaderboardData?.leaderboard ?? []}
+                    limit={5}
+                    showViewAll
+                    viewAllHref={`/guilds/${guildId}/analytics`}
+                />
             </div>
 
             {/* Brands Preview */}

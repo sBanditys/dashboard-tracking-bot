@@ -19,9 +19,9 @@ Progress: [█████████░] ~90% (37 plans complete across 7 phas
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 36
+- Total plans completed: 37
 - Average duration: 1m 55s (code plans only, excluding verification)
-- Total execution time: ~69m 36s
+- Total execution time: ~71m 18s
 
 **By Phase:**
 
@@ -33,11 +33,11 @@ Progress: [█████████░] ~90% (37 plans complete across 7 phas
 | 04 | 3 | 4m 24s | 1m 28s |
 | 05 | 6 | 13m 04s | 2m 11s |
 | 06 | 5 | 7m 38s | 1m 32s |
-| 07 | 7 | 11m 48s | 1m 41s |
+| 07 | 8 | 13m 30s | 1m 41s |
 
 **Recent Trend:**
-- Last 5 plans: 07-03 (1m 29s), 07-04 (1m 42s), 07-05 (1m 39s), 07-06 (1m 52s), 07-07 (2m 07s)
-- Trend: Maintaining exceptional velocity - 11 consecutive plans under 2min 10s, avg 1m 42s
+- Last 5 plans: 07-04 (1m 42s), 07-05 (1m 39s), 07-06 (1m 52s), 07-07 (2m 07s), 07-08 (1m 42s)
+- Trend: Maintaining exceptional velocity - 12 consecutive plans under 2min 10s, avg 1m 44s
 
 *Updated after each plan completion*
 
@@ -197,6 +197,10 @@ Recent decisions affecting current work:
 - DEV-077: Suffix badge for filename extension (auto-appended .csv/.json/.xlsx shown outside input)
 - DEV-078: Dual progress tracking on exports page (form inline + page-level via useExportStatus)
 
+**From 07-08 execution:**
+- DEV-079: Color-coded left border for urgency (yellow for <= 7 days, red for <= 1 day)
+- DEV-080: Per-item restore loading state tracked by restoringId (avoids all cards showing spinner)
+
 ### Phase 1 Deliverables
 
 Completed foundation ready for Phase 2:
@@ -270,6 +274,7 @@ Data management with export and bulk operations:
 - **Export & Reassign Components (07-05):** ExportDropdown with format selection (CSV/JSON/Excel) and mode grouping (current view/all data), ExportProgress with animated status bar and download links, ReassignModal with brand/group selection and type-to-confirm
 - **Page Integration (07-06):** Accounts page with SelectableAccountCard, shift-click selection, SelectionBar (delete/export/reassign), ExportDropdown, TypeToConfirmModal, ReassignModal; Posts page with same pattern minus reassign, postsWithId mapping for URL-based selection
 - **Exports Page (07-07):** Dedicated exports page with ExportConfigForm (data type/format/mode/filename), ExportHistoryTable with status badges and download links, sidebar Exports navigation link
+- **Trash Management (07-08):** TrashItemCard with platform icon, type badge, expiry countdown (color-coded urgency), TrashList with Accounts/Posts tabs and TypeToConfirmModal for permanent delete, Trash page at /guilds/[guildId]/settings/trash
 
 ### Pending Todos
 
@@ -281,11 +286,11 @@ None - execution proceeding smoothly.
 
 ## Session Continuity
 
-Last session: 2026-02-07 15:59 UTC
-Stopped at: Completed 07-06-PLAN.md
+Last session: 2026-02-07 16:00 UTC
+Stopped at: Completed 07-08-PLAN.md
 Resume file: None
 
-**Next action:** Continue Phase 7 Data Management with 07-07 (Trash Management)
+**Next action:** Continue Phase 7 Data Management with 07-09 (Final integration)
 
 ---
 *Last updated: 2026-02-07*

@@ -19,6 +19,7 @@
     "react-day-picker": "^9.13.0",
     "react-dom": "^18",
     "react-intersection-observer": "^10.0.2",
+    "recharts": "^3.7.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

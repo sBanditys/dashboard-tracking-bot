@@ -1,7 +1,7 @@
 'use client'
 
 import { useGuild, useGuildStatusRealtime, useGuildUsage } from '@/hooks/use-guilds'
-import { useAnalytics, useAnalyticsLeaderboard } from '@/hooks/use-analytics'
+import { useWeeklySubmissions, useAnalyticsLeaderboard } from '@/hooks/use-analytics'
 import { StatCard } from '@/components/stat-card'
 import { BotStatus } from '@/components/bot-status'
 import { GuildTabs } from '@/components/guild-tabs'
@@ -20,7 +20,7 @@ export default function GuildDetailPage({ params }: PageProps) {
     const { data: guild, isLoading } = useGuild(guildId)
     const { data: status, connectionState, reconnect } = useGuildStatusRealtime(guildId)
     const { data: usage } = useGuildUsage(guildId)
-    const { data: analytics } = useAnalytics(guildId, 7)
+    const { data: weeklyData } = useWeeklySubmissions(guildId, 8)
     const { data: leaderboardData } = useAnalyticsLeaderboard(guildId, 7, 5)
 
     if (isLoading) {
@@ -137,9 +137,9 @@ export default function GuildDetailPage({ params }: PageProps) {
                     href={`/guilds/${guildId}/analytics`}
                     className="md:col-span-2 bg-surface border border-border rounded-sm p-6 hover:border-accent-purple/50 transition-colors"
                 >
-                    <h3 className="text-lg font-semibold text-white mb-2">Submissions This Week</h3>
-                    {analytics?.time_series ? (
-                        <MiniSparkline data={analytics.time_series.map(p => ({ value: p.count }))} />
+                    <h3 className="text-lg font-semibold text-white mb-2">Weekly Views</h3>
+                    {weeklyData?.weeks && weeklyData.weeks.length > 0 ? (
+                        <MiniSparkline data={[...weeklyData.weeks].reverse().map(w => ({ value: w.total_views }))} />
                     ) : (
                         <div className="h-[40px] bg-surface-hover rounded animate-pulse" />
                     )}

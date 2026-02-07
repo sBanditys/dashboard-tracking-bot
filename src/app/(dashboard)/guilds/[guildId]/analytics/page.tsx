@@ -37,11 +37,11 @@ export default function AnalyticsPage() {
   const { data: topAccounts, isLoading: topAccountsLoading } = useTopAccounts(guildId, range, 10)
   const { data: weeklyData, isLoading: weeklyLoading } = useWeeklySubmissions(guildId, 8)
 
-  // Transform time series data for chart
-  const chartData: ChartDataPoint[] = analytics?.time_series
-    ? analytics.time_series.map((point) => ({
+  // Transform views series data for chart
+  const chartData: ChartDataPoint[] = analytics?.views_series
+    ? analytics.views_series.map((point) => ({
         date: format(parseISO(point.period), 'MMM d'),
-        count: point.count,
+        value: point.views,
         rawDate: point.period,
       }))
     : []
@@ -116,8 +116,10 @@ export default function AnalyticsPage() {
           ) : analytics ? (
             <AnalyticsChart
               data={chartData}
+              title="Weekly Views"
+              totalValue={analytics.counters.total_views}
+              tooltipLabel="views"
               granularity={analytics.granularity}
-              onDataPointClick={handleDateClick}
             />
           ) : null}
         </div>

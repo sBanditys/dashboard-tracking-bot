@@ -11,8 +11,17 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 
+interface ChartDataPoint {
+  date: string
+  value: number
+  rawDate: string
+}
+
 interface AnalyticsChartProps {
-  data: Array<{ date: string; count: number; rawDate: string }>
+  data: ChartDataPoint[]
+  title?: string
+  totalValue?: number
+  tooltipLabel?: string
   granularity: 'day' | 'week'
   onDataPointClick?: (rawDate: string) => void
   className?: string
@@ -22,12 +31,19 @@ interface CustomTooltipProps {
   active?: boolean
   payload?: Array<{
     value: number
-    payload: { date: string; count: number; rawDate: string }
+    payload: ChartDataPoint
   }>
-  granularity: 'day' | 'week'
+  label?: string
+  tooltipLabel: string
 }
 
-function CustomTooltip({ active, payload, granularity }: CustomTooltipProps) {
+function formatCompact(num: number): string {
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`
+  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`
+  return num.toLocaleString()
+}
+
+function CustomTooltip({ active, payload, tooltipLabel }: CustomTooltipProps) {
   if (!active || !payload?.length) return null
 
   return (
@@ -36,14 +52,22 @@ function CustomTooltip({ active, payload, granularity }: CustomTooltipProps) {
         {payload[0].payload.date}
       </p>
       <p className="text-sm text-gray-300">
-        {payload[0].value} posts {granularity === 'week' ? 'this week' : 'on this day'}
+        {formatCompact(payload[0].value)} {tooltipLabel}
       </p>
     </div>
   )
 }
 
-export function AnalyticsChart({ data, granularity, onDataPointClick, className }: AnalyticsChartProps) {
-  const isEmpty = !data || data.length === 0 || data.every(d => d.count === 0)
+export function AnalyticsChart({
+  data,
+  title = 'Views',
+  totalValue,
+  tooltipLabel = 'views',
+  granularity,
+  onDataPointClick,
+  className,
+}: AnalyticsChartProps) {
+  const isEmpty = !data || data.length === 0 || data.every(d => d.value === 0)
 
   const handleClick = (e: { activeLabel?: string | number } | null) => {
     if (e && e.activeLabel !== undefined && onDataPointClick) {
@@ -56,18 +80,23 @@ export function AnalyticsChart({ data, granularity, onDataPointClick, className 
 
   return (
     <div className={cn('bg-surface border border-border rounded-sm p-6', className)}>
-      <h3 className="text-lg font-semibold text-white mb-4">Submissions</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-white">{title}</h3>
+        {totalValue !== undefined && (
+          <span className="text-2xl font-bold text-white">{formatCompact(totalValue)}</span>
+        )}
+      </div>
 
       {isEmpty ? (
         <div className="h-[300px] flex items-center justify-center">
-          <p className="text-gray-400 text-sm">No submissions data for this period</p>
+          <p className="text-gray-400 text-sm">No data for this period</p>
         </div>
       ) : (
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} onClick={handleClick}>
               <defs>
-                <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
                   <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                 </linearGradient>
@@ -81,15 +110,16 @@ export function AnalyticsChart({ data, granularity, onDataPointClick, className 
               <YAxis
                 stroke="#9ca3af"
                 tick={{ fontSize: 12 }}
+                tickFormatter={formatCompact}
                 allowDecimals={false}
               />
-              <Tooltip content={<CustomTooltip granularity={granularity} />} />
+              <Tooltip content={<CustomTooltip tooltipLabel={tooltipLabel} />} />
               <Area
                 type="monotone"
-                dataKey="count"
+                dataKey="value"
                 stroke="#8b5cf6"
                 fillOpacity={1}
-                fill="url(#colorCount)"
+                fill="url(#colorValue)"
               />
             </AreaChart>
           </ResponsiveContainer>

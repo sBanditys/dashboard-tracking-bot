@@ -137,13 +137,37 @@ export default function GuildDetailPage({ params }: PageProps) {
                     href={`/guilds/${guildId}/analytics`}
                     className="md:col-span-2 bg-surface border border-border rounded-sm p-6 hover:border-accent-purple/50 transition-colors"
                 >
-                    <h3 className="text-lg font-semibold text-white mb-2">Weekly Views</h3>
-                    {weeklyData?.weeks && weeklyData.weeks.length > 0 ? (
-                        <MiniSparkline data={[...weeklyData.weeks].reverse().map(w => ({ value: w.total_views }))} />
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-white">Weekly Views</h3>
+                        {weeklyData?.weeks && weeklyData.weeks.length > 0 && (
+                            <span className="text-2xl font-bold text-white">
+                                {weeklyData.weeks[0].total_views.toLocaleString()}
+                            </span>
+                        )}
+                    </div>
+                    {weeklyData?.weeks && weeklyData.weeks.length > 1 ? (
+                        <div className="flex items-end gap-1 h-[60px]">
+                            {[...weeklyData.weeks].reverse().map((w, i) => {
+                                const max = Math.max(...weeklyData.weeks.map(wk => wk.total_views))
+                                const pct = max > 0 ? (w.total_views / max) * 100 : 0
+                                return (
+                                    <div
+                                        key={w.week_start}
+                                        className="flex-1 bg-accent-purple/30 hover:bg-accent-purple/50 transition-colors rounded-t-sm relative group"
+                                        style={{ height: `${Math.max(pct, 4)}%` }}
+                                    >
+                                        <div
+                                            className="absolute bottom-0 left-0 right-0 bg-accent-purple rounded-t-sm"
+                                            style={{ height: `${Math.max(pct, 4)}%` }}
+                                        />
+                                    </div>
+                                )
+                            })}
+                        </div>
                     ) : (
-                        <div className="h-[40px] bg-surface-hover rounded animate-pulse" />
+                        <div className="h-[60px] bg-surface-hover rounded animate-pulse" />
                     )}
-                    <p className="text-sm text-accent-purple mt-2">View full analytics →</p>
+                    <p className="text-sm text-accent-purple mt-3">View full analytics →</p>
                 </Link>
 
                 {/* Top 5 Leaderboard Preview - takes 1 column */}

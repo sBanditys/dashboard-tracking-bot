@@ -21,6 +21,7 @@ export interface AnalyticsData {
     total_brands: number
   }
   time_series: Array<{ period: string; count: number }>
+  views_series: Array<{ period: string; views: number }>
   granularity: 'day' | 'week'
 }
 
@@ -93,6 +94,6 @@ export interface ActivityResponse {
 // Chart data point (formatted for Recharts)
 export interface ChartDataPoint {
   date: string
-  count: number
+  value: number
   rawDate: string  // ISO date for click navigation
 }

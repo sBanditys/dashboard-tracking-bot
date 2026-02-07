@@ -4,6 +4,7 @@ import type { LeaderboardEntry } from '@/types/analytics'
 
 interface LeaderboardProps {
   entries: LeaderboardEntry[]
+  guildId?: string
   limit?: number
   showViewAll?: boolean
   viewAllHref?: string
@@ -12,6 +13,7 @@ interface LeaderboardProps {
 
 export function Leaderboard({
   entries,
+  guildId,
   limit,
   showViewAll = false,
   viewAllHref,
@@ -49,18 +51,18 @@ export function Leaderboard({
                       ? 'text-orange-400'
                       : 'text-gray-400'
 
-              return (
-                <div
-                  key={entry.group_id}
-                  className="grid grid-cols-[auto_1fr_auto] gap-4 py-3 border-b border-border last:border-0 items-center"
-                >
+              const href = guildId
+                ? `/guilds/${guildId}/accounts?group=${encodeURIComponent(entry.group_label)}`
+                : undefined
+
+              const content = (
+                <>
                   <div className={cn('text-lg font-bold w-8', rankColor)}>
                     #{rank}
                   </div>
 
                   <div className="min-w-0">
                     <span className="text-white truncate block">{entry.group_label}</span>
-                    {/* Platform breakdown */}
                     <div className="flex gap-2 mt-1">
                       {entry.instagram_views > 0 && (
                         <span className="text-xs text-gray-500">IG: {entry.instagram_views.toLocaleString()}</span>
@@ -77,6 +79,22 @@ export function Leaderboard({
                   <div className="text-gray-300 text-right font-medium">
                     {entry.total_views.toLocaleString()}
                   </div>
+                </>
+              )
+
+              const gridClass = 'grid grid-cols-[auto_1fr_auto] gap-4 py-3 border-b border-border last:border-0 items-center'
+
+              return href ? (
+                <Link
+                  key={entry.group_id}
+                  href={href}
+                  className={cn(gridClass, 'hover:bg-surface-hover transition-colors cursor-pointer')}
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div key={entry.group_id} className={gridClass}>
+                  {content}
                 </div>
               )
             })}

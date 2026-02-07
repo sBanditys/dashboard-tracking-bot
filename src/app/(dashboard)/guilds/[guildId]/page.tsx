@@ -149,6 +149,7 @@ export default function GuildDetailPage({ params }: PageProps) {
                 {/* Top 5 Leaderboard Preview - takes 1 column */}
                 <Leaderboard
                     entries={leaderboardData?.leaderboard ?? []}
+                    guildId={guildId}
                     limit={5}
                     showViewAll
                     viewAllHref={`/guilds/${guildId}/analytics`}

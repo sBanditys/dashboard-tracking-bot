@@ -3,6 +3,25 @@ import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { TopAccountEntry } from '@/types/analytics'
 
+function getProfileUrl(platform: string, username: string): string {
+  const handle = username.replace(/^@/, '')
+  switch (platform.toLowerCase()) {
+    case 'instagram':
+      return `https://instagram.com/${handle}`
+    case 'tiktok':
+      return `https://tiktok.com/@${handle}`
+    case 'youtube':
+      return `https://youtube.com/@${handle}`
+    case 'x':
+    case 'twitter':
+      return `https://x.com/${handle}`
+    case 'facebook':
+      return `https://facebook.com/${handle}`
+    default:
+      return '#'
+  }
+}
+
 interface TopAccountsProps {
   accounts: TopAccountEntry[]
   className?: string
@@ -39,11 +58,15 @@ export function TopAccounts({ accounts, className }: TopAccountsProps) {
                     : rank === 3
                       ? 'text-orange-400'
                       : 'text-gray-400'
+              const profileUrl = getProfileUrl(entry.platform, entry.username)
 
               return (
-                <div
+                <a
                   key={entry.account_id}
-                  className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 py-3 border-b border-border last:border-0 items-center"
+                  href={profileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 py-3 border-b border-border last:border-0 items-center hover:bg-surface-hover transition-colors cursor-pointer"
                 >
                   <div className={cn('text-lg font-bold w-8', rankColor)}>
                     #{rank}
@@ -51,7 +74,9 @@ export function TopAccounts({ accounts, className }: TopAccountsProps) {
 
                   <div className="flex items-center gap-2 min-w-0">
                     <PlatformIcon platform={entry.platform} size="w-5 h-5" />
-                    <span className="text-white truncate">{entry.username}</span>
+                    <span className="text-white truncate hover:text-accent-purple transition-colors">
+                      {entry.username}
+                    </span>
                   </div>
 
                   <div className="text-gray-300 text-right">
@@ -65,7 +90,7 @@ export function TopAccounts({ accounts, className }: TopAccountsProps) {
                   <div className="text-gray-400 text-right">
                     {entry.post_count}
                   </div>
-                </div>
+                </a>
               )
             })}
           </div>

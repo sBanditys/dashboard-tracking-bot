@@ -126,7 +126,7 @@ export default function AnalyticsPage() {
           {leaderboardLoading ? (
             <LeaderboardSkeleton count={5} />
           ) : leaderboard ? (
-            <Leaderboard entries={leaderboard.leaderboard} limit={10} />
+            <Leaderboard entries={leaderboard.leaderboard} guildId={guildId} limit={10} />
           ) : null}
         </div>
       </div>

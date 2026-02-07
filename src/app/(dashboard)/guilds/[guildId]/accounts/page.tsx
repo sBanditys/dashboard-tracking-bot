@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useInView } from 'react-intersection-observer'
 import { useAccountsInfinite, useBrands, type AccountFilters } from '@/hooks/use-tracking'
 import { GuildTabs } from '@/components/guild-tabs'
@@ -17,11 +18,12 @@ interface PageProps {
 
 export default function AccountsPage({ params }: PageProps) {
     const { guildId } = params
+    const searchParams = useSearchParams()
 
-    // Filter state
+    // Filter state - initialize group from URL if present
     const [search, setSearch] = useState('')
     const [platform, setPlatform] = useState('')
-    const [group, setGroup] = useState('')
+    const [group, setGroup] = useState(searchParams.get('group') ?? '')
     const [pageSize, setPageSize] = useState(50)
     const [showAddModal, setShowAddModal] = useState(false)
 

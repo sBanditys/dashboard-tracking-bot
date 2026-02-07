@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { safeFormatDistanceToNow } from '@/lib/date-utils'
 import { useExportHistory } from '@/hooks/use-exports'
 import type { ExportFormat, ExportStatus } from '@/types/export'
 
@@ -115,7 +115,7 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
                       : '-'}
                   </td>
                   <td className="px-6 py-3 text-gray-400">
-                    {formatDistanceToNow(new Date(exportRecord.createdAt), { addSuffix: true })}
+                    {safeFormatDistanceToNow(exportRecord.createdAt)}
                   </td>
                   <td className="px-6 py-3">
                     {exportRecord.status === 'completed' && exportRecord.downloadUrl ? (
@@ -169,7 +169,7 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-500">
-                  {formatDistanceToNow(new Date(exportRecord.createdAt), { addSuffix: true })}
+                  {safeFormatDistanceToNow(exportRecord.createdAt)}
                 </span>
                 {exportRecord.status === 'completed' && exportRecord.downloadUrl && (
                   <a

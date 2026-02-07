@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { formatDistanceToNow } from 'date-fns'
+import { safeFormatDistanceToNow } from '@/lib/date-utils'
 import type { ConnectionState } from '@/hooks/use-sse'
 
 interface BotStatusProps {
@@ -54,7 +54,7 @@ export function BotStatus({
 
         // Bot offline
         const lastSeenText = lastHeartbeat
-            ? `Last seen: ${formatDistanceToNow(new Date(lastHeartbeat), { addSuffix: true })}`
+            ? `Last seen: ${safeFormatDistanceToNow(lastHeartbeat)}`
             : null
         return {
             dotClass: 'bg-red-500',

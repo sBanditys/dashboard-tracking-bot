@@ -2,21 +2,10 @@
 
 import { useState } from 'react'
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/react'
-import { formatDistanceToNow } from 'date-fns'
 import { useAuditLog } from '@/hooks/use-audit-log'
 import { cn } from '@/lib/utils'
+import { safeFormatDistanceToNow } from '@/lib/date-utils'
 import type { AuditLogEntry } from '@/types/audit'
-
-function safeFormatDate(dateString: string | null | undefined): string {
-  if (!dateString) return 'Unknown'
-  try {
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return 'Unknown'
-    return formatDistanceToNow(date, { addSuffix: true })
-  } catch {
-    return 'Unknown'
-  }
-}
 
 interface AuditLogTableProps {
   guildId: string
@@ -295,7 +284,7 @@ export function AuditLogTable({ guildId }: AuditLogTableProps) {
               entries.map((entry: AuditLogEntry) => (
                 <tr key={entry.id} className="border-b border-border hover:bg-background/50 transition-colors">
                   <td className="py-3 px-4 text-sm text-gray-300">
-                    {safeFormatDate(entry.created_at)}
+                    {safeFormatDistanceToNow(entry.created_at)}
                   </td>
                   <td className="py-3 px-4 text-sm text-gray-300">
                     {entry.actor.name || entry.actor.id}

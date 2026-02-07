@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { PlatformIcon } from '@/components/platform-icon'
-import { formatDistanceToNow } from 'date-fns'
+import { safeFormatDistanceToNow } from '@/lib/date-utils'
 import type { TrashItem } from '@/hooks/use-trash'
 
 interface TrashItemCardProps {
@@ -48,7 +48,7 @@ export function TrashItemCard({
 }: TrashItemCardProps) {
   const purge = getPurgeStyles(item.daysUntilPurge)
   const dataType = getDataType(item.type)
-  const deletedAgo = formatDistanceToNow(new Date(item.deletedAt), { addSuffix: false })
+  const deletedAgo = safeFormatDistanceToNow(item.deletedAt, { addSuffix: false, fallback: 'recently' })
 
   return (
     <div

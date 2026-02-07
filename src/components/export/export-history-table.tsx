@@ -83,8 +83,8 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
           </thead>
           <tbody>
             {exports.map((exportRecord) => {
-              const status = statusConfig[exportRecord.status]
-              const fmt = formatConfig[exportRecord.format]
+              const status = statusConfig[exportRecord.status] ?? { label: exportRecord.status, className: 'bg-gray-500/20 text-gray-400' }
+              const fmt = formatConfig[exportRecord.format] ?? { label: exportRecord.format.toUpperCase(), className: 'bg-gray-500/20 text-gray-400' }
 
               return (
                 <tr
@@ -140,8 +140,8 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
       {/* Mobile Card Layout */}
       <div className="md:hidden px-6 pb-4 space-y-3">
         {exports.map((exportRecord) => {
-          const status = statusConfig[exportRecord.status]
-          const fmt = formatConfig[exportRecord.format]
+          const status = statusConfig[exportRecord.status] ?? { label: exportRecord.status, className: 'bg-gray-500/20 text-gray-400' }
+          const fmt = formatConfig[exportRecord.format] ?? { label: exportRecord.format.toUpperCase(), className: 'bg-gray-500/20 text-gray-400' }
 
           return (
             <div

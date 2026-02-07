@@ -28,8 +28,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const data = await response.json()
     return NextResponse.json(data, { status: response.status })
-  } catch {
-    return NextResponse.json({ error: 'Failed to create export' }, { status: 500 })
+  } catch (error) {
+    console.error('Export API error:', error)
+    return NextResponse.json({ error: 'Failed to create export', details: String(error) }, { status: 500 })
   }
 }
 

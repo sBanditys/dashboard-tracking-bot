@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2025-01-24)
 ## Current Position
 
 Phase: 7 of 8 (Data Management)
-Plan: 6 of 9 complete (07-01, 07-02, 07-03, 07-04, 07-05, 07-06 complete)
-Status: In progress — Page integration complete, selection and bulk ops wired
-Last activity: 2026-02-07 — Completed 07-06-PLAN.md
+Plan: 8 of 9 complete (07-01, 07-02, 07-03, 07-04, 07-05, 07-06, 07-07, 07-08 complete)
+Status: In progress — Trash management page complete
+Last activity: 2026-02-07 — Completed 07-08-PLAN.md
 
-Progress: [████████░░] ~87% (35 plans complete across 7 phases)
+Progress: [█████████░] ~90% (37 plans complete across 7 phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 35
+- Total plans completed: 36
 - Average duration: 1m 55s (code plans only, excluding verification)
-- Total execution time: ~67m 29s
+- Total execution time: ~69m 36s
 
 **By Phase:**
 
@@ -33,11 +33,11 @@ Progress: [████████░░] ~87% (35 plans complete across 7 phas
 | 04 | 3 | 4m 24s | 1m 28s |
 | 05 | 6 | 13m 04s | 2m 11s |
 | 06 | 5 | 7m 38s | 1m 32s |
-| 07 | 6 | 9m 41s | 1m 37s |
+| 07 | 7 | 11m 48s | 1m 41s |
 
 **Recent Trend:**
-- Last 5 plans: 07-02 (1m 29s), 07-03 (1m 29s), 07-04 (1m 42s), 07-05 (1m 39s), 07-06 (1m 52s)
-- Trend: Maintaining exceptional velocity - 10 consecutive plans under 2min, avg 1m 38s
+- Last 5 plans: 07-03 (1m 29s), 07-04 (1m 42s), 07-05 (1m 39s), 07-06 (1m 52s), 07-07 (2m 07s)
+- Trend: Maintaining exceptional velocity - 11 consecutive plans under 2min 10s, avg 1m 42s
 
 *Updated after each plan completion*
 
@@ -192,6 +192,11 @@ Recent decisions affecting current work:
 - DEV-074: Bulk export from SelectionBar sends selected IDs as CSV filter parameter (simple approach)
 - DEV-075: Posts mapped with id=url for useShiftSelection compatibility
 
+**From 07-07 execution:**
+- DEV-076: Radio-card pattern for format selection (border-accent-purple active state)
+- DEV-077: Suffix badge for filename extension (auto-appended .csv/.json/.xlsx shown outside input)
+- DEV-078: Dual progress tracking on exports page (form inline + page-level via useExportStatus)
+
 ### Phase 1 Deliverables
 
 Completed foundation ready for Phase 2:
@@ -264,6 +269,7 @@ Data management with export and bulk operations:
 - **Selection UI (07-04):** SelectableAccountCard and SelectablePostCard wrappers with checkbox selection, SelectionBar sticky bottom bar with context-aware actions (export, reassign, delete), BulkResultsToast with three result states
 - **Export & Reassign Components (07-05):** ExportDropdown with format selection (CSV/JSON/Excel) and mode grouping (current view/all data), ExportProgress with animated status bar and download links, ReassignModal with brand/group selection and type-to-confirm
 - **Page Integration (07-06):** Accounts page with SelectableAccountCard, shift-click selection, SelectionBar (delete/export/reassign), ExportDropdown, TypeToConfirmModal, ReassignModal; Posts page with same pattern minus reassign, postsWithId mapping for URL-based selection
+- **Exports Page (07-07):** Dedicated exports page with ExportConfigForm (data type/format/mode/filename), ExportHistoryTable with status badges and download links, sidebar Exports navigation link
 
 ### Pending Todos
 

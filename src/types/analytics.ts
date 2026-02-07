@@ -33,6 +33,8 @@ export interface LeaderboardEntry {
   instagram_views: number
   tiktok_views: number
   youtube_views: number
+  facebook_views: number
+  x_views: number
   week_count: number
   owner_username: string | null
   owner_discord_id: string | null

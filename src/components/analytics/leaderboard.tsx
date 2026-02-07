@@ -123,6 +123,12 @@ export function Leaderboard({
                       {entry.youtube_views > 0 && (
                         <span className="text-xs text-gray-500">YT: {entry.youtube_views.toLocaleString()}</span>
                       )}
+                      {entry.facebook_views > 0 && (
+                        <span className="text-xs text-gray-500">FB: {entry.facebook_views.toLocaleString()}</span>
+                      )}
+                      {entry.x_views > 0 && (
+                        <span className="text-xs text-gray-500">X: {entry.x_views.toLocaleString()}</span>
+                      )}
                     </div>
                   </div>
 

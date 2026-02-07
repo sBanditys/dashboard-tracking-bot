@@ -38,9 +38,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Analytics
 
-- [ ] **ANAL-01**: User can see basic counters (total tracked accounts, total posts)
-- [ ] **ANAL-02**: User can see time-series graphs (posts per day/week)
-- [ ] **ANAL-03**: User can see activity timeline of recent events
+- [x] **ANAL-01**: User can see basic counters (total tracked accounts, total posts)
+- [x] **ANAL-02**: User can see time-series graphs (posts per day/week)
+- [x] **ANAL-03**: User can see activity timeline of recent events
 
 ### Data Management
 

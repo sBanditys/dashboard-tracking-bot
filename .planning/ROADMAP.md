@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Real-Time Updates** - Bot status indicators with live updates
 - [x] **Phase 5: Configuration & Mutations** - Add/edit/remove tracked items and settings
 - [x] **Phase 6: Analytics** - Counters, time-series graphs, activity timelines
-- [ ] **Phase 7: Data Management** - Exports, bulk operations, soft delete with trash
+- [x] **Phase 7: Data Management** - Exports, bulk operations, soft delete with trash
 - [ ] **Phase 8: Polish & Optimization** - Performance tuning, edge cases, production readiness
 
 ## Phase Details
@@ -145,15 +145,15 @@ Plans:
 **Plans**: 9 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — Foundation types, useShiftSelection hook, TypeToConfirmModal
-- [ ] 07-02-PLAN.md — API proxy routes for exports, bulk operations, and trash
-- [ ] 07-03-PLAN.md — React Query hooks for exports, bulk ops, and trash
-- [ ] 07-04-PLAN.md — Selectable card wrappers, SelectionBar, BulkResultsToast
-- [ ] 07-05-PLAN.md — ExportDropdown, ExportProgress, ReassignModal components
-- [ ] 07-06-PLAN.md — Wire selection and bulk ops into Accounts and Posts pages
-- [ ] 07-07-PLAN.md — Dedicated Exports page with config form and history table
-- [ ] 07-08-PLAN.md — Trash page with restore and permanent delete
-- [ ] 07-09-PLAN.md — Navigation integration and visual verification checkpoint
+- [x] 07-01-PLAN.md — Foundation types, useShiftSelection hook, TypeToConfirmModal
+- [x] 07-02-PLAN.md — API proxy routes for exports, bulk operations, and trash
+- [x] 07-03-PLAN.md — React Query hooks for exports, bulk ops, and trash
+- [x] 07-04-PLAN.md — Selectable card wrappers, SelectionBar, BulkResultsToast
+- [x] 07-05-PLAN.md — ExportDropdown, ExportProgress, ReassignModal components
+- [x] 07-06-PLAN.md — Wire selection and bulk ops into Accounts and Posts pages
+- [x] 07-07-PLAN.md — Dedicated Exports page with config form and history table
+- [x] 07-08-PLAN.md — Trash page with restore and permanent delete
+- [x] 07-09-PLAN.md — Navigation integration and visual verification checkpoint
 
 ### Phase 8: Polish & Optimization
 **Goal**: Dashboard performs well under real-world usage patterns
@@ -183,7 +183,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 4. Real-Time Updates | 3/3 | ✓ Complete | 2026-02-03 |
 | 5. Configuration & Mutations | 0/7 | Not started | - |
 | 6. Analytics | 6/6 | ✓ Complete | 2026-02-07 |
-| 7. Data Management | 0/9 | Not started | - |
+| 7. Data Management | 9/9 | ✓ Complete | 2026-02-07 |
 | 8. Polish & Optimization | 0/TBD | Not started | - |
 
 ---

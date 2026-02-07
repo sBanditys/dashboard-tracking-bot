@@ -45,6 +45,17 @@ export default function AnalyticsPage() {
       }))
     : []
 
+  // Transform time series data for submissions count chart
+  const submissionsChartData: ChartDataPoint[] = analytics?.time_series
+    ? analytics.time_series.map((point) => ({
+        date: format(parseISO(point.period), 'MMM d'),
+        value: point.count,
+        rawDate: point.period,
+      }))
+    : []
+
+  const totalSubmissions = submissionsChartData.reduce((sum, d) => sum + d.value, 0)
+
   // Calculate platform split total
   const platformSplitValue = analytics?.counters.by_platform
     ? Object.values(analytics.counters.by_platform).reduce((sum, count) => sum + count, 0)
@@ -103,17 +114,26 @@ export default function AnalyticsPage() {
 
       {/* Chart + Account Groups leaderboard - 2/3 + 1/3 split */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-6">
           {analyticsLoading ? (
             <AnalyticsChartSkeleton />
           ) : analytics ? (
-            <AnalyticsChart
-              data={chartData}
-              title="Weekly Views"
-              totalValue={analytics.counters.total_views}
-              tooltipLabel="views"
-              granularity={analytics.granularity}
-            />
+            <>
+              <AnalyticsChart
+                data={chartData}
+                title="Daily Views"
+                totalValue={analytics.counters.total_views}
+                tooltipLabel="views"
+                granularity={analytics.granularity}
+              />
+              <AnalyticsChart
+                data={submissionsChartData}
+                title="Daily Post Submissions"
+                totalValue={totalSubmissions}
+                tooltipLabel="posts"
+                granularity={analytics.granularity}
+              />
+            </>
           ) : null}
         </div>
 

@@ -66,7 +66,7 @@ export function TopAccounts({ accounts, className }: TopAccountsProps) {
                   href={profileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 py-3 border-b border-border last:border-0 items-center hover:bg-surface-hover hover:pl-2 hover:border-l-2 hover:border-l-accent-purple transition-all duration-150 cursor-pointer rounded-sm"
+                  className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 py-3 border-b border-border last:border-0 items-center pl-2 border-l-2 border-l-transparent hover:bg-surface-hover hover:border-l-accent-purple transition-all duration-150 cursor-pointer rounded-sm"
                 >
                   <div className={cn('text-lg font-bold w-8', rankColor)}>
                     #{rank}

@@ -145,26 +145,21 @@ export default function GuildDetailPage({ params }: PageProps) {
                         )}
                     </div>
                     {weeklyData?.weeks && weeklyData.weeks.length > 1 ? (
-                        <div className="flex items-end gap-1 h-[60px]">
+                        <div className="flex items-end gap-1.5 h-[48px]">
                             {[...weeklyData.weeks].reverse().map((w) => {
                                 const max = Math.max(...weeklyData.weeks.map(wk => wk.total_views))
                                 const pct = max > 0 ? (w.total_views / max) * 100 : 0
                                 return (
                                     <div
                                         key={w.week_start}
-                                        className="flex-1 bg-accent-purple/30 hover:bg-accent-purple/50 transition-colors rounded-t-sm relative group"
-                                        style={{ height: `${Math.max(pct, 4)}%` }}
-                                    >
-                                        <div
-                                            className="absolute bottom-0 left-0 right-0 bg-accent-purple rounded-t-sm"
-                                            style={{ height: `${Math.max(pct, 4)}%` }}
-                                        />
-                                    </div>
+                                        className="flex-1 bg-accent-purple hover:bg-accent-purple/80 transition-colors rounded-t-sm"
+                                        style={{ height: `${Math.max(pct, 6)}%` }}
+                                    />
                                 )
                             })}
                         </div>
                     ) : (
-                        <div className="h-[60px] bg-surface-hover rounded animate-pulse" />
+                        <div className="h-[48px] bg-surface-hover rounded animate-pulse" />
                     )}
                     <p className="text-sm text-accent-purple mt-3">View full analytics →</p>
                 </Link>

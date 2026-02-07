@@ -88,7 +88,7 @@ export function Leaderboard({
                 <Link
                   key={entry.group_id}
                   href={href}
-                  className={cn(gridClass, 'hover:bg-surface-hover hover:pl-2 hover:border-l-2 hover:border-l-accent-purple transition-all duration-150 cursor-pointer rounded-sm')}
+                  className={cn(gridClass, 'pl-2 border-l-2 border-l-transparent hover:bg-surface-hover hover:border-l-accent-purple transition-all duration-150 cursor-pointer rounded-sm')}
                 >
                   {content}
                 </Link>

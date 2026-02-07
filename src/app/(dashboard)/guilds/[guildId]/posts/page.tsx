@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useInView } from 'react-intersection-observer'
 import type { DateRange } from 'react-day-picker'
 import { usePostsInfinite, useBrands, type PostFiltersExtended } from '@/hooks/use-tracking'
+import { useShiftSelection } from '@/hooks/use-selection'
+import { useBulkDelete } from '@/hooks/use-bulk-operations'
+import { useCreateExport } from '@/hooks/use-exports'
 import { GuildTabs } from '@/components/guild-tabs'
 import {
     FilterBar,
@@ -14,10 +17,16 @@ import {
     DateRangePicker,
     PageSizeSelect
 } from '@/components/filters'
-import { PostCard, PostCardSkeleton } from '@/components/tracking'
+import { PostCardSkeleton } from '@/components/tracking'
+import { SelectablePostCard } from '@/components/tracking/selectable-post-card'
+import { SelectionBar } from '@/components/bulk/selection-bar'
+import { ExportDropdown } from '@/components/export/export-dropdown'
+import { TypeToConfirmModal } from '@/components/ui/type-to-confirm-modal'
+import { BulkResultsToast } from '@/components/bulk/bulk-results-toast'
 import { EmptyState, NoResults } from '@/components/empty-state'
 import { ScrollToTop } from '@/components/scroll-to-top'
 import { ScrollToBottom } from '@/components/scroll-to-bottom'
+import type { BulkOperationResult } from '@/types/bulk'
 
 interface PageProps {
     params: { guildId: string }
@@ -33,6 +42,11 @@ export default function PostsPage({ params }: PageProps) {
     const [status, setStatus] = useState('')
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
     const [pageSize, setPageSize] = useState(50)
+
+    // Bulk operation state
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    const [bulkResults, setBulkResults] = useState<BulkOperationResult | null>(null)
+    const [bulkResultsType, setBulkResultsType] = useState<'deleted' | 'reassigned' | 'exported'>('deleted')
 
     // Fetch brands to get groups for the filter
     const { data: brandsData, isLoading: brandsLoading } = useBrands(guildId)
@@ -99,10 +113,39 @@ export default function PostsPage({ params }: PageProps) {
         })
     }, [data, search, platform, group, status, dateRange])
 
+    // Map posts to have `id` field for useShiftSelection (posts use `url` as identifier)
+    const postsWithId = useMemo(() => posts.map(p => ({ ...p, id: p.url })), [posts])
+
+    // Selection hook
+    const {
+        selectedIds,
+        handleSelect,
+        selectAllVisible,
+        clearSelection,
+        isAllVisibleSelected,
+        selectedCount,
+    } = useShiftSelection(postsWithId)
+
+    // Bulk operation mutations
+    const bulkDelete = useBulkDelete(guildId)
+    const createExport = useCreateExport(guildId)
+
     const totalCount = data?.pages[0]?.pagination.total ?? 0
 
     // Check if any filters are active
     const hasActiveFilters = search || platform || group || status || dateRange?.from
+
+    // Build active filters record for export dropdown
+    const activeFiltersRecord = useMemo(() => {
+        const record: Record<string, string> = {}
+        if (search) record.search = search
+        if (platform) record.platform = platform
+        if (group) record.group = group
+        if (status) record.status = status
+        if (dateRange?.from) record.from = dateRange.from.toISOString()
+        if (dateRange?.to) record.to = dateRange.to.toISOString()
+        return record
+    }, [search, platform, group, status, dateRange])
 
     // Clear all filters
     const handleClearFilters = useCallback(() => {
@@ -112,6 +155,53 @@ export default function PostsPage({ params }: PageProps) {
         setStatus('')
         setDateRange(undefined)
     }, [])
+
+    // Bulk delete handler
+    const handleBulkDelete = useCallback(async () => {
+        try {
+            const result = await bulkDelete.mutateAsync({
+                ids: Array.from(selectedIds),
+                dataType: 'posts',
+            })
+            setBulkResultsType('deleted')
+            setBulkResults(result)
+            clearSelection()
+            setShowDeleteConfirm(false)
+        } catch {
+            // Error handled by mutation
+            setShowDeleteConfirm(false)
+        }
+    }, [bulkDelete, selectedIds, clearSelection])
+
+    // Bulk export handler (exports selected items as CSV)
+    const handleBulkExport = useCallback(async () => {
+        try {
+            await createExport.mutateAsync({
+                format: 'csv',
+                mode: 'current_view',
+                dataType: 'posts',
+                filters: { ids: Array.from(selectedIds).join(',') },
+            })
+            setBulkResultsType('exported')
+            setBulkResults({
+                total: selectedCount,
+                succeeded: selectedCount,
+                failed: 0,
+                results: Array.from(selectedIds).map(id => ({ id, status: 'success' as const })),
+            })
+            clearSelection()
+        } catch {
+            // Error handled by mutation
+        }
+    }, [createExport, selectedIds, selectedCount, clearSelection])
+
+    // Auto-dismiss bulk results toast after 8 seconds
+    useEffect(() => {
+        if (bulkResults) {
+            const timer = setTimeout(() => setBulkResults(null), 8000)
+            return () => clearTimeout(timer)
+        }
+    }, [bulkResults])
 
     if (isError) {
         return (
@@ -161,7 +251,21 @@ export default function PostsPage({ params }: PageProps) {
                     value={pageSize}
                     onChange={setPageSize}
                 />
+                <ExportDropdown
+                    guildId={guildId}
+                    dataType="posts"
+                    activeFilters={activeFiltersRecord}
+                />
             </FilterBar>
+
+            {/* Bulk results toast */}
+            {bulkResults && (
+                <BulkResultsToast
+                    results={bulkResults}
+                    operationType={bulkResultsType}
+                    onDismiss={() => setBulkResults(null)}
+                />
+            )}
 
             {/* Loading state */}
             {isLoading && (
@@ -198,8 +302,14 @@ export default function PostsPage({ params }: PageProps) {
             {/* Posts grid */}
             {!isLoading && posts.length > 0 && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                    {posts.map(post => (
-                        <PostCard key={post.url} post={post} />
+                    {posts.map((post, index) => (
+                        <SelectablePostCard
+                            key={post.url}
+                            post={post}
+                            index={index}
+                            selected={selectedIds.has(post.url)}
+                            onSelect={handleSelect}
+                        />
                     ))}
                 </div>
             )}
@@ -216,6 +326,28 @@ export default function PostsPage({ params }: PageProps) {
 
             <ScrollToTop />
             <ScrollToBottom />
+
+            {/* Selection bar - no reassign for posts */}
+            <SelectionBar
+                selectedCount={selectedCount}
+                dataType="posts"
+                onDelete={() => setShowDeleteConfirm(true)}
+                onExport={handleBulkExport}
+                onClear={clearSelection}
+            />
+
+            {/* Bulk delete confirmation modal */}
+            <TypeToConfirmModal
+                open={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleBulkDelete}
+                title={`Delete ${selectedCount} posts`}
+                description={`This will move ${selectedCount} post${selectedCount !== 1 ? 's' : ''} to trash. They can be restored within 30 days.`}
+                confirmText={selectedCount.toString()}
+                confirmLabel="Delete"
+                isLoading={bulkDelete.isPending}
+                variant="danger"
+            />
         </div>
     )
 }

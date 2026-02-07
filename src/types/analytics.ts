@@ -39,9 +39,9 @@ export interface LeaderboardResponse {
 // Activity timeline event
 export interface ActivityEvent {
   id: string
-  type: 'post_captured' | 'settings_changed' | 'account_added' | 'account_removed' | 'brand_added' | 'brand_removed'
+  type: 'post_captured' | 'post_submitted' | 'settings_changed' | 'account_added' | 'account_removed' | 'brand_added' | 'brand_removed'
   created_at: string
-  actor: string
+  actor: string | null
   description: string
   link: string | null
 }

@@ -16,6 +16,7 @@ export function ActivityEvent({ event, guildId }: ActivityEventProps) {
   // Determine dot color based on event type
   const dotColor = {
     post_captured: 'bg-blue-500',
+    post_submitted: 'bg-blue-500',
     settings_changed: 'bg-yellow-500',
     account_added: 'bg-green-500',
     brand_added: 'bg-green-500',
@@ -29,6 +30,7 @@ export function ActivityEvent({ event, guildId }: ActivityEventProps) {
 
     switch (event.type) {
       case 'post_captured':
+      case 'post_submitted':
         return `/guilds/${guildId}/posts`
       case 'account_added':
       case 'account_removed':

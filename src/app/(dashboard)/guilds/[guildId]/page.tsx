@@ -21,7 +21,7 @@ export default function GuildDetailPage({ params }: PageProps) {
     const { data: guild, isLoading } = useGuild(guildId)
     const { data: status, connectionState, reconnect } = useGuildStatusRealtime(guildId)
     const { data: usage } = useGuildUsage(guildId)
-    const { data: analytics } = useAnalytics(guildId, 14)
+    const { data: analytics } = useAnalytics(guildId, 7)
     const { data: weeklyData } = useWeeklySubmissions(guildId, 8)
     const { data: leaderboardData } = useAnalyticsLeaderboard(guildId, 7, 5)
 

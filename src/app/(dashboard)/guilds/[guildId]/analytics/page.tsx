@@ -26,7 +26,7 @@ export default function AnalyticsPage() {
   const params = useParams()
   const guildId = params.guildId as string
 
-  const [range, setRange] = useState<TimeRange>(30)
+  const [range, setRange] = useState<TimeRange>(7)
 
   const { data: guild } = useGuild(guildId)
   const { data: analytics, isLoading: analyticsLoading } = useAnalytics(guildId, range)

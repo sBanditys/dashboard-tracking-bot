@@ -36,6 +36,7 @@ export interface LeaderboardEntry {
   facebook_views: number
   x_views: number
   week_count: number
+  previous_total_views: number
   owner_username: string | null
   owner_discord_id: string | null
   owner_avatar_url: string | null

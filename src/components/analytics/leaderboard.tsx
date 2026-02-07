@@ -174,8 +174,28 @@ export function Leaderboard({
                     </div>
                   </div>
 
-                  <div className="text-gray-300 text-right font-medium">
-                    {entry.total_views.toLocaleString()}
+                  <div className="text-right">
+                    <div className="text-gray-300 font-medium">
+                      {entry.total_views.toLocaleString()}
+                    </div>
+                    {entry.previous_total_views > 0 ? (
+                      <div className={cn(
+                        'text-xs flex items-center justify-end gap-0.5',
+                        entry.total_views >= entry.previous_total_views ? 'text-green-400' : 'text-red-400'
+                      )}>
+                        <span>{entry.total_views >= entry.previous_total_views ? '\u2191' : '\u2193'}</span>
+                        <span>
+                          {Math.abs(
+                            Math.round(((entry.total_views - entry.previous_total_views) / entry.previous_total_views) * 100)
+                          )}%
+                        </span>
+                      </div>
+                    ) : entry.total_views > 0 ? (
+                      <div className="text-xs text-green-400 flex items-center justify-end gap-0.5">
+                        <span>{'\u2191'}</span>
+                        <span>new</span>
+                      </div>
+                    ) : null}
                   </div>
                 </>
               )

@@ -101,9 +101,7 @@ export default function AccountsPage({ params }: PageProps) {
     const {
         selectedIds,
         handleSelect,
-        selectAllVisible,
         clearSelection,
-        isAllVisibleSelected,
         selectedCount,
     } = useShiftSelection(accounts)
 

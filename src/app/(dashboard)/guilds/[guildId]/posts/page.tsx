@@ -120,9 +120,7 @@ export default function PostsPage({ params }: PageProps) {
     const {
         selectedIds,
         handleSelect,
-        selectAllVisible,
         clearSelection,
-        isAllVisibleSelected,
         selectedCount,
     } = useShiftSelection(postsWithId)
 

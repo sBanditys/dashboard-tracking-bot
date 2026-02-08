@@ -1,11 +1,30 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 export async function POST() {
   try {
-    // Clear auth_token cookie
     const cookieStore = await cookies();
+    const authToken = cookieStore.get('auth_token')?.value;
+    const refreshToken = cookieStore.get('refresh_token')?.value;
+
+    if (authToken) {
+      await fetch(`${API_URL}/api/v1/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+          ...(process.env.API_KEY && { 'X-API-Key': process.env.API_KEY }),
+        },
+        body: JSON.stringify({
+          ...(refreshToken && { refresh_token: refreshToken }),
+        }),
+      }).catch(() => undefined);
+    }
+
     cookieStore.delete('auth_token');
+    cookieStore.delete('refresh_token');
 
     return NextResponse.json({ success: true });
   } catch {

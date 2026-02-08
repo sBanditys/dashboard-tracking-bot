@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 type RouteParams = { params: Promise<{ guildId: string; exportId: string }> }
 

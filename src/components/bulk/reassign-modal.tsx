@@ -4,6 +4,7 @@ import { Dialog, DialogPanel, DialogTitle, Description } from '@headlessui/react
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import type { Brand } from '@/types/tracking'
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
 
 interface ReassignModalProps {
   open: boolean
@@ -39,19 +40,36 @@ export function ReassignModal({
 
   // Fetch brands on mount
   useEffect(() => {
-    if (open && brands.length === 0) {
+    if (!open || brands.length !== 0) return
+
+    let cancelled = false
+
+    const fetchBrands = async () => {
       setLoadingBrands(true)
-      fetch(`/api/guilds/${guildId}/brands`)
-        .then((res) => res.json())
-        .then((data) => {
+
+      try {
+        const response = await fetchWithRetry(`/api/guilds/${guildId}/brands`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch brands')
+        }
+
+        const data = await response.json()
+        if (!cancelled) {
           setBrands(data.brands || [])
-        })
-        .catch((error) => {
-          console.error('Failed to fetch brands:', error)
-        })
-        .finally(() => {
+        }
+      } catch (error) {
+        console.error('Failed to fetch brands:', error)
+      } finally {
+        if (!cancelled) {
           setLoadingBrands(false)
-        })
+        }
+      }
+    }
+
+    fetchBrands()
+
+    return () => {
+      cancelled = true
     }
   }, [open, guildId, brands.length])
 

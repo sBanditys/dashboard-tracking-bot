@@ -10,6 +10,7 @@
 const DEFAULT_MAX_RETRIES = 3;
 const MAX_BACKOFF_MS = 30000; // 30 seconds
 const BASE_BACKOFF_MS = 1000; // 1 second
+let refreshPromise: Promise<boolean> | null = null;
 
 /**
  * Calculate exponential backoff delay with jitter
@@ -61,6 +62,31 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function isAuthEndpoint(url: string): boolean {
+  return url.includes('/api/auth/');
+}
+
+async function refreshSession(): Promise<boolean> {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+      });
+      return response.ok;
+    } catch {
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
 /**
  * Fetch with automatic retry logic for rate limiting and network errors.
  *
@@ -76,10 +102,19 @@ export async function fetchWithRetry(
   maxRetries: number = DEFAULT_MAX_RETRIES
 ): Promise<Response> {
   let lastError: Error | null = null;
+  let didRetryAfterRefresh = false;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(url, options);
+
+      if (response.status === 401 && !didRetryAfterRefresh && !isAuthEndpoint(url)) {
+        const refreshed = await refreshSession();
+        if (refreshed) {
+          didRetryAfterRefresh = true;
+          continue;
+        }
+      }
 
       // Handle 429 Too Many Requests
       if (response.status === 429) {

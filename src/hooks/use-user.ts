@@ -2,6 +2,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { User } from '@/types/user';
+import { fetchWithRetry } from '@/lib/fetch-with-retry';
 
 /**
  * Hook to fetch and manage current user session
@@ -10,7 +11,7 @@ export function useUser() {
   const query = useQuery<User>({
     queryKey: ['user'],
     queryFn: async () => {
-      const response = await fetch('/api/user');
+      const response = await fetchWithRetry('/api/user');
 
       if (!response.ok) {
         throw new Error('Not authenticated');

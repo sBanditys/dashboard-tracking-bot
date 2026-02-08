@@ -3,6 +3,7 @@
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { useState } from 'react'
 import type { ExportFormat, ExportMode } from '@/types/export'
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
 
 interface ExportDropdownProps {
   guildId: string
@@ -26,7 +27,7 @@ export function ExportDropdown({
     setLoadingFormat(key)
 
     try {
-      const response = await fetch(`/api/guilds/${guildId}/exports`, {
+      const response = await fetchWithRetry(`/api/guilds/${guildId}/exports`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

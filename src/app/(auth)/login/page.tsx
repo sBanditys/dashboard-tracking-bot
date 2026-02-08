@@ -3,6 +3,17 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  callback_failed: 'Authentication failed. Please try again.',
+  missing_code: 'Missing authorization code. Please try signing in again.',
+  missing_state: 'Login session is invalid. Please try again.',
+  invalid_state: 'Login session expired. Please start sign-in again.',
+  oauth_failed: 'Discord authentication failed. Please try again.',
+  no_guilds: 'No accessible guilds were found for your account.',
+  server_error: 'Authentication service is temporarily unavailable.',
+  access_denied: 'Discord sign-in was cancelled.',
+};
+
 function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -11,8 +22,14 @@ function LoginContent() {
   // Check for error from OAuth callback
   useEffect(() => {
     const errorParam = searchParams.get('error');
-    if (errorParam === 'callback_failed') {
-      setError('Authentication failed. Please try again.');
+    const errorDescription = searchParams.get('error_description');
+
+    if (errorParam) {
+      setError(
+        AUTH_ERROR_MESSAGES[errorParam] ||
+          errorDescription ||
+          'Authentication failed. Please try again.'
+      );
     }
   }, [searchParams]);
 
@@ -22,7 +39,7 @@ function LoginContent() {
 
     // Redirect directly to backend OAuth endpoint
     // The backend will redirect to Discord, then back to our callback
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     window.location.href = `${apiUrl}/api/v1/auth/discord`;
   };
 

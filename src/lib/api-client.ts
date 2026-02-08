@@ -2,7 +2,7 @@
  * Type-safe API client for backend communication
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const API_KEY = process.env.API_KEY;
 
 interface ApiResponse<T> {

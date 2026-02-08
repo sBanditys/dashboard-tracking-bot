@@ -7,6 +7,7 @@ import { useAccountsInfinite, useBrands, type AccountFilters } from '@/hooks/use
 import { useShiftSelection } from '@/hooks/use-selection'
 import { useBulkDelete, useBulkReassign } from '@/hooks/use-bulk-operations'
 import { useCreateExport } from '@/hooks/use-exports'
+import { usePersistentState } from '@/hooks/use-persistent-state'
 import { GuildTabs } from '@/components/guild-tabs'
 import { FilterBar, SearchInput, PlatformSelect, GroupSelect, PageSizeSelect } from '@/components/filters'
 import { AccountCardSkeleton } from '@/components/tracking'
@@ -30,11 +31,11 @@ export default function AccountsPage({ params }: PageProps) {
     const { guildId } = params
     const searchParams = useSearchParams()
 
-    // Filter state - initialize group from URL if present
-    const [search, setSearch] = useState('')
-    const [platform, setPlatform] = useState('')
-    const [group, setGroup] = useState(searchParams.get('group') ?? '')
-    const [pageSize, setPageSize] = useState(50)
+    // Filter state with persistent state (URL takes precedence for group)
+    const [search, setSearch] = usePersistentState(`${guildId}-accounts-search`, '')
+    const [platform, setPlatform] = usePersistentState(`${guildId}-accounts-platform`, '')
+    const [group, setGroup] = usePersistentState(`${guildId}-accounts-group`, searchParams.get('group') ?? '')
+    const [pageSize, setPageSize] = usePersistentState(`${guildId}-accounts-pageSize`, 50)
     const [showAddModal, setShowAddModal] = useState(false)
 
     // Bulk operation state
@@ -96,6 +97,11 @@ export default function AccountsPage({ params }: PageProps) {
             return true
         })
     }, [data, search, platform, group])
+
+    // Calculate loaded count from all pages
+    const loadedCount = useMemo(() => {
+        return data?.pages.reduce((total, page) => total + page.accounts.length, 0) ?? 0
+    }, [data])
 
     // Selection hook - accounts already have `id` field
     const {
@@ -211,7 +217,7 @@ export default function AccountsPage({ params }: PageProps) {
                     <h1 className="text-3xl font-bold text-white mb-2">Accounts</h1>
                     <p className="text-gray-400">
                         All tracked social media accounts
-                        {!isLoading && <span className="ml-2">({totalCount} total)</span>}
+                        {!isLoading && data && <span className="ml-2 text-gray-500">({loadedCount} accounts)</span>}
                     </p>
                 </div>
                 <button
@@ -261,8 +267,8 @@ export default function AccountsPage({ params }: PageProps) {
                 />
             )}
 
-            {/* Loading state */}
-            {isLoading && (
+            {/* Loading state - only show skeleton on initial load, not when data exists */}
+            {isLoading && !data && (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
                     <AccountCardSkeleton count={6} />
                 </div>

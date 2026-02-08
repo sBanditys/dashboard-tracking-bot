@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useGuild, useGuildStatusRealtime, useGuildUsage } from '@/hooks/use-guilds'
 import { useAnalytics, useWeeklySubmissions, useAnalyticsLeaderboard } from '@/hooks/use-analytics'
 import { StatCard } from '@/components/stat-card'
@@ -8,9 +9,14 @@ import { GuildTabs } from '@/components/guild-tabs'
 import { GuildSettingsForm } from '@/components/forms/guild-settings-form'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Leaderboard } from '@/components/analytics/leaderboard'
-import { MiniSparkline } from '@/components/analytics/mini-sparkline'
 import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
+
+// Code-split Recharts-using component
+const MiniSparkline = dynamic(
+  () => import('@/components/analytics/mini-sparkline').then((mod) => mod.MiniSparkline),
+  { ssr: false, loading: () => <div className="h-16 bg-surface-dark/50 rounded animate-pulse" /> }
+)
 
 interface PageProps {
     params: { guildId: string }

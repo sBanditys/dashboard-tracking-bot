@@ -1,6 +1,9 @@
 'use client'
 
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+
+const MAX_BULK_ITEMS = 100
 
 interface SelectionBarProps {
   selectedCount: number
@@ -20,6 +23,30 @@ export function SelectionBar({
   onClear,
 }: SelectionBarProps) {
   if (selectedCount === 0) return null
+
+  const handleDelete = () => {
+    if (selectedCount > MAX_BULK_ITEMS) {
+      toast.error('Select up to 100 items for bulk operations')
+      return
+    }
+    onDelete()
+  }
+
+  const handleExport = () => {
+    if (selectedCount > MAX_BULK_ITEMS) {
+      toast.error('Select up to 100 items for bulk operations')
+      return
+    }
+    onExport()
+  }
+
+  const handleReassign = () => {
+    if (selectedCount > MAX_BULK_ITEMS) {
+      toast.error('Select up to 100 items for bulk operations')
+      return
+    }
+    onReassign?.()
+  }
 
   return (
     <div className="fixed bottom-0 left-0 md:left-64 right-0 z-40">
@@ -43,7 +70,7 @@ export function SelectionBar({
           {/* Export Button */}
           <button
             type="button"
-            onClick={onExport}
+            onClick={handleExport}
             className={cn(
               'px-4 py-2 text-sm font-medium rounded-lg',
               'border border-border bg-surface text-text-primary',
@@ -58,7 +85,7 @@ export function SelectionBar({
           {dataType === 'accounts' && onReassign && (
             <button
               type="button"
-              onClick={onReassign}
+              onClick={handleReassign}
               className={cn(
                 'px-4 py-2 text-sm font-medium rounded-lg',
                 'border border-border bg-surface text-text-primary',
@@ -73,7 +100,7 @@ export function SelectionBar({
           {/* Delete Button */}
           <button
             type="button"
-            onClick={onDelete}
+            onClick={handleDelete}
             className={cn(
               'px-4 py-2 text-sm font-medium rounded-lg',
               'bg-red-600 hover:bg-red-700 text-white transition-colors',

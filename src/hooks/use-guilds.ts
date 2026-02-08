@@ -193,7 +193,7 @@ export function useUpdateGuildSettings(guildId: string) {
                 description: error instanceof Error ? error.message : 'Unknown error',
             })
         },
-        onSuccess: (data) => {
+        onSuccess: () => {
             toast.success('Settings saved successfully')
         },
         onSettled: () => {

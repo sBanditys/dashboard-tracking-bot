@@ -1,6 +1,8 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
 
 /**
  * Trash item representation
@@ -45,7 +47,7 @@ export function useTrashItems(
             params.set('limit', limit.toString())
             if (type) params.set('type', type)
 
-            const response = await fetch(`/api/guilds/${guildId}/trash?${params.toString()}`)
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/trash?${params.toString()}`)
             if (!response.ok) {
                 throw new Error('Failed to fetch trash items')
             }
@@ -64,7 +66,7 @@ export function useRestoreItem(guildId: string) {
 
     return useMutation({
         mutationFn: async (params: { itemId: string; dataType: 'accounts' | 'posts' }) => {
-            const response = await fetch(`/api/guilds/${guildId}/trash/${params.itemId}/restore`, {
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/trash/${params.itemId}/restore`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -80,6 +82,7 @@ export function useRestoreItem(guildId: string) {
             return response.json()
         },
         onSuccess: (data, variables) => {
+            toast.success('Item restored successfully')
             // Invalidate trash, the restored data type list, and guild details
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'trash'] })
             if (variables.dataType === 'accounts') {
@@ -88,6 +91,11 @@ export function useRestoreItem(guildId: string) {
                 queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'posts'] })
             }
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
+        },
+        onError: (error) => {
+            toast.error('Failed to restore item', {
+                description: error instanceof Error ? error.message : 'Unknown error',
+            })
         },
     })
 }
@@ -100,7 +108,7 @@ export function usePermanentDelete(guildId: string) {
 
     return useMutation({
         mutationFn: async (params: { itemId: string; dataType: 'accounts' | 'posts' }) => {
-            const response = await fetch(
+            const response = await fetchWithRetry(
                 `/api/guilds/${guildId}/trash/${params.itemId}?dataType=${params.dataType}`,
                 {
                     method: 'DELETE',
@@ -115,8 +123,14 @@ export function usePermanentDelete(guildId: string) {
             return response.json()
         },
         onSuccess: () => {
+            toast.success('Item permanently deleted')
             // Only invalidate trash query (item is gone permanently)
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'trash'] })
+        },
+        onError: (error) => {
+            toast.error('Failed to permanently delete item', {
+                description: error instanceof Error ? error.message : 'Unknown error',
+            })
         },
     })
 }

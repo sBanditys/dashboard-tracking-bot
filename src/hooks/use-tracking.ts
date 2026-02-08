@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import type {
     BrandsResponse,
     AccountsResponse,
@@ -15,7 +16,7 @@ export function useBrands(guildId: string) {
     return useQuery<BrandsResponse>({
         queryKey: ['guild', guildId, 'brands'],
         queryFn: async () => {
-            const response = await fetch(`/api/guilds/${guildId}/brands`)
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/brands`)
             if (!response.ok) {
                 throw new Error('Failed to fetch brands')
             }
@@ -33,7 +34,7 @@ export function useAccounts(guildId: string, page: number = 1, limit: number = 2
     return useQuery<AccountsResponse>({
         queryKey: ['guild', guildId, 'accounts', page, limit],
         queryFn: async () => {
-            const response = await fetch(`/api/guilds/${guildId}/accounts?page=${page}&limit=${limit}`)
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/accounts?page=${page}&limit=${limit}`)
             if (!response.ok) {
                 throw new Error('Failed to fetch accounts')
             }
@@ -76,7 +77,7 @@ export function usePosts(
         queryKey: ['guild', guildId, 'posts', page, limit, filters],
         queryFn: async () => {
             const query = buildPostQuery(page, limit, filters)
-            const response = await fetch(`/api/guilds/${guildId}/posts?${query}`)
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/posts?${query}`)
             if (!response.ok) {
                 throw new Error('Failed to fetch posts')
             }
@@ -123,7 +124,7 @@ export function useAccountsInfinite(
         queryKey: ['guild', guildId, 'accounts', 'infinite', limit, filters],
         queryFn: async ({ pageParam }) => {
             const query = buildAccountQuery(pageParam, limit, filters)
-            const response = await fetch(`/api/guilds/${guildId}/accounts?${query}`)
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/accounts?${query}`)
             if (!response.ok) {
                 throw new Error('Failed to fetch accounts')
             }
@@ -173,6 +174,7 @@ function buildPostQueryExtended(page: number, limit: number, filters: PostFilter
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
 export function usePostsInfinite(
     guildId: string,
@@ -183,7 +185,7 @@ export function usePostsInfinite(
         queryKey: ['guild', guildId, 'posts', 'infinite', limit, filters],
         queryFn: async ({ pageParam }) => {
             const query = buildPostQueryExtended(pageParam, limit, filters)
-            const response = await fetch(`/api/guilds/${guildId}/posts?${query}`)
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/posts?${query}`)
             if (!response.ok) {
                 throw new Error('Failed to fetch posts')
             }
@@ -207,7 +209,7 @@ export function useDeleteAccount(guildId: string) {
 
   return useMutation({
     mutationFn: async (accountId: string) => {
-      const response = await fetch(`/api/guilds/${guildId}/accounts/${accountId}`, {
+      const response = await fetchWithRetry(`/api/guilds/${guildId}/accounts/${accountId}`, {
         method: 'DELETE',
       })
 
@@ -219,9 +221,15 @@ export function useDeleteAccount(guildId: string) {
       return response.json()
     },
     onSuccess: () => {
+      toast.success('Account deleted successfully')
       // Invalidate accounts list and guild details (account_count)
       queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] })
       queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
+    },
+    onError: (error) => {
+      toast.error('Failed to delete account', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
     },
   })
 }
@@ -246,7 +254,7 @@ export function useAddAccount(guildId: string) {
 
     return useMutation({
         mutationFn: async (data: AddAccountRequest) => {
-            const response = await fetch(`/api/guilds/${guildId}/accounts`, {
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/accounts`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -262,10 +270,16 @@ export function useAddAccount(guildId: string) {
             return response.json();
         },
         onSuccess: () => {
+            toast.success('Account added successfully')
             // Invalidate accounts list, guild details, and brands (account_count updates)
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] });
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] });
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'brands'] });
+        },
+        onError: (error) => {
+            toast.error('Failed to add account', {
+                description: error instanceof Error ? error.message : 'Unknown error',
+            })
         },
     });
 }
@@ -275,7 +289,7 @@ export function useAddBrand(guildId: string) {
 
     return useMutation({
         mutationFn: async (data: AddBrandRequest) => {
-            const response = await fetch(`/api/guilds/${guildId}/brands`, {
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/brands`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -291,9 +305,15 @@ export function useAddBrand(guildId: string) {
             return response.json();
         },
         onSuccess: () => {
+            toast.success('Brand added successfully')
             // Invalidate brands list and guild details (brand_count updates)
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'brands'] });
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] });
+        },
+        onError: (error) => {
+            toast.error('Failed to add brand', {
+                description: error instanceof Error ? error.message : 'Unknown error',
+            })
         },
     });
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import type { AuditLogResponse, AuditLogFilters, AuditLogEntry } from '@/types/audit'
 
 // Re-export for convenience
@@ -16,7 +17,7 @@ export function useAuditLog(guildId: string, filters: AuditLogFilters = {}) {
       params.set('page', String(filters.page ?? 1))
       params.set('limit', String(filters.limit ?? 25))
 
-      const response = await fetch(`/api/guilds/${guildId}/audit-log?${params}`)
+      const response = await fetchWithRetry(`/api/guilds/${guildId}/audit-log?${params}`)
       if (!response.ok) {
         throw new Error('Failed to fetch audit log')
       }

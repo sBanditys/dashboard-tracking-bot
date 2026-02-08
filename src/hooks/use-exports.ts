@@ -2,6 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import type {
     ExportRequest,
     ExportRecord,
@@ -18,7 +20,7 @@ export function useCreateExport(guildId: string) {
 
     return useMutation({
         mutationFn: async (request: ExportRequest) => {
-            const response = await fetch(`/api/guilds/${guildId}/exports`, {
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/exports`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -34,8 +36,16 @@ export function useCreateExport(guildId: string) {
             return response.json() as Promise<ExportRecord>
         },
         onSuccess: () => {
+            toast.success('Export created successfully', {
+                description: 'Processing will begin shortly',
+            })
             // Invalidate export history to show new export
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'exports'] })
+        },
+        onError: (error) => {
+            toast.error('Failed to create export', {
+                description: error instanceof Error ? error.message : 'Unknown error',
+            })
         },
     })
 }
@@ -47,7 +57,7 @@ export function useExportHistory(guildId: string, page: number = 1, limit: numbe
     return useQuery<ExportHistoryResponse>({
         queryKey: ['guild', guildId, 'exports', page, limit],
         queryFn: async () => {
-            const response = await fetch(`/api/guilds/${guildId}/exports?page=${page}&limit=${limit}`)
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/exports?page=${page}&limit=${limit}`)
             if (!response.ok) {
                 throw new Error('Failed to fetch export history')
             }
@@ -67,7 +77,7 @@ export function useExportStatus(guildId: string, exportId: string | null) {
         queryFn: async () => {
             if (!exportId) throw new Error('Export ID is required')
 
-            const response = await fetch(`/api/guilds/${guildId}/exports/${exportId}`)
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/exports/${exportId}`)
             if (!response.ok) {
                 throw new Error('Failed to fetch export status')
             }

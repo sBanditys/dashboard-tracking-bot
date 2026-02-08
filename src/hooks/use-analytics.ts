@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import type {
   AnalyticsData,
   LeaderboardResponse,
@@ -17,7 +18,7 @@ export function useAnalytics(guildId: string, range: TimeRange = 30) {
   return useQuery<AnalyticsData>({
     queryKey: ['guild', guildId, 'analytics', range],
     queryFn: async () => {
-      const response = await fetch(`/api/guilds/${guildId}/analytics?range=${range}`)
+      const response = await fetchWithRetry(`/api/guilds/${guildId}/analytics?range=${range}`)
       if (!response.ok) {
         throw new Error('Failed to fetch analytics')
       }
@@ -39,7 +40,7 @@ export function useAnalyticsLeaderboard(
   return useQuery<LeaderboardResponse>({
     queryKey: ['guild', guildId, 'analytics', 'leaderboard', range, limit],
     queryFn: async () => {
-      const response = await fetch(
+      const response = await fetchWithRetry(
         `/api/guilds/${guildId}/analytics/leaderboard?range=${range}&limit=${limit}`
       )
       if (!response.ok) {
@@ -63,7 +64,7 @@ export function useTopAccounts(
   return useQuery<TopAccountsResponse>({
     queryKey: ['guild', guildId, 'analytics', 'top-accounts', range, limit],
     queryFn: async () => {
-      const response = await fetch(
+      const response = await fetchWithRetry(
         `/api/guilds/${guildId}/analytics/top-accounts?range=${range}&limit=${limit}`
       )
       if (!response.ok) {
@@ -83,7 +84,7 @@ export function useWeeklySubmissions(guildId: string, weeks: number = 8) {
   return useQuery<WeeklySubmissionsResponse>({
     queryKey: ['guild', guildId, 'analytics', 'weekly-submissions', weeks],
     queryFn: async () => {
-      const response = await fetch(
+      const response = await fetchWithRetry(
         `/api/guilds/${guildId}/analytics/weekly-submissions?weeks=${weeks}`
       )
       if (!response.ok) {
@@ -103,7 +104,7 @@ export function useAnalyticsActivity(guildId: string) {
   return useInfiniteQuery<ActivityResponse>({
     queryKey: ['guild', guildId, 'analytics', 'activity'],
     queryFn: async ({ pageParam = 1 }) => {
-      const response = await fetch(
+      const response = await fetchWithRetry(
         `/api/guilds/${guildId}/analytics/activity?page=${pageParam}&limit=50`
       )
       if (!response.ok) {

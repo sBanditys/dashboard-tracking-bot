@@ -116,8 +116,6 @@ export default function AccountsPage({ params }: PageProps) {
     const bulkReassign = useBulkReassign(guildId)
     const createExport = useCreateExport(guildId)
 
-    const totalCount = data?.pages[0]?.pagination.total ?? 0
-
     // Check if any filters are active
     const hasActiveFilters = search || platform || group
 
@@ -135,7 +133,7 @@ export default function AccountsPage({ params }: PageProps) {
         setSearch('')
         setPlatform('')
         setGroup('')
-    }, [])
+    }, [setSearch, setPlatform, setGroup])
 
     // Bulk delete handler
     const handleBulkDelete = useCallback(async () => {

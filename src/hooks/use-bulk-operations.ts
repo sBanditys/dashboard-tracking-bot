@@ -1,6 +1,8 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import type { BulkOperationResult } from '@/types/bulk'
 
 /**
@@ -11,7 +13,7 @@ export function useBulkDelete(guildId: string) {
 
     return useMutation({
         mutationFn: async (params: { ids: string[]; dataType: 'accounts' | 'posts' }) => {
-            const response = await fetch(`/api/guilds/${guildId}/bulk/delete`, {
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/bulk/delete`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -35,6 +37,12 @@ export function useBulkDelete(guildId: string) {
             }
             // Always invalidate guild details (counts may have changed)
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
+            // BulkResultsToast handles success display
+        },
+        onError: (error) => {
+            toast.error('Bulk delete failed', {
+                description: error instanceof Error ? error.message : 'Unknown error',
+            })
         },
     })
 }
@@ -51,7 +59,7 @@ export function useBulkReassign(guildId: string) {
             targetBrandId: string
             targetGroupId?: string
         }) => {
-            const response = await fetch(`/api/guilds/${guildId}/bulk/reassign`, {
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/bulk/reassign`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -71,6 +79,12 @@ export function useBulkReassign(guildId: string) {
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] })
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'brands'] })
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
+            // BulkResultsToast handles success display
+        },
+        onError: (error) => {
+            toast.error('Bulk reassign failed', {
+                description: error instanceof Error ? error.message : 'Unknown error',
+            })
         },
     })
 }

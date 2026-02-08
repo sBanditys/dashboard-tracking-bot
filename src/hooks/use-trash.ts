@@ -46,6 +46,22 @@ interface TrashResponse {
     }
 }
 
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+    const contentType = response.headers.get('content-type') || ''
+
+    if (contentType.includes('application/json')) {
+        const payload = await response.json().catch(() => null)
+        return payload?.message || payload?.error || fallback
+    }
+
+    const text = await response.text().catch(() => '')
+    if (text) {
+        return `${fallback} (HTTP ${response.status})`
+    }
+
+    return fallback
+}
+
 function normalizeTrashItem(raw: RawTrashItem): TrashItem {
     return {
         id: raw.id,
@@ -107,8 +123,8 @@ export function useRestoreItem(guildId: string) {
             })
 
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to restore item')
+                const message = await readErrorMessage(response, 'Failed to restore item')
+                throw new Error(message)
             }
 
             return response.json()
@@ -153,14 +169,18 @@ export function usePermanentDelete(guildId: string) {
             }
 
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to permanently delete item')
+                const message = await readErrorMessage(response, 'Failed to permanently delete item')
+                throw new Error(message)
             }
 
             return response.json()
         },
-        onSuccess: (_data, variables) => {
-            toast.success('Item permanently deleted')
+        onSuccess: async (data, variables) => {
+            if (data?.alreadyDeleted) {
+                toast.success('Item was already removed from trash')
+            } else {
+                toast.success('Item permanently deleted')
+            }
             // Remove the item from trash cache immediately
             queryClient.setQueriesData<TrashResponse>(
                 { queryKey: ['guild', guildId, 'trash'] },
@@ -177,7 +197,7 @@ export function usePermanentDelete(guildId: string) {
                 }
             )
             // Also invalidate to sync with server
-            queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'trash'] })
+            await queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'trash'] })
         },
         onError: (error) => {
             toast.error('Failed to permanently delete item', {

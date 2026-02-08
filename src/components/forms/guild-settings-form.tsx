@@ -3,7 +3,7 @@
 import { useGuildChannels, useUpdateGuildSettings } from '@/hooks/use-guilds'
 import { ChannelSelect } from '@/components/ui/channel-select'
 import type { GuildSettings } from '@/types/guild'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface GuildSettingsFormProps {
   guildId: string
@@ -19,6 +19,14 @@ export function GuildSettingsForm({ guildId, settings }: GuildSettingsFormProps)
   const mutation = useUpdateGuildSettings(guildId)
 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
+
+  // Store initial settings snapshot on mount
+  const initialSettingsRef = useRef<GuildSettings>(settings)
+
+  // Update snapshot if settings prop changes (e.g., after reload)
+  useEffect(() => {
+    initialSettingsRef.current = settings
+  }, [settings])
 
   // Auto-clear success/error status after 3 seconds
   useEffect(() => {

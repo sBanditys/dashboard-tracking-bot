@@ -48,7 +48,7 @@ export default function GuildsPage() {
                                 />
                             </svg>
                             <h3 className="text-xl font-semibold text-white mb-2">
-                                You don't have access to any servers
+                                You don&apos;t have access to any servers
                             </h3>
                             <p className="text-gray-400 text-center max-w-md">
                                 Ask a server admin to grant you access, or make sure you have the correct permissions on Discord.

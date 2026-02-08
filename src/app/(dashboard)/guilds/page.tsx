@@ -33,9 +33,25 @@ export default function GuildsPage() {
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {data?.guilds.length === 0 ? (
-                        <div className="col-span-full bg-surface border border-border rounded-sm p-8 text-center">
-                            <p className="text-gray-400">
-                                No guilds found. Make sure the bot is added to your Discord servers.
+                        <div className="col-span-full flex flex-col items-center justify-center py-16 px-4">
+                            <svg
+                                className="w-16 h-16 text-gray-600 mb-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={1.5}
+                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                />
+                            </svg>
+                            <h3 className="text-xl font-semibold text-white mb-2">
+                                You don't have access to any servers
+                            </h3>
+                            <p className="text-gray-400 text-center max-w-md">
+                                Ask a server admin to grant you access, or make sure you have the correct permissions on Discord.
                             </p>
                         </div>
                     ) : (

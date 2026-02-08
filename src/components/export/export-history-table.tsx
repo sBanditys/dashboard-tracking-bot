@@ -30,6 +30,12 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
   const exports = data?.exports ?? []
   const pagination = data?.pagination
 
+  // Helper: Check if export has expired
+  const isExpired = (exportRecord: typeof exports[0]) => {
+    if (!exportRecord.expiresAt) return false
+    return new Date() > new Date(exportRecord.expiresAt)
+  }
+
   // Auto-refresh is handled by cache invalidation from export status polling
   // and the hook's 30s staleTime
 
@@ -85,6 +91,7 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
             {exports.map((exportRecord) => {
               const status = statusConfig[exportRecord.status] ?? { label: exportRecord.status, className: 'bg-gray-500/20 text-gray-400' }
               const fmt = formatConfig[exportRecord.format] ?? { label: exportRecord.format.toUpperCase(), className: 'bg-gray-500/20 text-gray-400' }
+              const expired = isExpired(exportRecord)
 
               return (
                 <tr
@@ -105,9 +112,16 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
                     </span>
                   </td>
                   <td className="px-6 py-3">
-                    <span className={cn('inline-block px-2 py-0.5 rounded text-xs font-medium', status.className)}>
-                      {status.label}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={cn('inline-block px-2 py-0.5 rounded text-xs font-medium', status.className)}>
+                        {status.label}
+                      </span>
+                      {expired && (
+                        <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-400">
+                          Expired
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-3 text-gray-400">
                     {exportRecord.recordCount !== null
@@ -119,13 +133,22 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
                   </td>
                   <td className="px-6 py-3">
                     {exportRecord.status === 'completed' && exportRecord.downloadUrl ? (
-                      <a
-                        href={exportRecord.downloadUrl}
-                        download
-                        className="text-accent-purple hover:text-accent-purple/80 text-sm font-medium"
-                      >
-                        Download
-                      </a>
+                      expired ? (
+                        <span
+                          className="text-gray-600 text-sm font-medium cursor-not-allowed pointer-events-none opacity-50"
+                          title="Export expired. Create a new export."
+                        >
+                          Download
+                        </span>
+                      ) : (
+                        <a
+                          href={exportRecord.downloadUrl}
+                          download
+                          className="text-accent-purple hover:text-accent-purple/80 text-sm font-medium"
+                        >
+                          Download
+                        </a>
+                      )
                     ) : (
                       <span className="text-gray-600">&mdash;</span>
                     )}
@@ -142,6 +165,7 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
         {exports.map((exportRecord) => {
           const status = statusConfig[exportRecord.status] ?? { label: exportRecord.status, className: 'bg-gray-500/20 text-gray-400' }
           const fmt = formatConfig[exportRecord.format] ?? { label: exportRecord.format.toUpperCase(), className: 'bg-gray-500/20 text-gray-400' }
+          const expired = isExpired(exportRecord)
 
           return (
             <div
@@ -152,9 +176,16 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
                 <span className="text-white font-medium text-sm truncate max-w-[180px]">
                   {exportRecord.filename}
                 </span>
-                <span className={cn('inline-block px-2 py-0.5 rounded text-xs font-medium', status.className)}>
-                  {status.label}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className={cn('inline-block px-2 py-0.5 rounded text-xs font-medium', status.className)}>
+                    {status.label}
+                  </span>
+                  {expired && (
+                    <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-400">
+                      Expired
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-400">
                 <span className="inline-block px-2 py-0.5 rounded bg-gray-500/20 text-gray-300">
@@ -172,13 +203,22 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
                   {safeFormatDistanceToNow(exportRecord.createdAt)}
                 </span>
                 {exportRecord.status === 'completed' && exportRecord.downloadUrl && (
-                  <a
-                    href={exportRecord.downloadUrl}
-                    download
-                    className="text-accent-purple hover:text-accent-purple/80 font-medium"
-                  >
-                    Download
-                  </a>
+                  expired ? (
+                    <span
+                      className="text-gray-600 font-medium opacity-50"
+                      title="Export expired. Create a new export."
+                    >
+                      Download
+                    </span>
+                  ) : (
+                    <a
+                      href={exportRecord.downloadUrl}
+                      download
+                      className="text-accent-purple hover:text-accent-purple/80 font-medium"
+                    >
+                      Download
+                    </a>
+                  )
                 )}
               </div>
             </div>

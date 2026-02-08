@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
+import dynamic from 'next/dynamic'
 import { useGuild } from '@/hooks/use-guilds'
+import { usePersistentState } from '@/hooks/use-persistent-state'
 import {
   useAnalytics,
   useAnalyticsLeaderboard,
@@ -13,20 +14,28 @@ import {
 import { TimeRangeSelector } from '@/components/analytics/time-range-selector'
 import { CounterCard } from '@/components/analytics/counter-card'
 import { CounterCardSkeleton } from '@/components/analytics/counter-card-skeleton'
-import { AnalyticsChart } from '@/components/analytics/analytics-chart'
 import { AnalyticsChartSkeleton } from '@/components/analytics/analytics-chart-skeleton'
 import { Leaderboard } from '@/components/analytics/leaderboard'
 import { LeaderboardSkeleton } from '@/components/analytics/leaderboard-skeleton'
 import { TopAccounts, TopAccountsSkeleton } from '@/components/analytics/top-accounts'
 import { WeeklySubmissions, WeeklySubmissionsSkeleton } from '@/components/analytics/weekly-submissions'
-import { ActivityTimeline } from '@/components/analytics/activity-timeline'
 import type { TimeRange, ChartDataPoint } from '@/types/analytics'
+
+// Code-split Recharts-using components
+const AnalyticsChart = dynamic(
+  () => import('@/components/analytics/analytics-chart').then((mod) => mod.AnalyticsChart),
+  { ssr: false, loading: () => <AnalyticsChartSkeleton /> }
+)
+const ActivityTimeline = dynamic(
+  () => import('@/components/analytics/activity-timeline').then((mod) => mod.ActivityTimeline),
+  { ssr: false }
+)
 
 export default function AnalyticsPage() {
   const params = useParams()
   const guildId = params.guildId as string
 
-  const [range, setRange] = useState<TimeRange>(7)
+  const [range, setRange] = usePersistentState<TimeRange>(`${guildId}-analytics-range`, 7)
 
   const { data: guild } = useGuild(guildId)
   const { data: analytics, isLoading: analyticsLoading } = useAnalytics(guildId, range)
@@ -91,7 +100,7 @@ export default function AnalyticsPage() {
 
       {/* Counter cards - 5 across on large screens */}
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
-        {analyticsLoading ? (
+        {analyticsLoading && !analytics ? (
           <CounterCardSkeleton count={5} />
         ) : analytics ? (
           <>
@@ -134,7 +143,7 @@ export default function AnalyticsPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           {/* Weekly Submission Views (from /sendlast7days) */}
-          {weeklyLoading ? (
+          {weeklyLoading && !weeklyData ? (
             <AnalyticsChartSkeleton />
           ) : weeklyData ? (
             <AnalyticsChart
@@ -147,7 +156,7 @@ export default function AnalyticsPage() {
           ) : null}
 
           {/* Daily Post Submissions */}
-          {analyticsLoading ? (
+          {analyticsLoading && !analytics ? (
             <AnalyticsChartSkeleton />
           ) : analytics ? (
             <AnalyticsChart
@@ -160,7 +169,7 @@ export default function AnalyticsPage() {
           ) : null}
 
           {/* Daily Views from post metrics */}
-          {analyticsLoading ? (
+          {analyticsLoading && !analytics ? (
             <AnalyticsChartSkeleton />
           ) : analytics ? (
             <AnalyticsChart
@@ -183,7 +192,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="lg:col-span-1">
-          {leaderboardLoading ? (
+          {leaderboardLoading && !leaderboard ? (
             <LeaderboardSkeleton count={5} />
           ) : leaderboard ? (
             <Leaderboard entries={leaderboard.leaderboard} guildId={guildId} limit={10} />
@@ -194,7 +203,7 @@ export default function AnalyticsPage() {
       {/* Top Accounts (by post metrics) + Weekly Submissions side by side */}
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
-          {topAccountsLoading ? (
+          {topAccountsLoading && !topAccounts ? (
             <TopAccountsSkeleton />
           ) : topAccounts ? (
             <TopAccounts accounts={topAccounts.accounts} />
@@ -202,7 +211,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div>
-          {weeklyLoading ? (
+          {weeklyLoading && !weeklyData ? (
             <WeeklySubmissionsSkeleton />
           ) : weeklyData ? (
             <WeeklySubmissions weeks={weeklyData.weeks} />

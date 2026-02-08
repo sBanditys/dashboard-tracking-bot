@@ -7,6 +7,7 @@ import { usePostsInfinite, useBrands, type PostFiltersExtended } from '@/hooks/u
 import { useShiftSelection } from '@/hooks/use-selection'
 import { useBulkDelete } from '@/hooks/use-bulk-operations'
 import { useCreateExport } from '@/hooks/use-exports'
+import { usePersistentState } from '@/hooks/use-persistent-state'
 import { GuildTabs } from '@/components/guild-tabs'
 import {
     FilterBar,
@@ -35,13 +36,13 @@ interface PageProps {
 export default function PostsPage({ params }: PageProps) {
     const { guildId } = params
 
-    // Filter state
-    const [search, setSearch] = useState('')
-    const [platform, setPlatform] = useState('')
-    const [group, setGroup] = useState('')
-    const [status, setStatus] = useState('')
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
-    const [pageSize, setPageSize] = useState(50)
+    // Filter state with persistent state
+    const [search, setSearch] = usePersistentState(`${guildId}-posts-search`, '')
+    const [platform, setPlatform] = usePersistentState(`${guildId}-posts-platform`, '')
+    const [group, setGroup] = usePersistentState(`${guildId}-posts-group`, '')
+    const [status, setStatus] = usePersistentState(`${guildId}-posts-status`, '')
+    const [dateRange, setDateRange] = usePersistentState<DateRange | undefined>(`${guildId}-posts-dateRange`, undefined)
+    const [pageSize, setPageSize] = usePersistentState(`${guildId}-posts-pageSize`, 50)
 
     // Bulk operation state
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -116,6 +117,11 @@ export default function PostsPage({ params }: PageProps) {
     // Map posts to have `id` field for useShiftSelection (posts use `url` as identifier)
     const postsWithId = useMemo(() => posts.map(p => ({ ...p, id: p.url })), [posts])
 
+    // Calculate loaded count from all pages
+    const loadedCount = useMemo(() => {
+        return data?.pages.reduce((total, page) => total + page.posts.length, 0) ?? 0
+    }, [data])
+
     // Selection hook
     const {
         selectedIds,
@@ -127,8 +133,6 @@ export default function PostsPage({ params }: PageProps) {
     // Bulk operation mutations
     const bulkDelete = useBulkDelete(guildId)
     const createExport = useCreateExport(guildId)
-
-    const totalCount = data?.pages[0]?.pagination.total ?? 0
 
     // Check if any filters are active
     const hasActiveFilters = search || platform || group || status || dateRange?.from
@@ -152,7 +156,7 @@ export default function PostsPage({ params }: PageProps) {
         setGroup('')
         setStatus('')
         setDateRange(undefined)
-    }, [])
+    }, [setSearch, setPlatform, setGroup, setStatus, setDateRange])
 
     // Bulk delete handler
     const handleBulkDelete = useCallback(async () => {
@@ -215,7 +219,7 @@ export default function PostsPage({ params }: PageProps) {
                 <h1 className="text-3xl font-bold text-white mb-2">Posts</h1>
                 <p className="text-gray-400">
                     Submitted posts and their performance
-                    {!isLoading && <span className="ml-2">({totalCount} total)</span>}
+                    {!isLoading && data && <span className="ml-2 text-gray-500">({loadedCount} posts)</span>}
                 </p>
             </header>
 
@@ -265,8 +269,8 @@ export default function PostsPage({ params }: PageProps) {
                 />
             )}
 
-            {/* Loading state */}
-            {isLoading && (
+            {/* Loading state - only show skeleton on initial load, not when data exists */}
+            {isLoading && !data && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                     <PostCardSkeleton count={6} />
                 </div>

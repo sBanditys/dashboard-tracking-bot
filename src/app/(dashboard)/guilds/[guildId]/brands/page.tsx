@@ -75,7 +75,7 @@ export default function BrandsPage({ params }: PageProps) {
 
             <GuildTabs guildId={guildId} />
 
-            {isLoading ? (
+            {isLoading && !data ? (
                 <div className="space-y-4">
                     {[1, 2, 3].map((i) => (
                         <Skeleton key={i} className="h-20" />

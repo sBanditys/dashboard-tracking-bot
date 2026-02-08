@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/react'
 import { useAuditLog } from '@/hooks/use-audit-log'
+import { usePersistentState } from '@/hooks/use-persistent-state'
 import { cn } from '@/lib/utils'
 import { safeFormatDistanceToNow } from '@/lib/date-utils'
 import type { AuditLogEntry } from '@/types/audit'
@@ -12,9 +13,9 @@ interface AuditLogTableProps {
 }
 
 export function AuditLogTable({ guildId }: AuditLogTableProps) {
-  const [userFilter, setUserFilter] = useState('')
-  const [actionFilter, setActionFilter] = useState('')
-  const [page, setPage] = useState(1)
+  const [userFilter, setUserFilter] = usePersistentState(`${guildId}-activity-userFilter`, '')
+  const [actionFilter, setActionFilter] = usePersistentState(`${guildId}-activity-actionFilter`, '')
+  const [page, setPage] = useState(1) // Page is ephemeral, not persisted
 
   const { data, isLoading, isError } = useAuditLog(guildId, {
     user: userFilter || undefined,
@@ -45,7 +46,7 @@ export function AuditLogTable({ guildId }: AuditLogTableProps) {
     return action
   }
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-gray-400">Loading audit log...</div>

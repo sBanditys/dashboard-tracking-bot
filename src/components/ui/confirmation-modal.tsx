@@ -29,7 +29,7 @@ export function ConfirmationModal({
 
       {/* Container */}
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-md w-full bg-surface border border-border rounded-lg p-6 space-y-4">
+        <DialogPanel className="max-w-md w-full bg-surface border border-border rounded-lg p-6 space-y-4 transition-all duration-200 ease-in-out">
           <DialogTitle className="text-lg font-semibold text-white">
             {title}
           </DialogTitle>

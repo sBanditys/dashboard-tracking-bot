@@ -1,9 +1,10 @@
 'use client'
 
 import { Dialog, DialogPanel, DialogTitle, Description } from '@headlessui/react'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { useAddAccount, useBrands } from '@/hooks/use-tracking'
+import { useUnsavedChanges } from '@/hooks/use-unsaved-changes'
 
 interface AddAccountModalProps {
   guildId: string
@@ -19,6 +20,14 @@ export function AddAccountModal({ guildId, open, onClose }: AddAccountModalProps
 
   const addAccount = useAddAccount(guildId)
   const { data: brandsData } = useBrands(guildId)
+
+  // Track dirty state - form has unsaved changes if any field differs from initial empty state
+  const isDirty = useMemo(() => {
+    return platform !== 'instagram' || username.trim() !== '' || brandId !== ''
+  }, [platform, username, brandId])
+
+  // Warn on unsaved changes when modal is open and form is dirty
+  useUnsavedChanges(isDirty && open)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,7 +75,7 @@ export function AddAccountModal({ guildId, open, onClose }: AddAccountModalProps
 
       {/* Container */}
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-md w-full bg-surface border border-border rounded-lg p-6 space-y-4">
+        <DialogPanel className="max-w-md w-full bg-surface border border-border rounded-lg p-6 space-y-4 transition-all duration-200 ease-in-out">
           <DialogTitle className="text-lg font-semibold text-white">
             Add Tracked Account
           </DialogTitle>

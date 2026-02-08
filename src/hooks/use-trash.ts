@@ -18,6 +18,22 @@ export interface TrashItem {
 }
 
 /**
+ * Raw trash item from backend (snake_case)
+ */
+interface RawTrashItem {
+    id: string
+    name: string
+    type: 'account' | 'post'
+    platform: string | null
+    deleted_at?: string
+    deletedAt?: string
+    deleted_by?: string | null
+    deletedBy?: string | null
+    days_until_purge?: number
+    daysUntilPurge?: number
+}
+
+/**
  * Trash listing response
  */
 interface TrashResponse {
@@ -27,6 +43,18 @@ interface TrashResponse {
         limit: number
         total: number
         total_pages: number
+    }
+}
+
+function normalizeTrashItem(raw: RawTrashItem): TrashItem {
+    return {
+        id: raw.id,
+        name: raw.name,
+        type: raw.type,
+        platform: raw.platform,
+        deletedAt: raw.deletedAt ?? raw.deleted_at ?? '',
+        deletedBy: raw.deletedBy ?? raw.deleted_by ?? null,
+        daysUntilPurge: raw.daysUntilPurge ?? raw.days_until_purge ?? 30,
     }
 }
 
@@ -51,7 +79,11 @@ export function useTrashItems(
             if (!response.ok) {
                 throw new Error('Failed to fetch trash items')
             }
-            return response.json()
+            const data = await response.json()
+            return {
+                ...data,
+                items: (data.items || []).map(normalizeTrashItem),
+            }
         },
         staleTime: 60 * 1000, // 1 minute
         enabled: !!guildId,

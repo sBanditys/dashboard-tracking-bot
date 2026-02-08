@@ -3,6 +3,8 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useSSE, type ConnectionState } from '@/hooks/use-sse'
 import { useCallback } from 'react'
+import { toast } from 'sonner'
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import type {
     GuildsResponse,
     GuildDetails,
@@ -17,7 +19,7 @@ export function useGuilds() {
     return useQuery<GuildsResponse>({
         queryKey: ['guilds'],
         queryFn: async () => {
-            const response = await fetch('/api/guilds')
+            const response = await fetchWithRetry('/api/guilds')
             if (!response.ok) {
                 throw new Error('Failed to fetch guilds')
             }
@@ -34,7 +36,7 @@ export function useGuild(guildId: string) {
     return useQuery<GuildDetails>({
         queryKey: ['guild', guildId],
         queryFn: async () => {
-            const response = await fetch(`/api/guilds/${guildId}`)
+            const response = await fetchWithRetry(`/api/guilds/${guildId}`)
             if (!response.ok) {
                 throw new Error('Failed to fetch guild')
             }
@@ -52,7 +54,7 @@ export function useGuildStatus(guildId: string) {
     return useQuery<GuildStatus>({
         queryKey: ['guild', guildId, 'status'],
         queryFn: async () => {
-            const response = await fetch(`/api/guilds/${guildId}/status`)
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/status`)
             if (!response.ok) {
                 throw new Error('Failed to fetch guild status')
             }
@@ -71,7 +73,7 @@ export function useGuildUsage(guildId: string, days: number = 30) {
     return useQuery<GuildUsage>({
         queryKey: ['guild', guildId, 'usage', days],
         queryFn: async () => {
-            const response = await fetch(`/api/guilds/${guildId}/usage?days=${days}`)
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/usage?days=${days}`)
             if (!response.ok) {
                 throw new Error('Failed to fetch guild usage')
             }
@@ -108,7 +110,7 @@ export function useGuildStatusRealtime(guildId: string) {
     const query = useQuery<GuildStatus>({
         queryKey: ['guild', guildId, 'status'],
         queryFn: async () => {
-            const response = await fetch(`/api/guilds/${guildId}/status`)
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/status`)
             if (!response.ok) {
                 throw new Error('Failed to fetch guild status')
             }
@@ -147,7 +149,7 @@ export function useUpdateGuildSettings(guildId: string) {
 
     return useMutation({
         mutationFn: async (settings: UpdateSettingsRequest) => {
-            const response = await fetch(`/api/guilds/${guildId}/settings`, {
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/settings`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings),
@@ -160,15 +162,43 @@ export function useUpdateGuildSettings(guildId: string) {
 
             return response.json() as Promise<{ settings: GuildSettings }>
         },
-        onSuccess: (data) => {
-            // Update the guild query cache with new settings
-            queryClient.setQueryData(['guild', guildId], (old: GuildDetails | undefined) => ({
-                ...old,
-                settings: data.settings,
-            }))
+        onMutate: async (settings) => {
+            // Cancel outgoing refetches (so they don't overwrite optimistic update)
+            await queryClient.cancelQueries({ queryKey: ['guild', guildId] })
+
+            // Snapshot previous value
+            const previousGuild = queryClient.getQueryData<GuildDetails>(['guild', guildId])
+
+            // Optimistically update to new value
+            queryClient.setQueryData<GuildDetails>(['guild', guildId], (old) => {
+                if (!old) return old
+                return {
+                    ...old,
+                    settings: {
+                        ...old.settings,
+                        ...settings,
+                    },
+                }
+            })
+
+            // Return context with previous value
+            return { previousGuild }
         },
-        onError: (error) => {
-            console.error('Settings update failed:', error)
+        onError: (error, variables, context) => {
+            // Rollback to previous value on error
+            if (context?.previousGuild) {
+                queryClient.setQueryData(['guild', guildId], context.previousGuild)
+            }
+            toast.error('Failed to update settings', {
+                description: error instanceof Error ? error.message : 'Unknown error',
+            })
+        },
+        onSuccess: (data) => {
+            toast.success('Settings saved successfully')
+        },
+        onSettled: () => {
+            // Always refetch after error or success to sync with server
+            queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
         },
     })
 }
@@ -182,7 +212,7 @@ export function useGuildChannels(guildId: string) {
     return useQuery<ChannelsResponse>({
         queryKey: ['guild', guildId, 'channels'],
         queryFn: async () => {
-            const response = await fetch(`/api/guilds/${guildId}/channels`)
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/channels`)
             if (!response.ok) {
                 throw new Error('Failed to fetch channels')
             }
@@ -201,7 +231,7 @@ export function useDeleteAccount(guildId: string) {
 
     return useMutation({
         mutationFn: async (accountId: string) => {
-            const response = await fetch(`/api/guilds/${guildId}/accounts/${accountId}`, {
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/accounts/${accountId}`, {
                 method: 'DELETE',
             })
             if (!response.ok) {
@@ -211,8 +241,14 @@ export function useDeleteAccount(guildId: string) {
             return response.json()
         },
         onSuccess: () => {
+            toast.success('Account deleted successfully')
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] })
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
+        },
+        onError: (error) => {
+            toast.error('Failed to delete account', {
+                description: error instanceof Error ? error.message : 'Unknown error',
+            })
         },
     })
 }
@@ -225,7 +261,7 @@ export function useDeleteBrand(guildId: string) {
 
     return useMutation({
         mutationFn: async (brandId: string) => {
-            const response = await fetch(`/api/guilds/${guildId}/brands/${brandId}`, {
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/brands/${brandId}`, {
                 method: 'DELETE',
             })
             if (!response.ok) {
@@ -235,8 +271,14 @@ export function useDeleteBrand(guildId: string) {
             return response.json()
         },
         onSuccess: () => {
+            toast.success('Brand deleted successfully')
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'brands'] })
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
+        },
+        onError: (error) => {
+            toast.error('Failed to delete brand', {
+                description: error instanceof Error ? error.message : 'Unknown error',
+            })
         },
     })
 }

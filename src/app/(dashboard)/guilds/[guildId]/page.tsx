@@ -24,7 +24,7 @@ interface PageProps {
 
 export default function GuildDetailPage({ params }: PageProps) {
     const { guildId } = params
-    const { data: guild, isLoading } = useGuild(guildId)
+    const { data: guild, isLoading, error, isError } = useGuild(guildId)
     const { data: status, connectionState, reconnect } = useGuildStatusRealtime(guildId)
     const { data: usage } = useGuildUsage(guildId)
     const { data: analytics } = useAnalytics(guildId, 7)
@@ -56,6 +56,25 @@ export default function GuildDetailPage({ params }: PageProps) {
                         <Skeleton key={i} className="h-24" />
                     ))}
                 </div>
+            </div>
+        )
+    }
+
+    if (isError) {
+        const message = error?.message || 'Failed to load guild'
+        const isRateLimit = message.includes('Rate limited')
+        return (
+            <div className="text-center py-12">
+                <p className="text-red-400 mb-2">{isRateLimit ? 'Too many requests' : 'Failed to load guild'}</p>
+                <p className="text-gray-400 text-sm mb-4">
+                    {isRateLimit ? 'Please wait a moment and try again.' : message}
+                </p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="px-4 py-2 bg-accent-purple text-white rounded-md hover:bg-accent-purple/80 transition-colors"
+                >
+                    Try Again
+                </button>
             </div>
         )
     }

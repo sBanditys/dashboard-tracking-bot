@@ -32,7 +32,7 @@ export function SelectableAccountCard({
           <input
             type="checkbox"
             checked={selected}
-            onChange={(e) => onSelect(account.id, index, e as unknown as React.MouseEvent)}
+            onChange={() => {/* handled by onClick for shift-click support */}}
             onClick={(e) => onSelect(account.id, index, e)}
             className={cn(
               'appearance-none w-5 h-5 border-2 border-border rounded bg-surface cursor-pointer',

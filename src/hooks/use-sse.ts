@@ -10,6 +10,8 @@ interface UseSSEOptions {
     maxRetries?: number
     initialRetryDelay?: number
     maxRetryDelay?: number
+    /** Minimum delay between reconnection attempts after visibility change (ms) */
+    reconnectCooldown?: number
 }
 
 /**
@@ -24,8 +26,9 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
         onMessage,
         onError,
         maxRetries = 3,
-        initialRetryDelay = 1000,
-        maxRetryDelay = 30000,
+        initialRetryDelay = 2000,
+        maxRetryDelay = 60000,
+        reconnectCooldown = 5000,
     } = options
 
     const [connectionState, setConnectionState] = useState<ConnectionState>(
@@ -34,6 +37,7 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
     const eventSourceRef = useRef<EventSource | null>(null)
     const retryCountRef = useRef(0)
     const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const lastConnectTimeRef = useRef<number>(0)
 
     // Store callbacks in refs to avoid effect re-runs
     const onMessageRef = useRef(onMessage)
@@ -49,6 +53,19 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
             setConnectionState('disconnected')
             return
         }
+
+        // Enforce cooldown between connection attempts to avoid rate limit storms
+        const now = Date.now()
+        const timeSinceLastConnect = now - lastConnectTimeRef.current
+        if (timeSinceLastConnect < reconnectCooldown && lastConnectTimeRef.current > 0) {
+            const waitTime = reconnectCooldown - timeSinceLastConnect
+            retryTimeoutRef.current = setTimeout(() => {
+                lastConnectTimeRef.current = Date.now()
+                connect()
+            }, waitTime)
+            return
+        }
+        lastConnectTimeRef.current = now
 
         setConnectionState('connecting')
         const es = new EventSource(url)
@@ -90,7 +107,7 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
                 onErrorRef.current?.()
             }
         }
-    }, [url, maxRetries, initialRetryDelay, maxRetryDelay])
+    }, [url, maxRetries, initialRetryDelay, maxRetryDelay, reconnectCooldown])
 
     const reconnect = useCallback(() => {
         retryCountRef.current = 0

@@ -116,7 +116,7 @@ export async function fetchWithRetry(
         }
       }
 
-      // Handle 429 Too Many Requests
+      // Handle 429 Too Many Requests — retry with backoff
       if (response.status === 429) {
         if (attempt >= maxRetries) {
           throw new Error(
@@ -136,7 +136,17 @@ export async function fetchWithRetry(
         continue;
       }
 
-      // Success - return response
+      // Handle 5xx Server Errors — retry with backoff
+      if (response.status >= 500 && attempt < maxRetries) {
+        const delay = calculateBackoff(attempt);
+        console.warn(
+          `Server error (${response.status}). Retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 1}/${maxRetries})...`
+        );
+        await sleep(delay);
+        continue;
+      }
+
+      // All other responses (2xx, 3xx, 4xx) — return immediately, don't retry
       return response;
     } catch (error) {
       // Network error or fetch failure

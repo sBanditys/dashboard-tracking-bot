@@ -17,7 +17,14 @@ function getDataType(type: TrashItem['type']): 'accounts' | 'posts' {
   return type === 'account' ? 'accounts' : 'posts'
 }
 
-function getPurgeStyles(daysUntilPurge: number) {
+function getPurgeStyles(daysUntilPurge: number | undefined | null) {
+  if (daysUntilPurge == null || isNaN(daysUntilPurge)) {
+    return {
+      textColor: 'text-gray-400',
+      borderColor: '',
+      label: 'Pending removal',
+    }
+  }
   if (daysUntilPurge <= 1) {
     return {
       textColor: 'text-red-400',

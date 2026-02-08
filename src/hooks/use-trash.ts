@@ -115,6 +115,11 @@ export function usePermanentDelete(guildId: string) {
                 }
             )
 
+            // 410 Gone means item was already permanently deleted — treat as success
+            if (response.status === 410) {
+                return { success: true, alreadyDeleted: true }
+            }
+
             if (!response.ok) {
                 const error = await response.json()
                 throw new Error(error.message || 'Failed to permanently delete item')
@@ -122,9 +127,24 @@ export function usePermanentDelete(guildId: string) {
 
             return response.json()
         },
-        onSuccess: () => {
+        onSuccess: (_data, variables) => {
             toast.success('Item permanently deleted')
-            // Only invalidate trash query (item is gone permanently)
+            // Remove the item from trash cache immediately
+            queryClient.setQueriesData<TrashResponse>(
+                { queryKey: ['guild', guildId, 'trash'] },
+                (old) => {
+                    if (!old) return old
+                    return {
+                        ...old,
+                        items: old.items.filter((item) => item.id !== variables.itemId),
+                        pagination: {
+                            ...old.pagination,
+                            total: Math.max(0, old.pagination.total - 1),
+                        },
+                    }
+                }
+            )
+            // Also invalidate to sync with server
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'trash'] })
         },
         onError: (error) => {

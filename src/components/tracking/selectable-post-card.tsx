@@ -30,7 +30,7 @@ export function SelectablePostCard({
           <input
             type="checkbox"
             checked={selected}
-            onChange={(e) => onSelect(post.url, index, e as unknown as React.MouseEvent)}
+            onChange={() => {/* handled by onClick for shift-click support */}}
             onClick={(e) => onSelect(post.url, index, e)}
             className={cn(
               'appearance-none w-5 h-5 border-2 border-border rounded bg-surface cursor-pointer',

@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2025-01-24)
 ## Current Position
 
 Phase: 8 of 8 (Polish & Optimization) — IN PROGRESS
-Plan: 3 of 9 complete
-Status: In progress — Browser state management hooks delivered
-Last activity: 2026-02-08 — Completed 08-03-PLAN.md
+Plan: 1 of 7 complete
+Status: In progress — Core dependencies and retry logic delivered
+Last activity: 2026-02-08 — Completed 08-01-PLAN.md
 
-Progress: [█████████░] ~97% (39 plans complete across 8 phases)
+Progress: [█████████░] ~95% (39 plans complete across 8 phases)
 
 ## Performance Metrics
 
 **Velocity:**
 - Total plans completed: 39
-- Average duration: 1m 53s (code plans only, excluding verification)
-- Total execution time: ~74m 26s
+- Average duration: 1m 55s (code plans only, excluding verification)
+- Total execution time: ~76m 20s
 
 **By Phase:**
 
@@ -34,11 +34,11 @@ Progress: [█████████░] ~97% (39 plans complete across 8 phas
 | 05 | 6 | 13m 04s | 2m 11s |
 | 06 | 5 | 7m 38s | 1m 32s |
 | 07 | 9 | 15m 30s | 1m 43s |
-| 08 | 3 | 3m 46s | 1m 15s |
+| 08 | 1 | 3m 02s | 3m 02s |
 
 **Recent Trend:**
-- Last 5 plans: 07-07 (2m 07s), 07-08 (1m 42s), 07-09 (2m 00s), 08-01 (1m 30s), 08-03 (1m 08s)
-- Trend: Outstanding velocity - 15 consecutive plans under 2min 10s, avg 1m 45s
+- Last 5 plans: 07-08 (1m 42s), 07-09 (2m 00s), 08-01 (3m 02s)
+- Trend: Maintaining strong velocity
 
 *Updated after each plan completion*
 
@@ -202,10 +202,22 @@ Recent decisions affecting current work:
 - DEV-079: Color-coded left border for urgency (yellow for <= 7 days, red for <= 1 day)
 - DEV-080: Per-item restore loading state tracked by restoringId (avoids all cards showing spinner)
 
+**From 08-01 execution:**
+- DEV-088: nprogress over BProgress (BProgress doesn't exist on npm, nprogress is de facto standard)
+- DEV-089: Inline NProgress style injection for accent-purple customization (ensures color consistency)
+- DEV-090: gcTime set to 10 minutes (balances memory usage with cache performance)
+- DEV-091: Max 3 visible toasts (prevents notification overflow)
+
+**From 08-02 execution:**
+- DEV-081: Three-level error boundary hierarchy (global → dashboard → guild for targeted error recovery)
+- DEV-082: Inline styles for global-error (Tailwind may not load during catastrophic failures)
+- DEV-083: Navigator.onLine API for offline detection (native browser API with reliable event listeners)
+- DEV-084: Keyboard shortcuts hook pattern (data-search-input selector enables loose coupling)
+
 **From 08-03 execution:**
-- DEV-081: sessionStorage over localStorage for state persistence (session-scoped, cleared on tab close)
-- DEV-082: beforeunload limitation acknowledged (Next.js App Router doesn't expose beforeRouteChange)
-- DEV-083: Clear retry timeouts on visibility close (prevents background reconnection attempts)
+- DEV-085: sessionStorage over localStorage for state persistence (session-scoped, cleared on tab close)
+- DEV-086: beforeunload limitation acknowledged (Next.js App Router doesn't expose beforeRouteChange)
+- DEV-087: Clear retry timeouts on visibility close (prevents background reconnection attempts)
 
 ### Phase 1 Deliverables
 
@@ -293,9 +305,9 @@ None - execution proceeding smoothly.
 
 ## Session Continuity
 
-Last session: 2026-02-08 09:36 UTC
-Stopped at: Completed 08-03 (Browser state management hooks)
-Resume file: None
+Last session: 2026-02-08 09:37 UTC
+Stopped at: Completed 08-01 (Core dependencies and retry logic)
+Resume file: .planning/phases/08-polish-optimization/08-01-SUMMARY.md
 
 **Next action:** Continue Phase 8 execution (6 plans remaining)
 

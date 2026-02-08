@@ -1,6 +1,7 @@
-import { NextRequest } from 'next/server';
-import { handleAuthCallback } from '@/lib/auth-callback';
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
-  return handleAuthCallback(request);
+  const target = new URL('/auth/callback', request.url)
+  target.search = request.nextUrl.search
+  return NextResponse.redirect(target)
 }

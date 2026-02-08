@@ -10,6 +10,7 @@
 const DEFAULT_MAX_RETRIES = 3;
 const MAX_BACKOFF_MS = 30000; // 30 seconds
 const BASE_BACKOFF_MS = 1000; // 1 second
+const RETRYABLE_SERVER_STATUSES = new Set([500, 502, 503, 504]);
 let refreshPromise: Promise<boolean> | null = null;
 
 /**
@@ -136,8 +137,9 @@ export async function fetchWithRetry(
         continue;
       }
 
-      // Handle 5xx Server Errors — retry with backoff
-      if (response.status >= 500 && attempt < maxRetries) {
+      // Handle transient server errors with backoff.
+      // Skip non-transient statuses like 501 (Not Implemented) to fail fast.
+      if (RETRYABLE_SERVER_STATUSES.has(response.status) && attempt < maxRetries) {
         const delay = calculateBackoff(attempt);
         console.warn(
           `Server error (${response.status}). Retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 1}/${maxRetries})...`

@@ -90,6 +90,7 @@ function AuthCallbackContent() {
           setStatus('Exchanging authorization code...')
           const exchangeResponse = await fetch(`${API_URL}/api/v1/auth/exchange`, {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code }),
             cache: 'no-store',

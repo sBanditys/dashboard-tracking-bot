@@ -4,12 +4,15 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const authToken = request.cookies.get('auth_token');
+  const refreshToken = request.cookies.get('refresh_token');
+  const hasSessionCookie = Boolean(authToken || refreshToken);
 
-  // Protected routes under /(dashboard) - redirect to login if no auth_token
+  // Protected routes under /(dashboard) - redirect to login if no session cookie.
+  // We allow refresh_token-only sessions so client refresh flow can renew auth_token.
   const isDashboardRoute = pathname.startsWith('/dashboard') || pathname === '/' || pathname.startsWith('/guilds') || pathname.startsWith('/settings');
   const isLoginRoute = pathname === '/login';
 
-  if (isDashboardRoute && !authToken) {
+  if (isDashboardRoute && !hasSessionCookie) {
     const loginUrl = new URL('/login', request.url);
     // Store callback URL for post-login redirect
     if (pathname !== '/') {

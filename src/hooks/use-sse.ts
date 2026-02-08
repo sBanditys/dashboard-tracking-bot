@@ -113,5 +113,29 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
         }
     }, [connect])
 
+    // Handle tab visibility changes - close connection when hidden, reconnect when visible
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                // Tab is hidden - close connection to prevent leaks
+                eventSourceRef.current?.close()
+                if (retryTimeoutRef.current) {
+                    clearTimeout(retryTimeoutRef.current)
+                    retryTimeoutRef.current = null
+                }
+                setConnectionState('disconnected')
+            } else if (url) {
+                // Tab is visible again - reconnect
+                connect()
+            }
+        }
+
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+        }
+    }, [url, connect])
+
     return { connectionState, reconnect }
 }

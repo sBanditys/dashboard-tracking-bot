@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { Topbar } from '@/components/layout/topbar'
 import { MobileDrawer } from '@/components/layout/mobile-drawer'
 import { Breadcrumbs } from '@/components/layout/breadcrumbs'
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
 
 export default function DashboardLayout({
   children,
@@ -12,6 +13,9 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
+
+  // Wire keyboard shortcuts (Ctrl+K / Cmd+K for search focus)
+  useKeyboardShortcuts()
 
   return (
     <div className="flex h-screen overflow-hidden">

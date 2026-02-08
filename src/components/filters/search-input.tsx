@@ -63,6 +63,7 @@ export function SearchInput({
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
         placeholder={placeholder}
+        data-search-input
         className={cn(
           'w-full sm:w-64 py-2.5 pl-10 pr-10 text-sm text-gray-300',
           'bg-surface border border-border rounded-lg',

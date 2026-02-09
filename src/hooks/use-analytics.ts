@@ -35,7 +35,10 @@ export function useAnalytics(guildId: string, range: TimeRange = 30) {
 export function useAnalyticsLeaderboard(
   guildId: string,
   range: TimeRange = 30,
-  limit: number = 10
+  limit: number = 10,
+  options?: {
+    enabled?: boolean
+  }
 ) {
   return useQuery<LeaderboardResponse>({
     queryKey: ['guild', guildId, 'analytics', 'leaderboard', range, limit],
@@ -49,7 +52,7 @@ export function useAnalyticsLeaderboard(
       return response.json()
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    enabled: !!guildId,
+    enabled: !!guildId && (options?.enabled ?? true),
   })
 }
 

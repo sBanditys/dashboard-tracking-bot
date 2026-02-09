@@ -44,8 +44,28 @@ export default function AnalyticsPage() {
     range,
     10
   )
+  const shouldFetchLastWeekLeaderboard = range === 7 && !!leaderboard && leaderboard.leaderboard.length === 0
+  const { data: lastWeekLeaderboard, isLoading: lastWeekLeaderboardLoading } = useAnalyticsLeaderboard(
+    guildId,
+    14,
+    10,
+    { enabled: shouldFetchLastWeekLeaderboard }
+  )
   const { data: topAccounts, isLoading: topAccountsLoading } = useTopAccounts(guildId, range, 10)
   const { data: weeklyData, isLoading: weeklyLoading } = useWeeklySubmissions(guildId, 8)
+
+  const usingLastWeekLeaderboard =
+    shouldFetchLastWeekLeaderboard &&
+    !!lastWeekLeaderboard &&
+    lastWeekLeaderboard.leaderboard.length > 0
+
+  const leaderboardEntries = usingLastWeekLeaderboard
+    ? lastWeekLeaderboard!.leaderboard
+    : (leaderboard?.leaderboard ?? [])
+
+  const showLeaderboardSkeleton =
+    (leaderboardLoading && !leaderboard) ||
+    (shouldFetchLastWeekLeaderboard && lastWeekLeaderboardLoading && !lastWeekLeaderboard)
 
   // Transform weekly submissions data for chart (from /sendlast7days)
   const weeklyViewsChartData: ChartDataPoint[] = weeklyData?.weeks
@@ -149,6 +169,7 @@ export default function AnalyticsPage() {
             <AnalyticsChart
               data={weeklyViewsChartData}
               title="Weekly Submission Views"
+              centerText="All time view:"
               totalValue={totalWeeklyViews}
               tooltipLabel="views"
               granularity="week"
@@ -192,10 +213,16 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="lg:col-span-1">
-          {leaderboardLoading && !leaderboard ? (
+          {showLeaderboardSkeleton ? (
             <LeaderboardSkeleton count={5} />
-          ) : leaderboard ? (
-            <Leaderboard entries={leaderboard.leaderboard} guildId={guildId} limit={10} />
+          ) : null}
+          {!showLeaderboardSkeleton ? (
+            <Leaderboard
+              entries={leaderboardEntries}
+              guildId={guildId}
+              limit={10}
+              subtitle={usingLastWeekLeaderboard ? 'Showing last week performance (no new submissions this week)' : undefined}
+            />
           ) : null}
         </div>
       </div>

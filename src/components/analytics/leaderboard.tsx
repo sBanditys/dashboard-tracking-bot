@@ -7,6 +7,7 @@ interface LeaderboardProps {
   entries: LeaderboardEntry[]
   guildId?: string
   limit?: number
+  subtitle?: string
   showViewAll?: boolean
   viewAllHref?: string
   className?: string
@@ -35,6 +36,7 @@ export function Leaderboard({
   entries,
   guildId,
   limit,
+  subtitle,
   showViewAll = false,
   viewAllHref,
   className,
@@ -66,7 +68,12 @@ export function Leaderboard({
 
   return (
     <div className={cn('bg-surface border border-border rounded-sm p-6', className)}>
-      <h3 className="text-lg font-semibold text-white mb-4">Top Account Groups</h3>
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-white">Top Account Groups</h3>
+        {subtitle ? (
+          <p className="mt-1 text-xs text-gray-400">{subtitle}</p>
+        ) : null}
+      </div>
 
       {/* Platform view counters */}
       {entries.length > 0 && (

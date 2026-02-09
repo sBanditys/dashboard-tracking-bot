@@ -85,10 +85,12 @@ export function AnalyticsChart({
     <div className={cn('bg-surface border border-border rounded-sm p-6', className)}>
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-lg font-semibold text-white">{title}</h3>
-        {statusBadge}
-        {totalValue !== undefined && (
-          <span className="text-2xl font-bold text-white">{formatCompact(totalValue)}</span>
-        )}
+        <div className="flex items-center gap-3">
+          {statusBadge}
+          {totalValue !== undefined && (
+            <span className="text-2xl font-bold text-white">{formatCompact(totalValue)}</span>
+          )}
+        </div>
       </div>
 
       {centerText ? (

@@ -83,13 +83,17 @@ export default function AnalyticsPage() {
   const totalWeeklyViews = weeklyViewsChartData.reduce((sum, d) => sum + d.value, 0)
   const latestWeek = weeklyWeeksSorted.length > 0 ? weeklyWeeksSorted[weeklyWeeksSorted.length - 1] : null
   const previousWeek = weeklyWeeksSorted.length > 1 ? weeklyWeeksSorted[weeklyWeeksSorted.length - 2] : null
-  const weekSummary = latestWeek && latestWeek.total_views > 0
-    ? latestWeek
-    : (previousWeek ?? latestWeek)
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000
+  const latestWeekIsRecent = latestWeek
+    ? (Date.now() - parseISO(latestWeek.week_start).getTime() < sevenDaysMs)
+    : false
+  const shouldUseLastWeekSummary =
+    range === 7 && (usingLastWeekLeaderboard || !latestWeekIsRecent || (latestWeek?.total_views ?? 0) === 0)
+  const weekSummary = shouldUseLastWeekSummary
+    ? (previousWeek ?? latestWeek)
+    : latestWeek
   const weekSummaryValue = weekSummary?.total_views ?? 0
-  const weekSummaryLabel = latestWeek && latestWeek.total_views > 0
-    ? 'This week view:'
-    : 'Last week view:'
+  const weekSummaryLabel = shouldUseLastWeekSummary ? 'Last week view:' : 'This week view:'
 
   // Transform views series data for chart (daily VideoMetrics)
   const chartData: ChartDataPoint[] = analytics?.views_series
@@ -182,7 +186,10 @@ export default function AnalyticsPage() {
             <AnalyticsChart
               data={weeklyViewsChartData}
               title="Weekly Submission Views"
-              centerText={range === 7 ? weekSummaryLabel : 'All time view:'}
+              centerText="All time views:"
+              statusBadge={range === 7 ? (
+                <span className="text-sm font-medium text-gray-300">{weekSummaryLabel}</span>
+              ) : undefined}
               totalValue={range === 7 ? weekSummaryValue : totalWeeklyViews}
               tooltipLabel="views"
               granularity="week"

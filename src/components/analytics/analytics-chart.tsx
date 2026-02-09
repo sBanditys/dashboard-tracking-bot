@@ -83,28 +83,17 @@ export function AnalyticsChart({
 
   return (
     <div className={cn('bg-surface border border-border rounded-sm p-6', className)}>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-lg font-semibold text-white">{title}</h3>
+        {statusBadge}
+        {totalValue !== undefined && (
+          <span className="text-2xl font-bold text-white">{formatCompact(totalValue)}</span>
+        )}
+      </div>
+
       {centerText ? (
-        <div className="relative flex items-center gap-3 mb-4 min-h-[40px]">
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
-          <span className="absolute left-1/2 -translate-x-1/2 text-sm font-medium text-gray-300">
-            {centerText}
-          </span>
-          <div className="ml-auto flex items-center gap-3">
-            {statusBadge}
-            {totalValue !== undefined && (
-              <span className="text-2xl font-bold text-white">{formatCompact(totalValue)}</span>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
-          {statusBadge}
-          {totalValue !== undefined && (
-            <span className="text-2xl font-bold text-white">{formatCompact(totalValue)}</span>
-          )}
-        </div>
-      )}
+        <p className="text-sm font-medium text-gray-300 text-center mb-4">{centerText}</p>
+      ) : null}
 
       {isEmpty ? (
         <div className="h-[300px] flex items-center justify-center">

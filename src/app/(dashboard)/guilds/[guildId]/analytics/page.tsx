@@ -67,16 +67,29 @@ export default function AnalyticsPage() {
     (leaderboardLoading && !leaderboard) ||
     (shouldFetchLastWeekLeaderboard && lastWeekLeaderboardLoading && !lastWeekLeaderboard)
 
-  // Transform weekly submissions data for chart (from /sendlast7days)
-  const weeklyViewsChartData: ChartDataPoint[] = weeklyData?.weeks
-    ? [...weeklyData.weeks].reverse().map((week) => ({
-        date: format(parseISO(week.week_start), 'MMM d'),
-        value: week.total_views,
-        rawDate: week.week_start,
-      }))
+  const weeklyWeeksSorted = weeklyData?.weeks
+    ? [...weeklyData.weeks].sort(
+        (a, b) => parseISO(a.week_start).getTime() - parseISO(b.week_start).getTime()
+      )
     : []
 
+  // Transform weekly submissions data for chart (from /sendlast7days)
+  const weeklyViewsChartData: ChartDataPoint[] = weeklyWeeksSorted.map((week) => ({
+    date: format(parseISO(week.week_start), 'MMM d'),
+    value: week.total_views,
+    rawDate: week.week_start,
+  }))
+
   const totalWeeklyViews = weeklyViewsChartData.reduce((sum, d) => sum + d.value, 0)
+  const latestWeek = weeklyWeeksSorted.length > 0 ? weeklyWeeksSorted[weeklyWeeksSorted.length - 1] : null
+  const previousWeek = weeklyWeeksSorted.length > 1 ? weeklyWeeksSorted[weeklyWeeksSorted.length - 2] : null
+  const weekSummary = latestWeek && latestWeek.total_views > 0
+    ? latestWeek
+    : (previousWeek ?? latestWeek)
+  const weekSummaryValue = weekSummary?.total_views ?? 0
+  const weekSummaryLabel = latestWeek && latestWeek.total_views > 0
+    ? 'This week view:'
+    : 'Last week view:'
 
   // Transform views series data for chart (daily VideoMetrics)
   const chartData: ChartDataPoint[] = analytics?.views_series
@@ -169,8 +182,8 @@ export default function AnalyticsPage() {
             <AnalyticsChart
               data={weeklyViewsChartData}
               title="Weekly Submission Views"
-              centerText="All time view:"
-              totalValue={totalWeeklyViews}
+              centerText={range === 7 ? weekSummaryLabel : 'All time view:'}
+              totalValue={range === 7 ? weekSummaryValue : totalWeeklyViews}
               tooltipLabel="views"
               granularity="week"
             />

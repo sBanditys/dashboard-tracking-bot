@@ -75,15 +75,6 @@ export async function GET(request: NextRequest) {
       const maxAge = Number.parseInt(bindingCookie.attributes['max-age'] || '', 10)
       const domain = getCookieDomain(request)
 
-      // Remove legacy host-only binding cookie path to avoid duplicate cookie collisions.
-      response.cookies.set(OAUTH_CONTEXT_COOKIE_NAME, '', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/api/auth',
-        maxAge: 0,
-      })
-
       response.cookies.set(OAUTH_CONTEXT_COOKIE_NAME, bindingCookie.value, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -92,18 +83,6 @@ export async function GET(request: NextRequest) {
         ...(domain && { domain }),
         maxAge: Number.isFinite(maxAge) && maxAge > 0 ? maxAge : OAUTH_COOKIE_FALLBACK_MAX_AGE_SECONDS,
       })
-
-      if (domain) {
-        // Also clear any legacy shared-domain cookie scoped to the old path.
-        response.cookies.set(OAUTH_CONTEXT_COOKIE_NAME, '', {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          domain,
-          path: '/api/auth',
-          maxAge: 0,
-        })
-      }
     }
 
     return response

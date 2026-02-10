@@ -78,7 +78,7 @@ export function TrashItemCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="text-white font-medium truncate">{item.name}</span>
-              <span className="text-xs px-1.5 py-0.5 rounded bg-gray-700 text-gray-300 shrink-0">
+              <span className="text-xs px-2 py-0.5 rounded-md border border-amber-500/30 bg-amber-100/80 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200 shrink-0">
                 {item.type === 'account' ? 'Account' : 'Post'}
               </span>
             </div>

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 
 export function ThemeToggle() {
   const [mounted, setMounted] = useState(false)
-  const { setTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
 
   useEffect(() => {
     setMounted(true)
@@ -24,12 +24,12 @@ export function ThemeToggle() {
 
   return (
     <button
-      onClick={() => setTheme('dark')}
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       className="w-10 h-10 flex items-center justify-center rounded-sm bg-surface/50 hover:bg-surface transition-colors text-white"
-      aria-label="Dark mode enabled"
-      title="Dark mode enabled"
+      aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >
-      <span className="text-xl">🌙</span>
+      <span className="text-xl">{theme === 'dark' ? '☀️' : '🌙'}</span>
     </button>
   )
 }

@@ -13,3 +13,70 @@
     @apply bg-background-light text-gray-900;
   }
 }
+
+@layer utilities {
+  .light .bg-background {
+    background-color: #f8fafc !important;
+  }
+
+  .light [class*='bg-background/95'] {
+    background-color: rgba(248, 250, 252, 0.95) !important;
+  }
+
+  .light [class*='bg-background/60'] {
+    background-color: rgba(248, 250, 252, 0.6) !important;
+  }
+
+  .light .bg-surface {
+    background-color: #ffffff !important;
+  }
+
+  .light [class*='bg-surface/50'] {
+    background-color: rgba(255, 255, 255, 0.6) !important;
+  }
+
+  .light [class*='bg-surface/80'] {
+    background-color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  .light .bg-surface-hover,
+  .light [class*='bg-surface-hover'] {
+    background-color: #f3f4f6 !important;
+  }
+
+  .light .border-border {
+    border-color: #d1d5db !important;
+  }
+
+  .light .text-white {
+    color: #111827 !important;
+  }
+
+  .light .text-gray-300 {
+    color: #374151 !important;
+  }
+
+  .light .text-gray-400 {
+    color: #4b5563 !important;
+  }
+
+  .light .text-gray-500 {
+    color: #6b7280 !important;
+  }
+
+  .light .text-gray-600 {
+    color: #9ca3af !important;
+  }
+
+  .light [class*='hover:text-white']:hover {
+    color: #111827 !important;
+  }
+
+  .light [class*='hover:bg-surface']:hover {
+    background-color: #f3f4f6 !important;
+  }
+
+  .light [class*='hover:bg-background']:hover {
+    background-color: #eef2f7 !important;
+  }
+}

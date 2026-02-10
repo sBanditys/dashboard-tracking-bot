@@ -6,6 +6,7 @@ import { useCreateExport } from '@/hooks/use-exports'
 import { ExportProgress } from '@/components/export/export-progress'
 import { useExportProgress } from '@/hooks/use-exports'
 import { exportAllPostsMetricsCsv } from '@/lib/posts-csv-export'
+import { exportAllPostsMetricsWorkbook } from '@/lib/posts-excel-export'
 import { toast } from 'sonner'
 import type { ExportFormat, ExportMode, ExportRecord } from '@/types/export'
 
@@ -57,13 +58,20 @@ export function ExportConfigForm({
     e.preventDefault()
 
     try {
-      // For posts CSV "Export all data", generate the same metrics file schema as /export metrics.
-      if (dataType === 'posts' && format === 'csv' && mode === 'all') {
+      // For posts "Export all data", generate client-side files aligned with /export metrics schema.
+      if (dataType === 'posts' && mode === 'all' && (format === 'csv' || format === 'xlsx')) {
         setIsDirectExporting(true)
-        const exportedCount = await exportAllPostsMetricsCsv(guildId, filename || getDefaultFilename(guildName, 'posts'))
-        toast.success('Posts exported', {
-          description: `${exportedCount.toLocaleString()} records downloaded`,
-        })
+        if (format === 'csv') {
+          const exportedCount = await exportAllPostsMetricsCsv(guildId, filename || getDefaultFilename(guildName, 'posts'))
+          toast.success('Posts exported', {
+            description: `${exportedCount.toLocaleString()} records downloaded`,
+          })
+        } else {
+          const result = await exportAllPostsMetricsWorkbook(guildId, filename || getDefaultFilename(guildName, 'posts'))
+          toast.success('Posts exported', {
+            description: `${result.recordCount.toLocaleString()} records across ${result.sheetCount} sheet${result.sheetCount === 1 ? '' : 's'}`,
+          })
+        }
         return
       }
 
@@ -76,7 +84,7 @@ export function ExportConfigForm({
       setActiveExportId(result.id)
       onExportStarted?.(result)
     } catch (error) {
-      if (dataType === 'posts' && format === 'csv' && mode === 'all') {
+      if (dataType === 'posts' && mode === 'all' && (format === 'csv' || format === 'xlsx')) {
         toast.error('Failed to export posts', {
           description: error instanceof Error ? error.message : 'Unknown error',
         })

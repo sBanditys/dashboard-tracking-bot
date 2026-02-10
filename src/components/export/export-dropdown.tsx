@@ -5,6 +5,7 @@ import { useState } from 'react'
 import type { ExportFormat, ExportMode } from '@/types/export'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import { exportAllPostsMetricsCsv } from '@/lib/posts-csv-export'
+import { exportAllPostsMetricsWorkbook } from '@/lib/posts-excel-export'
 import { toast } from 'sonner'
 
 interface ExportDropdownProps {
@@ -29,12 +30,19 @@ export function ExportDropdown({
     setLoadingFormat(key)
 
     try {
-      // For posts CSV "All data", keep schema aligned with /export metrics output.
-      if (dataType === 'posts' && mode === 'all' && format === 'csv') {
-        const exportedCount = await exportAllPostsMetricsCsv(guildId, `export_metrics_${Date.now()}`)
-        toast.success('Posts exported', {
-          description: `${exportedCount.toLocaleString()} records downloaded`,
-        })
+      // For posts "All data", keep schema aligned with /export metrics output.
+      if (dataType === 'posts' && mode === 'all' && (format === 'csv' || format === 'xlsx')) {
+        if (format === 'csv') {
+          const exportedCount = await exportAllPostsMetricsCsv(guildId, `export_metrics_${Date.now()}`)
+          toast.success('Posts exported', {
+            description: `${exportedCount.toLocaleString()} records downloaded`,
+          })
+        } else {
+          const result = await exportAllPostsMetricsWorkbook(guildId, `export_metrics_${Date.now()}`)
+          toast.success('Posts exported', {
+            description: `${result.recordCount.toLocaleString()} records across ${result.sheetCount} sheet${result.sheetCount === 1 ? '' : 's'}`,
+          })
+        }
         return
       }
 

@@ -84,7 +84,7 @@ export function AccountCard({ account, guildId }: AccountCardProps) {
           </div>
 
           {/* Username + Brand */}
-          <div className="flex-1 min-w-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,140px)] lg:items-center gap-1 lg:gap-3">
+          <div className="flex-1 min-w-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,96px)] lg:items-center gap-1 lg:gap-3">
             <a
               href={getProfileUrl(account.platform, account.username)}
               target="_blank"
@@ -95,7 +95,7 @@ export function AccountCard({ account, guildId }: AccountCardProps) {
               @{account.username}
             </a>
 
-            <div className="hidden lg:block text-sm text-text-secondary truncate text-right">
+            <div className="hidden lg:block text-sm text-text-secondary truncate text-right justify-self-end max-w-[96px]">
               {account.brand}
             </div>
           </div>

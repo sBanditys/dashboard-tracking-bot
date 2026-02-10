@@ -1,11 +1,35 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { extractSetCookieByName } from '@/lib/server/dashboard-session-cookies'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 const OAUTH_CONTEXT_COOKIE_NAME = (process.env.OAUTH_CONTEXT_COOKIE_NAME || 'oauth_ctx').trim() || 'oauth_ctx'
 const OAUTH_COOKIE_FALLBACK_MAX_AGE_SECONDS = 10 * 60 // 10 minutes
+const OAUTH_CONTEXT_COOKIE_DOMAIN = process.env.OAUTH_CONTEXT_COOKIE_DOMAIN?.trim()
 
-export async function GET() {
+function getCookieDomain(request: NextRequest): string | undefined {
+  if (OAUTH_CONTEXT_COOKIE_DOMAIN) {
+    return OAUTH_CONTEXT_COOKIE_DOMAIN
+  }
+
+  const hostname = request.nextUrl.hostname.trim().toLowerCase()
+  if (!hostname || hostname === 'localhost' || hostname.endsWith('.localhost')) {
+    return undefined
+  }
+
+  // IP literals cannot be used as cookie domains.
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname) || hostname.includes(':')) {
+    return undefined
+  }
+
+  const parts = hostname.split('.').filter(Boolean)
+  if (parts.length < 2) {
+    return undefined
+  }
+
+  return `.${parts.slice(-2).join('.')}`
+}
+
+export async function GET(request: NextRequest) {
   try {
     const upstream = await fetch(`${API_URL}/api/v1/auth/discord`, {
       method: 'GET',
@@ -32,13 +56,37 @@ export async function GET() {
 
     if (bindingCookie) {
       const maxAge = Number.parseInt(bindingCookie.attributes['max-age'] || '', 10)
-      response.cookies.set(OAUTH_CONTEXT_COOKIE_NAME, bindingCookie.value, {
+      const domain = getCookieDomain(request)
+
+      // Remove legacy host-only binding cookie path to avoid duplicate cookie collisions.
+      response.cookies.set(OAUTH_CONTEXT_COOKIE_NAME, '', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/api/auth',
+        maxAge: 0,
+      })
+
+      response.cookies.set(OAUTH_CONTEXT_COOKIE_NAME, bindingCookie.value, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/api',
+        ...(domain && { domain }),
         maxAge: Number.isFinite(maxAge) && maxAge > 0 ? maxAge : OAUTH_COOKIE_FALLBACK_MAX_AGE_SECONDS,
       })
+
+      if (domain) {
+        // Also clear any legacy shared-domain cookie scoped to the old path.
+        response.cookies.set(OAUTH_CONTEXT_COOKIE_NAME, '', {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          domain,
+          path: '/api/auth',
+          maxAge: 0,
+        })
+      }
     }
 
     return response

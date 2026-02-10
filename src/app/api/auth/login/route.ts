@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        path: '/api',
+        path: '/',
         ...(domain && { domain }),
         maxAge: Number.isFinite(maxAge) && maxAge > 0 ? maxAge : OAUTH_COOKIE_FALLBACK_MAX_AGE_SECONDS,
       })

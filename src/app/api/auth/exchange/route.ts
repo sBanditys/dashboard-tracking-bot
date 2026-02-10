@@ -128,7 +128,7 @@ export async function POST(request: Request) {
       sameSite: 'lax',
       ...(sharedCookieDomain && { domain: sharedCookieDomain }),
       maxAge: 0,
-      path: '/api',
+      path: '/',
     })
 
     response.cookies.set(OAUTH_CONTEXT_COOKIE_NAME, '', {

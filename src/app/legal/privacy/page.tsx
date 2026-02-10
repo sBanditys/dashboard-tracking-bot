@@ -112,7 +112,7 @@ export default function PrivacyPolicy() {
         <li><strong>Withdrawal of Consent:</strong> You can revoke OAuth access through Discord at any time</li>
       </ul>
       <p>
-        To exercise these rights, please contact us at [Contact Email]. We will respond to your request within 30 days.
+        To exercise these rights, please contact us at contact@lxmediacore.com . We will respond to your request within 30 days.
       </p>
 
       <h2>7. Children&apos;s Privacy</h2>

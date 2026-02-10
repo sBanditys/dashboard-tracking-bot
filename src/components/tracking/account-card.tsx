@@ -77,28 +77,27 @@ export function AccountCard({ account, guildId }: AccountCardProps) {
           'rounded-lg'
         )}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 min-w-0">
           {/* Platform Icon */}
           <div className="flex-shrink-0">
             <PlatformIcon platform={account.platform} size="w-6 h-6" />
           </div>
 
-          {/* Username */}
-          <div className="flex-1 min-w-0">
+          {/* Username + Brand */}
+          <div className="flex-1 min-w-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,140px)] lg:items-center gap-1 lg:gap-3">
             <a
               href={getProfileUrl(account.platform, account.username)}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="text-sm font-medium text-text-primary hover:text-accent-purple truncate inline-block"
+              className="text-sm font-medium text-text-primary hover:text-accent-purple truncate block"
             >
               @{account.username}
             </a>
-          </div>
 
-          {/* Brand */}
-          <div className="hidden sm:block text-sm text-text-secondary truncate max-w-[120px]">
-            {account.brand}
+            <div className="hidden lg:block text-sm text-text-secondary truncate text-right">
+              {account.brand}
+            </div>
           </div>
 
           {/* Status Badge */}
@@ -163,8 +162,8 @@ export function AccountCard({ account, guildId }: AccountCardProps) {
                 </div>
               )}
 
-              {/* Brand (shown on mobile in expanded) */}
-              <div className="sm:hidden">
+              {/* Brand (shown in expanded details when hidden in row) */}
+              <div className="lg:hidden">
                 <span className="text-text-tertiary">Brand:</span>{' '}
                 <span className="text-text-primary">{account.brand}</span>
               </div>

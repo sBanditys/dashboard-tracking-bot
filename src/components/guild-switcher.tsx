@@ -19,7 +19,7 @@ export function GuildSwitcher() {
   }
 
   return (
-    <Menu as="div" className="relative">
+    <Menu as="div" className="relative z-[90]">
       <Menu.Button className="flex items-center gap-2 px-3 py-2 bg-surface border border-border rounded-sm hover:border-accent-purple/50 transition-colors max-w-[200px]">
         <span className="text-sm font-medium text-white truncate">
           {currentGuild?.name || 'Select Guild'}
@@ -34,7 +34,7 @@ export function GuildSwitcher() {
         </svg>
       </Menu.Button>
 
-      <Menu.Items className="absolute left-0 mt-2 w-64 bg-surface border border-border rounded-sm shadow-lg overflow-hidden z-50 max-h-80 overflow-y-auto">
+      <Menu.Items className="absolute left-0 mt-2 w-64 bg-surface border border-border rounded-sm shadow-lg overflow-hidden z-[100] max-h-80 overflow-y-auto">
         <div className="py-1">
           {data.guilds.map((guild) => (
             <Menu.Item key={guild.id}>

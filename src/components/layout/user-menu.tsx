@@ -55,7 +55,7 @@ export function UserMenu() {
     : null
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative z-[90]" ref={menuRef}>
       {/* User Avatar Button */}
       <button
         onClick={() => setOpen(!open)}
@@ -78,7 +78,7 @@ export function UserMenu() {
 
       {/* Dropdown Menu */}
       {open && (
-        <div className="absolute right-0 mt-2 w-64 bg-surface border border-border rounded-sm shadow-lg py-2 z-50">
+        <div className="absolute right-0 mt-2 w-64 bg-surface border border-border rounded-sm shadow-lg py-2 z-[100]">
           {/* User Info */}
           <div className="px-4 py-2 border-b border-border">
             <p className="text-sm font-medium text-white">{user.username}</p>

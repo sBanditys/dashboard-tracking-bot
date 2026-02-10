@@ -14,6 +14,7 @@ const tabs = [
     { name: 'Brands', href: '/brands' },
     { name: 'Accounts', href: '/accounts' },
     { name: 'Posts', href: '/posts' },
+    { name: 'Analytics', href: '/analytics' },
     { name: 'Exports', href: '/exports' },
 ]
 

@@ -11,7 +11,7 @@ interface TopbarProps {
 
 export function Topbar({ onMenuClick }: TopbarProps) {
   return (
-    <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="relative z-40 h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="h-full px-4 flex items-center justify-between">
         {/* Left: Mobile hamburger + Logo + Guild Switcher */}
         <div className="flex items-center gap-4">

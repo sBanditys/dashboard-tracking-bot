@@ -39,12 +39,12 @@ export function TopAccounts({ accounts, className }: TopAccountsProps) {
       ) : (
         <>
           {/* Column headers */}
-          <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 pb-3 border-b border-border mb-2">
+          <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 pb-3 border-b border-border mb-2 px-2 pr-4">
             <div className="text-xs text-gray-500 uppercase tracking-wider">Rank</div>
             <div className="text-xs text-gray-500 uppercase tracking-wider">Account</div>
-            <div className="text-xs text-gray-500 uppercase tracking-wider text-right">Views</div>
-            <div className="text-xs text-gray-500 uppercase tracking-wider text-right">Likes</div>
-            <div className="text-xs text-gray-500 uppercase tracking-wider text-right">Posts</div>
+            <div className="text-xs text-gray-500 uppercase tracking-wider text-right pr-1">Views</div>
+            <div className="text-xs text-gray-500 uppercase tracking-wider text-right pr-1">Likes</div>
+            <div className="text-xs text-gray-500 uppercase tracking-wider text-right pr-1">Posts</div>
           </div>
 
           <div className="space-y-0">
@@ -66,7 +66,7 @@ export function TopAccounts({ accounts, className }: TopAccountsProps) {
                   href={profileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 py-3 border-b border-border last:border-0 items-center pl-2 border-l-2 border-l-transparent hover:bg-surface-hover hover:border-l-accent-purple transition-all duration-150 cursor-pointer rounded-sm"
+                  className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 py-3 px-2 pr-4 border-b border-border last:border-0 items-center border-l-2 border-l-transparent hover:bg-surface-hover hover:border-l-accent-purple hover:translate-x-[2px] hover:shadow-sm transition-all duration-200 cursor-pointer rounded-sm"
                 >
                   <div className={cn('text-lg font-bold w-8', rankColor)}>
                     #{rank}
@@ -79,15 +79,15 @@ export function TopAccounts({ accounts, className }: TopAccountsProps) {
                     </span>
                   </div>
 
-                  <div className="text-gray-300 text-right">
+                  <div className="text-gray-300 text-right pr-1">
                     {entry.total_views.toLocaleString()}
                   </div>
 
-                  <div className="text-gray-300 text-right">
+                  <div className="text-gray-300 text-right pr-1">
                     {entry.total_likes.toLocaleString()}
                   </div>
 
-                  <div className="text-gray-400 text-right">
+                  <div className="text-gray-400 text-right pr-1">
                     {entry.post_count}
                   </div>
                 </a>

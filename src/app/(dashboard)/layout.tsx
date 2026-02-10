@@ -32,7 +32,7 @@ export default function DashboardLayout({
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <Topbar onMenuClick={() => setDrawerOpen(true)} />
-        <main className="flex-1 overflow-auto p-4 md:p-6">
+        <main className="relative z-0 flex-1 overflow-auto p-4 md:p-6">
           <Breadcrumbs />
           {children}
         </main>

@@ -101,10 +101,10 @@ export function Leaderboard({
       ) : (
         <>
           {/* Column headers */}
-          <div className="grid grid-cols-[auto_1fr_auto] gap-3 pb-2 border-b border-border">
+          <div className="grid grid-cols-[auto_1fr_auto] gap-3 pb-2 border-b border-border px-2 pr-4">
             <div className="text-xs text-gray-500 uppercase tracking-wider w-8">Rank</div>
             <div className="text-xs text-gray-500 uppercase tracking-wider">Group</div>
-            <div className="text-xs text-gray-500 uppercase tracking-wider text-right">Total Views</div>
+            <div className="text-xs text-gray-500 uppercase tracking-wider text-right pr-1">Total Views</div>
           </div>
 
           {/* Leaderboard rows */}
@@ -181,7 +181,7 @@ export function Leaderboard({
                     </div>
                   </div>
 
-                  <div className="text-right">
+                  <div className="text-right pr-1">
                     <div className="text-gray-300 font-medium">
                       {entry.total_views.toLocaleString()}
                     </div>
@@ -207,18 +207,21 @@ export function Leaderboard({
                 </>
               )
 
-              const rowClass = 'grid grid-cols-[auto_1fr_auto] gap-3 py-2.5 border-b border-border items-center'
+              const rowClass = 'grid grid-cols-[auto_1fr_auto] gap-3 py-2.5 px-2 pr-4 border-b border-border items-center rounded-sm transition-all duration-200'
 
               return href ? (
                 <Link
                   key={entry.group_id}
                   href={href}
-                  className={cn(rowClass, 'pl-2 border-l-2 border-l-transparent hover:bg-surface-hover hover:border-l-accent-purple transition-all duration-150 cursor-pointer rounded-sm')}
+                  className={cn(
+                    rowClass,
+                    'border-l-2 border-l-transparent hover:bg-surface-hover hover:border-l-accent-purple hover:translate-x-[2px] hover:shadow-sm cursor-pointer'
+                  )}
                 >
                   {content}
                 </Link>
               ) : (
-                <div key={entry.group_id} className={rowClass}>
+                <div key={entry.group_id} className={cn(rowClass, 'hover:bg-surface-hover')}>
                   {content}
                 </div>
               )

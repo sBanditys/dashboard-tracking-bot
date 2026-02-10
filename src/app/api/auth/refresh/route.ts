@@ -1,66 +1,95 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { extractDashboardSessionCookies } from '@/lib/server/dashboard-session-cookies'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const DEFAULT_ACCESS_MAX_AGE_SECONDS = 60 * 60
+const DEFAULT_REFRESH_MAX_AGE_SECONDS = 90 * 24 * 60 * 60
+
+interface LegacyTokenPayload {
+  access_token?: string
+  refresh_token?: string
+  expires_in?: number
+}
 
 function parsePositiveInt(value: unknown, fallback: number): number {
-  const parsed = Number(value);
+  const parsed = Number(value)
   if (!Number.isFinite(parsed) || parsed <= 0) {
-    return fallback;
+    return fallback
   }
-  return Math.floor(parsed);
+  return Math.floor(parsed)
 }
 
 export async function POST() {
   try {
-    const cookieStore = await cookies();
-    const refreshToken = cookieStore.get('refresh_token')?.value;
+    const cookieStore = await cookies()
+    const refreshToken = cookieStore.get('refresh_token')?.value
+    const accessToken = cookieStore.get('auth_token')?.value
 
     if (!refreshToken) {
-      return NextResponse.json({ error: 'No refresh token' }, { status: 401 });
+      return NextResponse.json({ error: 'No refresh token' }, { status: 401 })
     }
 
-    const response = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`
+    }
+
+    const upstream = await fetch(`${API_URL}/api/v1/auth/refresh`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ refresh_token: refreshToken }),
       cache: 'no-store',
-    });
+    })
 
-    const data = await response.json().catch(() => null);
-    if (!response.ok || !data?.access_token || !data?.refresh_token) {
-      cookieStore.delete('auth_token');
-      cookieStore.delete('refresh_token');
+    const payload = await upstream.json().catch(() => null)
+    if (!upstream.ok) {
+      cookieStore.delete('auth_token')
+      cookieStore.delete('refresh_token')
 
       return NextResponse.json(
-        { error: data?.message || data?.error || 'Failed to refresh token' },
-        { status: response.status || 401 }
-      );
+        { error: payload?.message || payload?.error || 'Failed to refresh token' },
+        { status: upstream.status || 401 }
+      )
     }
 
-    cookieStore.set('auth_token', data.access_token, {
+    const cookieSession = extractDashboardSessionCookies(upstream.headers)
+    const legacyPayload = (payload || {}) as LegacyTokenPayload
+    const nextAccessToken = cookieSession?.accessToken ?? legacyPayload.access_token
+    const nextRefreshToken = cookieSession?.refreshToken ?? legacyPayload.refresh_token
+
+    if (!nextAccessToken || !nextRefreshToken) {
+      cookieStore.delete('auth_token')
+      cookieStore.delete('refresh_token')
+      return NextResponse.json(
+        { error: 'Refresh succeeded but no session tokens were returned' },
+        { status: 502 }
+      )
+    }
+
+    cookieStore.set('auth_token', nextAccessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: parsePositiveInt(data.expires_in, 60 * 15),
+      maxAge: cookieSession?.accessMaxAgeSeconds ?? parsePositiveInt(legacyPayload.expires_in, DEFAULT_ACCESS_MAX_AGE_SECONDS),
       path: '/',
-    });
+    })
 
-    cookieStore.set('refresh_token', data.refresh_token, {
+    cookieStore.set('refresh_token', nextRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30,
+      maxAge: cookieSession?.refreshMaxAgeSeconds ?? DEFAULT_REFRESH_MAX_AGE_SECONDS,
       path: '/',
-    });
+    })
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json(
       { error: 'Failed to refresh token' },
       { status: 500 }
-    );
+    )
   }
 }

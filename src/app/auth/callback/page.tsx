@@ -3,8 +3,6 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-
 interface TokenPayload {
   access_token: string
   refresh_token: string
@@ -88,7 +86,7 @@ function AuthCallbackContent() {
           }
 
           setStatus('Exchanging authorization code...')
-          const exchangeResponse = await fetch(`${API_URL}/api/v1/auth/exchange`, {
+          const exchangeResponse = await fetch('/api/auth/exchange', {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -107,11 +105,10 @@ function AuthCallbackContent() {
           }
 
           tokens = normalizeTokenPayload(payload)
-        }
-
-        if (!tokens) {
-          router.replace('/login?error=callback_failed')
-          return
+          if (!tokens) {
+            router.replace('/')
+            return
+          }
         }
 
         setStatus('Setting secure session...')

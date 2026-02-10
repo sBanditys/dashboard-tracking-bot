@@ -15,6 +15,7 @@ const MAX_RATE_LIMIT_RETRIES = 1;
 const RATE_LIMIT_FALLBACK_MS = 15000; // 15 seconds if backend does not send Retry-After
 const LONG_RATE_LIMIT_THRESHOLD_MS = 10000; // fail fast when cooldown is clearly not transient
 const RETRYABLE_SERVER_STATUSES = new Set([500, 502, 503, 504]);
+const RETRYABLE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 let refreshPromise: Promise<boolean> | null = null;
 let sessionRecoveryInProgress = false;
 let globalRateLimitUntil = 0;
@@ -166,6 +167,9 @@ export async function fetchWithRetry(
   options?: RequestInit,
   maxRetries: number = DEFAULT_MAX_RETRIES
 ): Promise<Response> {
+  const requestMethod = (options?.method || 'GET').toUpperCase();
+  const canRetryRequest = RETRYABLE_METHODS.has(requestMethod);
+
   if (!isAuthEndpoint(url)) {
     const cooldownMs = getRateLimitRemainingMs();
     if (cooldownMs > 0) {
@@ -203,6 +207,7 @@ export async function fetchWithRetry(
 
         const rateLimitRetryCap = Math.min(MAX_RATE_LIMIT_RETRIES, maxRetries);
         const shouldFailFast =
+          !canRetryRequest ||
           delay >= LONG_RATE_LIMIT_THRESHOLD_MS || attempt >= rateLimitRetryCap;
 
         if (shouldFailFast) {
@@ -219,7 +224,7 @@ export async function fetchWithRetry(
 
       // Handle transient server errors with backoff.
       // Skip non-transient statuses like 501 (Not Implemented) to fail fast.
-      if (RETRYABLE_SERVER_STATUSES.has(response.status) && attempt < maxRetries) {
+      if (canRetryRequest && RETRYABLE_SERVER_STATUSES.has(response.status) && attempt < maxRetries) {
         const delay = calculateBackoff(attempt);
         console.warn(
           `Server error (${response.status}). Retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 1}/${maxRetries})...`
@@ -238,9 +243,11 @@ export async function fetchWithRetry(
       // Network error or fetch failure
       lastError = error instanceof Error ? error : new Error(String(error));
 
-      if (attempt >= maxRetries) {
+      if (!canRetryRequest || attempt >= maxRetries) {
         throw new Error(
-          `Request failed after ${maxRetries} retries: ${lastError.message}`
+          canRetryRequest
+            ? `Request failed after ${maxRetries} retries: ${lastError.message}`
+            : `Request failed: ${lastError.message}`
         );
       }
 

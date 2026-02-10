@@ -37,11 +37,9 @@ function LoginContent() {
   const handleDiscordLogin = () => {
     setIsLoading(true);
     setError(null);
-
-    // Redirect directly to backend OAuth endpoint
-    // The backend will redirect to Discord, then back to our callback
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    window.location.href = `${apiUrl}/api/v1/auth/discord`;
+    // Use same-origin auth bootstrap so OAuth context cookies can be proxied
+    // and enforced during code exchange.
+    window.location.href = '/api/auth/login';
   };
 
   return (

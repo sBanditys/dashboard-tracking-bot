@@ -25,6 +25,7 @@ export function ExportProgress({
       case 'completed':
         return 'bg-green-500'
       case 'failed':
+      case 'expired':
         return 'bg-red-500'
       default:
         return 'bg-accent-purple'
@@ -40,6 +41,8 @@ export function ExportProgress({
         return 'Export complete'
       case 'failed':
         return message || 'Export failed'
+      case 'expired':
+        return 'Export expired'
     }
   }
 

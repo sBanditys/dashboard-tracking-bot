@@ -6,7 +6,6 @@ import { useInView } from 'react-intersection-observer'
 import { useAccountsInfinite, useBrands, type AccountFilters } from '@/hooks/use-tracking'
 import { useShiftSelection } from '@/hooks/use-selection'
 import { useBulkDelete, useBulkReassign } from '@/hooks/use-bulk-operations'
-import { useCreateExport } from '@/hooks/use-exports'
 import { usePersistentState } from '@/hooks/use-persistent-state'
 import { GuildTabs } from '@/components/guild-tabs'
 import { FilterBar, SearchInput, PlatformSelect, GroupSelect, PageSizeSelect } from '@/components/filters'
@@ -21,10 +20,28 @@ import { EmptyState, NoResults } from '@/components/empty-state'
 import { ScrollToTop } from '@/components/scroll-to-top'
 import { ScrollToBottom } from '@/components/scroll-to-bottom'
 import { AddAccountModal } from '@/components/forms/add-account-modal'
+import { downloadCsv } from '@/lib/csv-download'
 import type { BulkOperationResult } from '@/types/bulk'
 
 interface PageProps {
     params: { guildId: string }
+}
+
+function getProfileUrl(platform: string, username: string): string {
+    const handle = username.replace(/^@/, '')
+    switch (platform.toLowerCase()) {
+        case 'instagram':
+            return `https://instagram.com/${handle}`
+        case 'tiktok':
+            return `https://tiktok.com/@${handle}`
+        case 'youtube':
+            return `https://youtube.com/@${handle}`
+        case 'x':
+        case 'twitter':
+            return `https://x.com/${handle}`
+        default:
+            return ''
+    }
 }
 
 export default function AccountsPage({ params }: PageProps) {
@@ -114,19 +131,22 @@ export default function AccountsPage({ params }: PageProps) {
     // Bulk operation mutations
     const bulkDelete = useBulkDelete(guildId)
     const bulkReassign = useBulkReassign(guildId)
-    const createExport = useCreateExport(guildId)
 
     // Check if any filters are active
     const hasActiveFilters = search || platform || group
 
-    // Build active filters record for export dropdown
+    // Build active filters record using backend export filter keys
     const activeFiltersRecord = useMemo(() => {
         const record: Record<string, string> = {}
-        if (search) record.search = search
         if (platform) record.platform = platform
-        if (group) record.group = group
+        if (group) {
+            const matchedGroup = groups.find((g) => g.slug === group)
+            if (matchedGroup?.id) {
+                record.accountGroupId = matchedGroup.id
+            }
+        }
         return record
-    }, [search, platform, group])
+    }, [platform, group, groups])
 
     // Clear all filters
     const handleClearFilters = useCallback(() => {
@@ -172,25 +192,35 @@ export default function AccountsPage({ params }: PageProps) {
 
     // Bulk export handler (exports selected items as CSV)
     const handleBulkExport = useCallback(async () => {
-        try {
-            await createExport.mutateAsync({
-                format: 'csv',
-                mode: 'current_view',
-                dataType: 'accounts',
-                filters: { ids: Array.from(selectedIds).join(',') },
-            })
-            setBulkResultsType('exported')
-            setBulkResults({
-                total: selectedCount,
-                succeeded: selectedCount,
-                failed: 0,
-                results: Array.from(selectedIds).map(id => ({ id, status: 'success' as const })),
-            })
-            clearSelection()
-        } catch {
-            // Error handled by mutation
+        const selectedAccounts = accounts.filter((account) => selectedIds.has(account.id))
+        if (selectedAccounts.length === 0) {
+            return
         }
-    }, [createExport, selectedIds, selectedCount, clearSelection])
+
+        const rows = selectedAccounts.map((account) => ({
+            accountId: account.id,
+            username: account.username,
+            profileUrl: getProfileUrl(account.platform, account.username),
+            platform: account.platform,
+            brandName: account.brand,
+            groupName: account.group ?? '',
+            profileHandle: account.username,
+            profileVerified: account.is_verified,
+            createdAt: account.created_at,
+        }))
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+        downloadCsv(`export_accounts_selected_${timestamp}.csv`, rows)
+
+        setBulkResultsType('exported')
+        setBulkResults({
+            total: selectedAccounts.length,
+            succeeded: selectedAccounts.length,
+            failed: 0,
+            results: selectedAccounts.map((account) => ({ id: account.id, status: 'success' as const })),
+        })
+        clearSelection()
+    }, [accounts, selectedIds, clearSelection])
 
     // Auto-dismiss bulk results toast after 8 seconds
     useEffect(() => {

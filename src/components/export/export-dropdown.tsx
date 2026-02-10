@@ -41,7 +41,10 @@ export function ExportDropdown({
       if (!response.ok) throw new Error('Failed to create export')
 
       const data = await response.json()
-      onExportStarted?.(data.id)
+      const exportId = data?.export?.id ?? data?.id
+      if (exportId) {
+        onExportStarted?.(exportId)
+      }
     } catch (error) {
       console.error('Export creation failed:', error)
     } finally {

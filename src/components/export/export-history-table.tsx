@@ -15,6 +15,7 @@ const statusConfig: Record<ExportStatus, { label: string; className: string }> =
   processing: { label: 'Processing', className: 'bg-yellow-500/20 text-yellow-400 animate-pulse' },
   completed: { label: 'Completed', className: 'bg-green-500/20 text-green-400' },
   failed: { label: 'Failed', className: 'bg-red-500/20 text-red-400' },
+  expired: { label: 'Expired', className: 'bg-orange-500/20 text-orange-400' },
 }
 
 const formatConfig: Record<ExportFormat, { label: string; className: string }> = {
@@ -89,7 +90,10 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
           </thead>
           <tbody>
             {exports.map((exportRecord) => {
-              const status = statusConfig[exportRecord.status] ?? { label: exportRecord.status, className: 'bg-gray-500/20 text-gray-400' }
+              const status = statusConfig[exportRecord.status] ?? {
+                label: exportRecord.status.charAt(0).toUpperCase() + exportRecord.status.slice(1),
+                className: 'bg-gray-500/20 text-gray-400',
+              }
               const fmt = formatConfig[exportRecord.format] ?? { label: exportRecord.format.toUpperCase(), className: 'bg-gray-500/20 text-gray-400' }
               const expired = isExpired(exportRecord)
 
@@ -116,7 +120,7 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
                       <span className={cn('inline-block px-2 py-0.5 rounded text-xs font-medium', status.className)}>
                         {status.label}
                       </span>
-                      {expired && (
+                      {expired && exportRecord.status !== 'expired' && (
                         <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-400">
                           Expired
                         </span>
@@ -163,7 +167,10 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
       {/* Mobile Card Layout */}
       <div className="md:hidden px-6 pb-4 space-y-3">
         {exports.map((exportRecord) => {
-          const status = statusConfig[exportRecord.status] ?? { label: exportRecord.status, className: 'bg-gray-500/20 text-gray-400' }
+          const status = statusConfig[exportRecord.status] ?? {
+            label: exportRecord.status.charAt(0).toUpperCase() + exportRecord.status.slice(1),
+            className: 'bg-gray-500/20 text-gray-400',
+          }
           const fmt = formatConfig[exportRecord.format] ?? { label: exportRecord.format.toUpperCase(), className: 'bg-gray-500/20 text-gray-400' }
           const expired = isExpired(exportRecord)
 
@@ -180,7 +187,7 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
                   <span className={cn('inline-block px-2 py-0.5 rounded text-xs font-medium', status.className)}>
                     {status.label}
                   </span>
-                  {expired && (
+                  {expired && exportRecord.status !== 'expired' && (
                     <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-400">
                       Expired
                     </span>

@@ -12,6 +12,11 @@ import type {
     ExportStatus,
 } from '@/types/export'
 
+function normalizeExportRecord(payload: unknown): ExportRecord {
+    const candidate = (payload as { export?: ExportRecord })?.export ?? payload
+    return candidate as ExportRecord
+}
+
 /**
  * Create a new export job
  */
@@ -33,7 +38,14 @@ export function useCreateExport(guildId: string) {
                 throw new Error(error.message || 'Failed to create export')
             }
 
-            return response.json() as Promise<ExportRecord>
+            const payload = await response.json()
+            const record = normalizeExportRecord(payload)
+
+            if (!record?.id) {
+                throw new Error('Export created but no export ID returned')
+            }
+
+            return record
         },
         onSuccess: () => {
             toast.success('Export created successfully', {
@@ -81,7 +93,8 @@ export function useExportStatus(guildId: string, exportId: string | null) {
             if (!response.ok) {
                 throw new Error('Failed to fetch export status')
             }
-            return response.json()
+            const payload = await response.json()
+            return normalizeExportRecord(payload)
         },
         // Poll every 2 seconds while export is active, stop when complete/failed
         refetchInterval: (query) => {

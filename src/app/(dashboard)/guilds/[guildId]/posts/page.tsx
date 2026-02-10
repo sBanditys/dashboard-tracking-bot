@@ -6,7 +6,6 @@ import type { DateRange } from 'react-day-picker'
 import { usePostsInfinite, useBrands, type PostFiltersExtended } from '@/hooks/use-tracking'
 import { useShiftSelection } from '@/hooks/use-selection'
 import { useBulkDelete } from '@/hooks/use-bulk-operations'
-import { useCreateExport } from '@/hooks/use-exports'
 import { usePersistentState } from '@/hooks/use-persistent-state'
 import { GuildTabs } from '@/components/guild-tabs'
 import {
@@ -27,6 +26,7 @@ import { BulkResultsToast } from '@/components/bulk/bulk-results-toast'
 import { EmptyState, NoResults } from '@/components/empty-state'
 import { ScrollToTop } from '@/components/scroll-to-top'
 import { ScrollToBottom } from '@/components/scroll-to-bottom'
+import { downloadCsv } from '@/lib/csv-download'
 import type { BulkOperationResult } from '@/types/bulk'
 
 interface PageProps {
@@ -132,22 +132,24 @@ export default function PostsPage({ params }: PageProps) {
 
     // Bulk operation mutations
     const bulkDelete = useBulkDelete(guildId)
-    const createExport = useCreateExport(guildId)
 
     // Check if any filters are active
     const hasActiveFilters = search || platform || group || status || dateRange?.from
 
-    // Build active filters record for export dropdown
+    // Build active filters record using backend export filter keys
     const activeFiltersRecord = useMemo(() => {
         const record: Record<string, string> = {}
-        if (search) record.search = search
         if (platform) record.platform = platform
-        if (group) record.group = group
-        if (status) record.status = status
-        if (dateRange?.from) record.from = dateRange.from.toISOString()
-        if (dateRange?.to) record.to = dateRange.to.toISOString()
+        if (group) {
+            const matchedGroup = groups.find((g) => g.slug === group)
+            if (matchedGroup?.id) {
+                record.accountGroupId = matchedGroup.id
+            }
+        }
+        if (dateRange?.from) record.startDate = dateRange.from.toISOString()
+        if (dateRange?.to) record.endDate = dateRange.to.toISOString()
         return record
-    }, [search, platform, group, status, dateRange])
+    }, [platform, group, dateRange, groups])
 
     // Clear all filters
     const handleClearFilters = useCallback(() => {
@@ -175,27 +177,35 @@ export default function PostsPage({ params }: PageProps) {
         }
     }, [bulkDelete, selectedIds, clearSelection])
 
-    // Bulk export handler (exports selected items as CSV)
+    // Bulk export handler (exports selected items as CSV matching metrics export columns)
     const handleBulkExport = useCallback(async () => {
-        try {
-            await createExport.mutateAsync({
-                format: 'csv',
-                mode: 'current_view',
-                dataType: 'posts',
-                filters: { ids: Array.from(selectedIds).join(',') },
-            })
-            setBulkResultsType('exported')
-            setBulkResults({
-                total: selectedCount,
-                succeeded: selectedCount,
-                failed: 0,
-                results: Array.from(selectedIds).map(id => ({ id, status: 'success' as const })),
-            })
-            clearSelection()
-        } catch {
-            // Error handled by mutation
+        const selectedPosts = posts.filter((post) => selectedIds.has(post.url))
+        if (selectedPosts.length === 0) {
+            return
         }
-    }, [createExport, selectedIds, selectedCount, clearSelection])
+
+        const rows = selectedPosts.map((post) => ({
+            platform: post.platform,
+            link: post.url,
+            views: post.metrics?.views ?? '',
+            postedAt: post.posted_at ?? post.submitted_at ?? '',
+            likes: post.metrics?.likes ?? '',
+            comments: post.metrics?.comments ?? '',
+            shares: post.metrics?.shares ?? '',
+        }))
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+        downloadCsv(`export_metrics_selected_${timestamp}.csv`, rows)
+
+        setBulkResultsType('exported')
+        setBulkResults({
+            total: selectedPosts.length,
+            succeeded: selectedPosts.length,
+            failed: 0,
+            results: selectedPosts.map((post) => ({ id: post.url, status: 'success' as const })),
+        })
+        clearSelection()
+    }, [posts, selectedIds, clearSelection])
 
     // Auto-dismiss bulk results toast after 8 seconds
     useEffect(() => {

@@ -6,7 +6,7 @@ export type ExportFormat = 'csv' | 'json' | 'xlsx'
 
 export type ExportMode = 'current_view' | 'all'
 
-export type ExportStatus = 'pending' | 'processing' | 'completed' | 'failed'
+export type ExportStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'expired'
 
 export interface ExportRequest {
   format: ExportFormat
@@ -21,7 +21,7 @@ export interface ExportRecord {
   format: ExportFormat
   dataType: 'accounts' | 'posts'
   status: ExportStatus
-  filename: string
+  filename: string | null
   recordCount: number | null
   progress: number
   downloadUrl: string | null

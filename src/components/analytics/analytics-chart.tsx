@@ -10,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { useId } from 'react'
 
 interface ChartDataPoint {
   date: string
@@ -70,6 +71,7 @@ export function AnalyticsChart({
   statusBadge,
   className,
 }: AnalyticsChartProps) {
+  const gradientId = useId().replace(/:/g, '')
   const isEmpty = !data || data.length === 0 || data.every(d => d.value === 0)
 
   const handleClick = (e: { activeLabel?: string | number } | null) => {
@@ -104,21 +106,21 @@ export function AnalyticsChart({
       ) : (
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} onClick={handleClick}>
+            <AreaChart data={data} onClick={handleClick} margin={{ top: 10, right: 12, left: 8, bottom: 0 }}>
               <defs>
-                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="6%" stopColor="var(--chart-accent)" stopOpacity={0.62} />
+                  <stop offset="96%" stopColor="var(--chart-accent)" stopOpacity={0.05} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <CartesianGrid strokeDasharray="4 6" stroke="var(--chart-grid)" />
               <XAxis
                 dataKey="date"
-                stroke="#9ca3af"
+                stroke="var(--chart-axis)"
                 tick={{ fontSize: 12 }}
               />
               <YAxis
-                stroke="#9ca3af"
+                stroke="var(--chart-axis)"
                 tick={{ fontSize: 12 }}
                 tickFormatter={formatCompact}
                 allowDecimals={false}
@@ -127,9 +129,11 @@ export function AnalyticsChart({
               <Area
                 type="monotone"
                 dataKey="value"
-                stroke="#8b5cf6"
+                stroke="var(--chart-accent)"
+                strokeWidth={2.25}
                 fillOpacity={1}
-                fill="url(#colorValue)"
+                fill={`url(#${gradientId})`}
+                activeDot={{ r: 4, strokeWidth: 2, stroke: 'var(--surface-bg)', fill: 'var(--chart-accent)' }}
               />
             </AreaChart>
           </ResponsiveContainer>

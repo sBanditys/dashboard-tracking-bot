@@ -1,7 +1,7 @@
 'use client'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ThemeProvider } from 'next-themes'
+import { ThemeProvider, useTheme } from 'next-themes'
 import { usePathname, useSearchParams } from 'next/navigation'
 import NProgress from 'nprogress'
 import { Suspense, useEffect, useState } from 'react'
@@ -27,7 +27,7 @@ function NavigationProgressInner() {
         pointer-events: none;
       }
       #nprogress .bar {
-        background: #8B5CF6 !important;
+        background: #c6a66d !important;
         position: fixed;
         z-index: 9999;
         top: 0;
@@ -41,7 +41,7 @@ function NavigationProgressInner() {
         right: 0px;
         width: 100px;
         height: 100%;
-        box-shadow: 0 0 10px #8B5CF6, 0 0 5px #8B5CF6;
+        box-shadow: 0 0 10px #c6a66d, 0 0 5px #c6a66d;
         opacity: 1.0;
         transform: rotate(3deg) translate(0px, -4px);
       }
@@ -76,6 +76,29 @@ function NavigationProgress() {
   )
 }
 
+function ThemedToaster() {
+  const { resolvedTheme } = useTheme()
+  const isLight = resolvedTheme === 'light'
+
+  return (
+    <Toaster
+      position="top-right"
+      visibleToasts={3}
+      theme={isLight ? 'light' : 'dark'}
+      toastOptions={{
+        style: {
+          background: isLight ? '#fffdfa' : '#19150f',
+          border: isLight ? '1px solid rgba(116, 94, 63, 0.24)' : '1px solid rgba(208, 173, 109, 0.22)',
+          color: isLight ? '#1b1813' : '#f6f1e6',
+          boxShadow: isLight
+            ? '0 1px 3px rgba(34, 26, 14, 0.08), 0 14px 32px rgba(34, 26, 14, 0.08)'
+            : '0 2px 6px rgba(0, 0, 0, 0.35), 0 20px 40px rgba(0, 0, 0, 0.28)',
+        },
+      }}
+    />
+  )
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -95,18 +118,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={true}>
         <NavigationProgress />
-        <Toaster
-          position="top-right"
-          visibleToasts={3}
-          theme="dark"
-          toastOptions={{
-            style: {
-              background: '#2d2d2d',
-              border: '1px solid #404040',
-              color: '#ffffff',
-            },
-          }}
-        />
+        <ThemedToaster />
         {children}
       </ThemeProvider>
     </QueryClientProvider>

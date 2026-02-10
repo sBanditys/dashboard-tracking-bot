@@ -4,79 +4,253 @@
 
 @import 'nprogress/nprogress.css';
 
+:root {
+  --page-bg: #0f0d0a;
+  --page-bg-overlay-95: rgba(15, 13, 10, 0.95);
+  --page-bg-overlay-60: rgba(15, 13, 10, 0.72);
+  --surface-bg: #19150f;
+  --surface-overlay-50: rgba(30, 25, 18, 0.5);
+  --surface-overlay-80: rgba(30, 25, 18, 0.82);
+  --surface-hover: #231d14;
+  --surface-border: rgba(208, 173, 109, 0.22);
+  --surface-border-strong: rgba(224, 193, 133, 0.4);
+  --text-primary: #f6f1e6;
+  --text-secondary: #d4c7ad;
+  --text-tertiary: #b4a88f;
+  --text-muted: #8d816a;
+  --chip-bg: rgba(207, 171, 97, 0.16);
+  --chip-text: #e1c792;
+  --accent-fill-start: #9f7a44;
+  --accent-fill-mid: #dfc38f;
+  --accent-fill-end: #b68c56;
+  --accent-ink: #22170a;
+  --accent-main: #c6a66d;
+  --card-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 20px 40px rgba(0, 0, 0, 0.28);
+  --card-shadow-hover: 0 4px 10px rgba(0, 0, 0, 0.34), 0 26px 46px rgba(0, 0, 0, 0.32);
+  --card-highlight: inset 0 1px 0 rgba(255, 246, 225, 0.06);
+  --chart-accent: #c6a66d;
+  --chart-grid: rgba(223, 198, 149, 0.15);
+  --chart-axis: rgba(219, 198, 154, 0.52);
+  --bg-glow-left: rgba(211, 171, 95, 0.14);
+  --bg-glow-right: rgba(164, 136, 85, 0.11);
+}
+
+.light {
+  --page-bg: #f6f3ed;
+  --page-bg-overlay-95: rgba(246, 243, 237, 0.95);
+  --page-bg-overlay-60: rgba(246, 243, 237, 0.78);
+  --surface-bg: #fffdfa;
+  --surface-overlay-50: rgba(255, 253, 250, 0.82);
+  --surface-overlay-80: rgba(255, 253, 250, 0.94);
+  --surface-hover: #f3eee5;
+  --surface-border: rgba(116, 94, 63, 0.2);
+  --surface-border-strong: rgba(127, 96, 54, 0.34);
+  --text-primary: #1b1813;
+  --text-secondary: #3f3529;
+  --text-tertiary: #615541;
+  --text-muted: #8a7a63;
+  --chip-bg: rgba(143, 109, 58, 0.13);
+  --chip-text: #6b4f2d;
+  --accent-fill-start: #b1884f;
+  --accent-fill-mid: #e3c89b;
+  --accent-fill-end: #c3985d;
+  --accent-ink: #21170a;
+  --accent-main: #a88048;
+  --card-shadow: 0 1px 3px rgba(34, 26, 14, 0.08), 0 14px 32px rgba(34, 26, 14, 0.08);
+  --card-shadow-hover: 0 3px 8px rgba(34, 26, 14, 0.1), 0 18px 36px rgba(34, 26, 14, 0.11);
+  --card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  --chart-accent: #a97f47;
+  --chart-grid: rgba(116, 94, 63, 0.2);
+  --chart-axis: rgba(116, 94, 63, 0.48);
+  --bg-glow-left: rgba(171, 129, 58, 0.1);
+  --bg-glow-right: rgba(153, 112, 44, 0.07);
+}
+
 @layer base {
+  html,
   body {
-    @apply bg-background text-white antialiased;
+    min-height: 100%;
   }
 
-  .light body {
-    @apply bg-background-light text-gray-900;
+  body {
+    @apply antialiased;
+    color: var(--text-primary);
+    background-color: var(--page-bg);
+    background-image:
+      radial-gradient(1200px 620px at -5% -10%, var(--bg-glow-left) 0%, transparent 60%),
+      radial-gradient(920px 560px at 105% -5%, var(--bg-glow-right) 0%, transparent 58%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 28%);
+    background-attachment: fixed;
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: "Iowan Old Style", "Baskerville", "Palatino Linotype", serif;
+    letter-spacing: -0.015em;
+    font-weight: 600;
+  }
+
+  ::selection {
+    background: rgba(198, 166, 109, 0.28);
+    color: var(--text-primary);
   }
 }
 
 @layer utilities {
-  .light .bg-background {
-    background-color: #f8fafc !important;
+  .bg-background {
+    background-color: var(--page-bg) !important;
   }
 
-  .light [class*='bg-background/95'] {
-    background-color: rgba(248, 250, 252, 0.95) !important;
+  [class*='bg-background/95'] {
+    background-color: var(--page-bg-overlay-95) !important;
   }
 
-  .light [class*='bg-background/60'] {
-    background-color: rgba(248, 250, 252, 0.6) !important;
+  [class*='bg-background/60'] {
+    background-color: var(--page-bg-overlay-60) !important;
   }
 
-  .light .bg-surface {
-    background-color: #ffffff !important;
+  .bg-surface {
+    background-color: var(--surface-bg) !important;
   }
 
-  .light [class*='bg-surface/50'] {
-    background-color: rgba(255, 255, 255, 0.6) !important;
+  [class*='bg-surface/50'] {
+    background-color: var(--surface-overlay-50) !important;
   }
 
-  .light [class*='bg-surface/80'] {
-    background-color: rgba(255, 255, 255, 0.85) !important;
+  [class*='bg-surface/80'] {
+    background-color: var(--surface-overlay-80) !important;
   }
 
-  .light .bg-surface-hover,
-  .light [class*='bg-surface-hover'] {
-    background-color: #f3f4f6 !important;
+  .bg-surface-hover,
+  [class*='bg-surface-hover'] {
+    background-color: var(--surface-hover) !important;
   }
 
-  .light .border-border {
-    border-color: #d1d5db !important;
+  .border-border {
+    border-color: var(--surface-border) !important;
   }
 
-  .light .text-white {
-    color: #111827 !important;
+  .text-white {
+    color: var(--text-primary) !important;
   }
 
-  .light .text-gray-300 {
-    color: #374151 !important;
+  .text-gray-300 {
+    color: var(--text-secondary) !important;
   }
 
-  .light .text-gray-400 {
-    color: #4b5563 !important;
+  .text-gray-400 {
+    color: var(--text-tertiary) !important;
   }
 
-  .light .text-gray-500 {
-    color: #6b7280 !important;
+  .text-gray-500,
+  .text-gray-600 {
+    color: var(--text-muted) !important;
   }
 
-  .light .text-gray-600 {
-    color: #9ca3af !important;
+  .text-accent-purple {
+    color: var(--accent-main) !important;
   }
 
-  .light [class*='hover:text-white']:hover {
-    color: #111827 !important;
+  .bg-gray-800 {
+    background-color: var(--chip-bg) !important;
+    color: var(--chip-text) !important;
   }
 
-  .light [class*='hover:bg-surface']:hover {
-    background-color: #f3f4f6 !important;
+  .rounded-sm {
+    border-radius: 0.75rem !important;
   }
 
-  .light [class*='hover:bg-background']:hover {
-    background-color: #eef2f7 !important;
+  .bg-surface.border-border {
+    border-radius: 0.9rem !important;
+    box-shadow: var(--card-shadow), var(--card-highlight);
+    backdrop-filter: blur(14px);
   }
+
+  .bg-surface.border-border:hover {
+    border-color: var(--surface-border-strong) !important;
+    box-shadow: var(--card-shadow-hover), var(--card-highlight);
+  }
+
+  .bg-accent-purple {
+    background: linear-gradient(
+      135deg,
+      var(--accent-fill-start) 0%,
+      var(--accent-fill-mid) 50%,
+      var(--accent-fill-end) 100%
+    ) !important;
+    border: 1px solid rgba(224, 193, 133, 0.42) !important;
+    box-shadow: 0 1px 0 rgba(255, 241, 212, 0.36) inset, 0 10px 22px rgba(0, 0, 0, 0.2);
+  }
+
+  .bg-accent-purple,
+  .bg-accent-purple * {
+    color: var(--accent-ink) !important;
+  }
+
+  [class*='hover:text-white']:hover {
+    color: var(--text-primary) !important;
+  }
+
+  [class*='hover:bg-surface']:hover {
+    background-color: var(--surface-hover) !important;
+  }
+
+  [class*='hover:bg-background']:hover {
+    background-color: var(--page-bg-overlay-60) !important;
+  }
+
+  .recharts-cartesian-grid line {
+    stroke: var(--chart-grid) !important;
+  }
+
+  .recharts-cartesian-axis-line,
+  .recharts-cartesian-axis-tick-line {
+    stroke: var(--chart-axis) !important;
+  }
+
+  .recharts-cartesian-axis-tick-value {
+    fill: var(--text-muted) !important;
+  }
+
+  .bg-background,
+  [class*='bg-background/'],
+  .bg-surface,
+  [class*='bg-surface/'],
+  .border-border,
+  .text-white,
+  .text-gray-300,
+  .text-gray-400,
+  .text-gray-500,
+  .text-gray-600 {
+    transition:
+      background-color 220ms ease,
+      border-color 220ms ease,
+      color 220ms ease,
+      box-shadow 220ms ease;
+  }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(198, 166, 109, 0.65) 0%, rgba(150, 120, 74, 0.55) 100%);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
 }

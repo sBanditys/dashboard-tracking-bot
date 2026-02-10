@@ -10,9 +10,26 @@
 const DEFAULT_MAX_RETRIES = 3;
 const MAX_BACKOFF_MS = 30000; // 30 seconds
 const BASE_BACKOFF_MS = 1000; // 1 second
+const MAX_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_RATE_LIMIT_RETRIES = 1;
+const RATE_LIMIT_FALLBACK_MS = 15000; // 15 seconds if backend does not send Retry-After
+const LONG_RATE_LIMIT_THRESHOLD_MS = 10000; // fail fast when cooldown is clearly not transient
 const RETRYABLE_SERVER_STATUSES = new Set([500, 502, 503, 504]);
 let refreshPromise: Promise<boolean> | null = null;
 let sessionRecoveryInProgress = false;
+let globalRateLimitUntil = 0;
+
+export class RateLimitError extends Error {
+  status: number;
+  retryAfterMs: number;
+
+  constructor(retryAfterMs: number) {
+    super(`Too many requests. Try again in ${formatDuration(retryAfterMs)}.`);
+    this.name = 'RateLimitError';
+    this.status = 429;
+    this.retryAfterMs = Math.max(0, Math.floor(retryAfterMs));
+  }
+}
 
 /**
  * Calculate exponential backoff delay with jitter
@@ -43,14 +60,14 @@ function parseRetryAfter(retryAfter: string | null): number | null {
   // Try parsing as seconds (e.g., "120")
   const seconds = parseInt(retryAfter, 10);
   if (!isNaN(seconds)) {
-    return Math.min(seconds * 1000, MAX_BACKOFF_MS);
+    return Math.min(seconds * 1000, MAX_RATE_LIMIT_WINDOW_MS);
   }
 
   // Try parsing as HTTP date (e.g., "Wed, 21 Oct 2026 07:28:00 GMT")
   const date = new Date(retryAfter);
   if (!isNaN(date.getTime())) {
     const delay = date.getTime() - Date.now();
-    return delay > 0 ? Math.min(delay, MAX_BACKOFF_MS) : 0;
+    return delay > 0 ? Math.min(delay, MAX_RATE_LIMIT_WINDOW_MS) : 0;
   }
 
   return null;
@@ -64,8 +81,30 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.max(1, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  }
+
+  return `${seconds}s`;
+}
+
 function isAuthEndpoint(url: string): boolean {
   return url.includes('/api/auth/');
+}
+
+function getRateLimitRemainingMs(): number {
+  return Math.max(0, globalRateLimitUntil - Date.now());
+}
+
+function setRateLimitCooldown(ms: number): void {
+  if (ms <= 0) return;
+  const boundedMs = Math.min(ms, MAX_RATE_LIMIT_WINDOW_MS);
+  globalRateLimitUntil = Math.max(globalRateLimitUntil, Date.now() + boundedMs);
 }
 
 async function refreshSession(): Promise<boolean> {
@@ -127,6 +166,13 @@ export async function fetchWithRetry(
   options?: RequestInit,
   maxRetries: number = DEFAULT_MAX_RETRIES
 ): Promise<Response> {
+  if (!isAuthEndpoint(url)) {
+    const cooldownMs = getRateLimitRemainingMs();
+    if (cooldownMs > 0) {
+      throw new RateLimitError(cooldownMs);
+    }
+  }
+
   let lastError: Error | null = null;
   let didRetryAfterRefresh = false;
 
@@ -151,18 +197,20 @@ export async function fetchWithRetry(
 
       // Handle 429 Too Many Requests — retry with backoff
       if (response.status === 429) {
-        if (attempt >= maxRetries) {
-          throw new Error(
-            `Rate limited after ${maxRetries} retries. Please try again later.`
-          );
+        const retryAfter = response.headers.get('Retry-After');
+        const delay = parseRetryAfter(retryAfter) ?? RATE_LIMIT_FALLBACK_MS;
+        setRateLimitCooldown(delay);
+
+        const rateLimitRetryCap = Math.min(MAX_RATE_LIMIT_RETRIES, maxRetries);
+        const shouldFailFast =
+          delay >= LONG_RATE_LIMIT_THRESHOLD_MS || attempt >= rateLimitRetryCap;
+
+        if (shouldFailFast) {
+          throw new RateLimitError(delay);
         }
 
-        // Get retry delay from header or use exponential backoff
-        const retryAfter = response.headers.get('Retry-After');
-        const delay = parseRetryAfter(retryAfter) ?? calculateBackoff(attempt);
-
         console.warn(
-          `Rate limited (429). Retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 1}/${maxRetries})...`
+          `Rate limited (429). Retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 1}/${rateLimitRetryCap})...`
         );
 
         await sleep(delay);
@@ -183,6 +231,10 @@ export async function fetchWithRetry(
       // All other responses (2xx, 3xx, 4xx) — return immediately, don't retry
       return response;
     } catch (error) {
+      if (error instanceof RateLimitError) {
+        throw error;
+      }
+
       // Network error or fetch failure
       lastError = error instanceof Error ? error : new Error(String(error));
 

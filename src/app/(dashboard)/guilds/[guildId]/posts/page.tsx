@@ -72,6 +72,7 @@ export default function PostsPage({ params }: PageProps) {
         data,
         isLoading,
         isError,
+        error,
         hasNextPage,
         isFetchingNextPage,
         fetchNextPage,
@@ -216,9 +217,12 @@ export default function PostsPage({ params }: PageProps) {
     }, [bulkResults])
 
     if (isError) {
+        const errorMessage = error instanceof Error
+            ? error.message
+            : 'Failed to load posts'
         return (
             <div className="text-center py-12">
-                <p className="text-red-400">Failed to load posts</p>
+                <p className="text-red-400">{errorMessage}</p>
             </div>
         )
     }

@@ -130,9 +130,9 @@ export function useExportProgress(guildId: string, exportId: string | null) {
         eventSource.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data) as ExportProgressEvent
-                setProgress(data.progress)
+                setProgress(typeof data.progress === 'number' ? data.progress : 0)
                 setStatus(data.status)
-                setRecordCount(data.recordCount)
+                setRecordCount(typeof data.recordCount === 'number' ? data.recordCount : 0)
                 setMessage(data.message)
             } catch (error) {
                 console.error('Failed to parse export progress event:', error)

@@ -31,6 +31,12 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
   const exports = data?.exports ?? []
   const pagination = data?.pagination
 
+  const formatRecordCount = (value: unknown): string => {
+    return typeof value === 'number' && Number.isFinite(value)
+      ? value.toLocaleString()
+      : '-'
+  }
+
   // Helper: Check if export has expired
   const isExpired = (exportRecord: typeof exports[0]) => {
     if (!exportRecord.expiresAt) return false
@@ -128,9 +134,7 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
                     </div>
                   </td>
                   <td className="px-6 py-3 text-gray-400">
-                    {exportRecord.recordCount !== null
-                      ? exportRecord.recordCount.toLocaleString()
-                      : '-'}
+                    {formatRecordCount(exportRecord.recordCount)}
                   </td>
                   <td className="px-6 py-3 text-gray-400">
                     {safeFormatDistanceToNow(exportRecord.createdAt)}
@@ -201,8 +205,8 @@ export function ExportHistoryTable({ guildId }: ExportHistoryTableProps) {
                 <span className={cn('inline-block px-2 py-0.5 rounded', fmt.className)}>
                   {fmt.label}
                 </span>
-                {exportRecord.recordCount !== null && (
-                  <span>{exportRecord.recordCount.toLocaleString()} records</span>
+                {formatRecordCount(exportRecord.recordCount) !== '-' && (
+                  <span>{formatRecordCount(exportRecord.recordCount)} records</span>
                 )}
               </div>
               <div className="flex items-center justify-between text-xs">

@@ -23,7 +23,6 @@ export async function GET(request: Request, { params }: RouteParams) {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     Accept: 'text/event-stream',
-                    ...(process.env.API_KEY && { 'X-API-Key': process.env.API_KEY }),
                 },
             }
         )

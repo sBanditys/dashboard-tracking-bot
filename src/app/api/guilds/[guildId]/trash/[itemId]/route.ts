@@ -21,7 +21,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
-        ...(process.env.API_KEY && { 'X-API-Key': process.env.API_KEY }),
       },
       body: JSON.stringify(body),
     })
@@ -49,7 +48,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,
-        ...(process.env.API_KEY && { 'X-API-Key': process.env.API_KEY }),
       },
     })
 

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 interface ExportProgressProps {
   progress: number
   status: ExportStatus
-  recordCount: number
+  recordCount: number | null | undefined
   message?: string
   downloadUrl?: string | null
   onDismiss?: () => void
@@ -20,6 +20,10 @@ export function ExportProgress({
   downloadUrl,
   onDismiss,
 }: ExportProgressProps) {
+  const safeRecordCount = typeof recordCount === 'number' && Number.isFinite(recordCount)
+    ? recordCount
+    : 0
+
   const getBarColor = () => {
     switch (status) {
       case 'completed':
@@ -36,7 +40,7 @@ export function ExportProgress({
     switch (status) {
       case 'pending':
       case 'processing':
-        return `Exporting ${recordCount.toLocaleString()} items...`
+        return `Exporting ${safeRecordCount.toLocaleString()} items...`
       case 'completed':
         return 'Export complete'
       case 'failed':

@@ -15,11 +15,12 @@ export function FilterBar({ children, className }: FilterBarProps) {
   return (
     <div
       className={cn(
-        'sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 py-4 -mx-4 px-4 border-b border-border',
+        'sticky top-0 z-20 py-4 -mx-4 px-4 border-b border-border',
+        'bg-background/60 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-background/60',
         className
       )}
     >
-      <div className="flex flex-wrap gap-3 items-center">
+      <div className="flex flex-wrap gap-3 items-center relative z-10">
         {children}
       </div>
     </div>

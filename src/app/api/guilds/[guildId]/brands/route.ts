@@ -20,7 +20,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const response = await fetch(`${API_URL}/api/v1/guilds/${guildId}/brands${queryString}`, {
       headers: {
         Authorization: `Bearer ${token}`,
-        ...(process.env.API_KEY && { 'X-API-Key': process.env.API_KEY }),
       },
     })
 
@@ -47,7 +46,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
-        ...(process.env.API_KEY && { 'X-API-Key': process.env.API_KEY }),
       },
       body: JSON.stringify(body),
     })

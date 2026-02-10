@@ -7,6 +7,7 @@ import { ExportProgress } from '@/components/export/export-progress'
 import { useExportProgress } from '@/hooks/use-exports'
 import { exportAllPostsMetricsCsv } from '@/lib/posts-csv-export'
 import { exportAllPostsMetricsWorkbook } from '@/lib/posts-excel-export'
+import { exportAllPostsMetricsJson } from '@/lib/posts-json-export'
 import { toast } from 'sonner'
 import type { ExportFormat, ExportMode, ExportRecord } from '@/types/export'
 
@@ -59,17 +60,22 @@ export function ExportConfigForm({
 
     try {
       // For posts "Export all data", generate client-side files aligned with /export metrics schema.
-      if (dataType === 'posts' && mode === 'all' && (format === 'csv' || format === 'xlsx')) {
+      if (dataType === 'posts' && mode === 'all' && (format === 'csv' || format === 'xlsx' || format === 'json')) {
         setIsDirectExporting(true)
         if (format === 'csv') {
           const result = await exportAllPostsMetricsCsv(guildId, filename || getDefaultFilename(guildName, 'posts'))
           toast.success('Posts exported', {
             description: `${result.recordCount.toLocaleString()} records in ${result.fileCount} CSV file${result.fileCount === 1 ? '' : 's'} (ZIP)`,
           })
-        } else {
+        } else if (format === 'xlsx') {
           const result = await exportAllPostsMetricsWorkbook(guildId, filename || getDefaultFilename(guildName, 'posts'))
           toast.success('Posts exported', {
             description: `${result.recordCount.toLocaleString()} records across ${result.sheetCount} sheet${result.sheetCount === 1 ? '' : 's'}`,
+          })
+        } else {
+          const result = await exportAllPostsMetricsJson(guildId, filename || getDefaultFilename(guildName, 'posts'))
+          toast.success('Posts exported', {
+            description: `${result.recordCount.toLocaleString()} records across ${result.platformCount} platform group${result.platformCount === 1 ? '' : 's'}`,
           })
         }
         return
@@ -84,7 +90,7 @@ export function ExportConfigForm({
       setActiveExportId(result.id)
       onExportStarted?.(result)
     } catch (error) {
-      if (dataType === 'posts' && mode === 'all' && (format === 'csv' || format === 'xlsx')) {
+      if (dataType === 'posts' && mode === 'all' && (format === 'csv' || format === 'xlsx' || format === 'json')) {
         toast.error('Failed to export posts', {
           description: error instanceof Error ? error.message : 'Unknown error',
         })

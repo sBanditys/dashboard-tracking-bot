@@ -185,7 +185,13 @@ export default function PostsPage({ params }: PageProps) {
             return
         }
 
-        const rows = selectedPosts.map((post) => ({
+        const sortedPosts = [...selectedPosts].sort((a, b) => {
+            const aViews = typeof a.metrics?.views === 'number' ? a.metrics.views : -1
+            const bViews = typeof b.metrics?.views === 'number' ? b.metrics.views : -1
+            return bViews - aViews
+        })
+
+        const rows = sortedPosts.map((post) => ({
             Link: post.url,
             Views: post.metrics?.views ?? '',
             'Posted At': post.posted_at ?? post.submitted_at ?? '',
@@ -199,10 +205,10 @@ export default function PostsPage({ params }: PageProps) {
 
         setBulkResultsType('exported')
         setBulkResults({
-            total: selectedPosts.length,
-            succeeded: selectedPosts.length,
+            total: sortedPosts.length,
+            succeeded: sortedPosts.length,
             failed: 0,
-            results: selectedPosts.map((post) => ({ id: post.url, status: 'success' as const })),
+            results: sortedPosts.map((post) => ({ id: post.url, status: 'success' as const })),
         })
         clearSelection()
     }, [posts, selectedIds, clearSelection])

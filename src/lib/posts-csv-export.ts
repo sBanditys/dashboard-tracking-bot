@@ -73,6 +73,14 @@ function toPostExportRow(post: Post): PostExportRow {
   }
 }
 
+function getRowViews(row: PostExportRow): number {
+  return typeof row.Views === 'number' && Number.isFinite(row.Views) ? row.Views : -1
+}
+
+function sortRowsByViewsDesc(rows: PostExportRow[]): PostExportRow[] {
+  return [...rows].sort((a, b) => getRowViews(b) - getRowViews(a))
+}
+
 function ensureZipBaseFilename(filename: string): string {
   const trimmed = filename.trim()
   if (!trimmed) {
@@ -253,7 +261,7 @@ export async function exportAllPostsMetricsCsv(
   const files = PLATFORM_FILES
     .map(({ platform, fileSuffix }) => ({
       fileSuffix,
-      rows: rowsByPlatform[platform],
+      rows: sortRowsByViewsDesc(rowsByPlatform[platform]),
     }))
     .filter((file) => file.rows.length > 0)
 

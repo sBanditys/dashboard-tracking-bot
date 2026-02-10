@@ -6,6 +6,7 @@ import type { ExportFormat, ExportMode } from '@/types/export'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import { exportAllPostsMetricsCsv } from '@/lib/posts-csv-export'
 import { exportAllPostsMetricsWorkbook } from '@/lib/posts-excel-export'
+import { exportAllPostsMetricsJson } from '@/lib/posts-json-export'
 import { toast } from 'sonner'
 
 interface ExportDropdownProps {
@@ -31,16 +32,21 @@ export function ExportDropdown({
 
     try {
       // For posts "All data", keep schema aligned with /export metrics output.
-      if (dataType === 'posts' && mode === 'all' && (format === 'csv' || format === 'xlsx')) {
+      if (dataType === 'posts' && mode === 'all' && (format === 'csv' || format === 'xlsx' || format === 'json')) {
         if (format === 'csv') {
           const result = await exportAllPostsMetricsCsv(guildId, `export_metrics_${Date.now()}`)
           toast.success('Posts exported', {
             description: `${result.recordCount.toLocaleString()} records in ${result.fileCount} CSV file${result.fileCount === 1 ? '' : 's'} (ZIP)`,
           })
-        } else {
+        } else if (format === 'xlsx') {
           const result = await exportAllPostsMetricsWorkbook(guildId, `export_metrics_${Date.now()}`)
           toast.success('Posts exported', {
             description: `${result.recordCount.toLocaleString()} records across ${result.sheetCount} sheet${result.sheetCount === 1 ? '' : 's'}`,
+          })
+        } else {
+          const result = await exportAllPostsMetricsJson(guildId, `export_metrics_${Date.now()}`)
+          toast.success('Posts exported', {
+            description: `${result.recordCount.toLocaleString()} records across ${result.platformCount} platform group${result.platformCount === 1 ? '' : 's'}`,
           })
         }
         return

@@ -100,6 +100,14 @@ function toPostExportRow(post: Post): PostExportRow {
   }
 }
 
+function getRowViews(row: PostExportRow): number {
+  return typeof row.Views === 'number' && Number.isFinite(row.Views) ? row.Views : -1
+}
+
+function sortRowsByViewsDesc(rows: PostExportRow[]): PostExportRow[] {
+  return [...rows].sort((a, b) => getRowViews(b) - getRowViews(a))
+}
+
 function columnToLetter(index: number): string {
   let value = index + 1
   let label = ''
@@ -372,7 +380,7 @@ export async function exportAllPostsMetricsWorkbook(
   }
 
   const sheets: PlatformSheet[] = PLATFORM_SHEETS
-    .map(({ platform, name }) => ({ name, rows: rowsByPlatform[platform] }))
+    .map(({ platform, name }) => ({ name, rows: sortRowsByViewsDesc(rowsByPlatform[platform]) }))
     .filter((sheet) => sheet.rows.length > 0)
 
   const recordCount = sheets.reduce((sum, sheet) => sum + sheet.rows.length, 0)

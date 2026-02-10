@@ -14,13 +14,30 @@ interface LegacyTokenPayload {
   expires_in?: number
 }
 
+function normalizeCookieDomain(rawDomain: string | undefined): string | undefined {
+  const normalized = (rawDomain || '').trim().toLowerCase().replace(/^\.+/, '')
+  return normalized.length > 0 ? normalized : undefined
+}
+
+function getRequestHostname(request: Request): string {
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const host = request.headers.get('host')
+  const requestUrlHost = new URL(request.url).hostname
+  const candidate = (forwardedHost || host || requestUrlHost || '')
+    .split(',')[0]
+    .trim()
+    .toLowerCase()
+
+  return candidate.replace(/:\d+$/, '')
+}
+
 function inferSharedCookieDomain(request: Request): string | undefined {
-  if (OAUTH_CONTEXT_COOKIE_DOMAIN) {
-    return OAUTH_CONTEXT_COOKIE_DOMAIN
+  const configuredDomain = normalizeCookieDomain(OAUTH_CONTEXT_COOKIE_DOMAIN)
+  if (configuredDomain) {
+    return configuredDomain
   }
 
-  const url = new URL(request.url)
-  const hostname = url.hostname.trim().toLowerCase()
+  const hostname = getRequestHostname(request)
   if (!hostname || hostname === 'localhost' || hostname.endsWith('.localhost')) {
     return undefined
   }
@@ -34,7 +51,7 @@ function inferSharedCookieDomain(request: Request): string | undefined {
     return undefined
   }
 
-  return `.${parts.slice(-2).join('.')}`
+  return parts.slice(-2).join('.')
 }
 
 function buildCookieHeader(name: string, value: string): string {

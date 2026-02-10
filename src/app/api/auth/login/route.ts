@@ -6,12 +6,29 @@ const OAUTH_CONTEXT_COOKIE_NAME = (process.env.OAUTH_CONTEXT_COOKIE_NAME || 'oau
 const OAUTH_COOKIE_FALLBACK_MAX_AGE_SECONDS = 10 * 60 // 10 minutes
 const OAUTH_CONTEXT_COOKIE_DOMAIN = process.env.OAUTH_CONTEXT_COOKIE_DOMAIN?.trim()
 
+function normalizeCookieDomain(rawDomain: string | undefined): string | undefined {
+  const normalized = (rawDomain || '').trim().toLowerCase().replace(/^\.+/, '')
+  return normalized.length > 0 ? normalized : undefined
+}
+
+function getRequestHostname(request: NextRequest): string {
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const host = request.headers.get('host')
+  const candidate = (forwardedHost || host || request.nextUrl.hostname || '')
+    .split(',')[0]
+    .trim()
+    .toLowerCase()
+
+  return candidate.replace(/:\d+$/, '')
+}
+
 function getCookieDomain(request: NextRequest): string | undefined {
-  if (OAUTH_CONTEXT_COOKIE_DOMAIN) {
-    return OAUTH_CONTEXT_COOKIE_DOMAIN
+  const configuredDomain = normalizeCookieDomain(OAUTH_CONTEXT_COOKIE_DOMAIN)
+  if (configuredDomain) {
+    return configuredDomain
   }
 
-  const hostname = request.nextUrl.hostname.trim().toLowerCase()
+  const hostname = getRequestHostname(request)
   if (!hostname || hostname === 'localhost' || hostname.endsWith('.localhost')) {
     return undefined
   }
@@ -26,7 +43,7 @@ function getCookieDomain(request: NextRequest): string | undefined {
     return undefined
   }
 
-  return `.${parts.slice(-2).join('.')}`
+  return parts.slice(-2).join('.')
 }
 
 export async function GET(request: NextRequest) {

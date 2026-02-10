@@ -12,6 +12,7 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   no_guilds: 'No accessible guilds were found for your account.',
   server_error: 'Authentication service is temporarily unavailable.',
   access_denied: 'Discord sign-in was cancelled.',
+  session_expired: 'Your session expired. Please sign in again.',
 };
 
 function LoginContent() {

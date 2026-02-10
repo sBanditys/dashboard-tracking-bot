@@ -15,7 +15,10 @@ export async function POST() {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${authToken}`,
-          ...(process.env.API_KEY && { 'X-API-Key': process.env.API_KEY }),
+          ...(process.env.API_KEY && {
+            'X-API-Key': process.env.API_KEY,
+            'X-Service-Name': process.env.API_SERVICE_NAME || 'dashboard-frontend',
+          }),
         },
         body: JSON.stringify({
           ...(refreshToken && { refresh_token: refreshToken }),

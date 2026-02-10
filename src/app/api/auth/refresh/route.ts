@@ -24,7 +24,10 @@ export async function POST() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(process.env.API_KEY && { 'X-API-Key': process.env.API_KEY }),
+        ...(process.env.API_KEY && {
+          'X-API-Key': process.env.API_KEY,
+          'X-Service-Name': process.env.API_SERVICE_NAME || 'dashboard-frontend',
+        }),
       },
       body: JSON.stringify({ refresh_token: refreshToken }),
       cache: 'no-store',

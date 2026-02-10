@@ -29,11 +29,19 @@ export function usePersistentState<T>(
         try {
             const stored = sessionStorage.getItem(key)
             if (stored !== null) {
+                // `JSON.stringify(undefined)` produces undefined, which browsers persist
+                // as the literal string "undefined". Treat invalid sentinel values as empty.
+                if (stored === 'undefined' || stored === 'null' || stored.trim() === '') {
+                    sessionStorage.removeItem(key)
+                    return defaultValue
+                }
                 return JSON.parse(stored) as T
             }
         } catch (error) {
             // Handle JSON parse errors, corrupted data, or quota exceeded errors
             console.warn(`Failed to read sessionStorage key "${key}":`, error)
+            // Self-heal corrupted storage to avoid repeated parse errors.
+            sessionStorage.removeItem(key)
         }
 
         return defaultValue
@@ -47,7 +55,19 @@ export function usePersistentState<T>(
         }
 
         try {
-            sessionStorage.setItem(key, JSON.stringify(state))
+            // Avoid persisting "undefined" as a string value.
+            if (typeof state === 'undefined') {
+                sessionStorage.removeItem(key)
+                return
+            }
+
+            const serialized = JSON.stringify(state)
+            if (typeof serialized === 'undefined') {
+                sessionStorage.removeItem(key)
+                return
+            }
+
+            sessionStorage.setItem(key, serialized)
         } catch (error) {
             // Handle quota exceeded or other storage errors
             console.warn(`Failed to write sessionStorage key "${key}":`, error)

@@ -12,6 +12,7 @@ const MAX_BACKOFF_MS = 30000; // 30 seconds
 const BASE_BACKOFF_MS = 1000; // 1 second
 const RETRYABLE_SERVER_STATUSES = new Set([500, 502, 503, 504]);
 let refreshPromise: Promise<boolean> | null = null;
+let sessionRecoveryInProgress = false;
 
 /**
  * Calculate exponential backoff delay with jitter
@@ -76,6 +77,8 @@ async function refreshSession(): Promise<boolean> {
     try {
       const response = await fetch('/api/auth/refresh', {
         method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
       });
       return response.ok;
     } catch {
@@ -86,6 +89,28 @@ async function refreshSession(): Promise<boolean> {
   })();
 
   return refreshPromise;
+}
+
+async function recoverExpiredSession(): Promise<void> {
+  if (sessionRecoveryInProgress) {
+    return;
+  }
+
+  sessionRecoveryInProgress = true;
+
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+    }).catch(() => undefined);
+
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      window.location.replace('/login?error=session_expired');
+    }
+  } finally {
+    sessionRecoveryInProgress = false;
+  }
 }
 
 /**
@@ -115,6 +140,13 @@ export async function fetchWithRetry(
           didRetryAfterRefresh = true;
           continue;
         }
+
+        await recoverExpiredSession();
+        return response;
+      }
+
+      if (response.status === 401 && didRetryAfterRefresh && !isAuthEndpoint(url)) {
+        await recoverExpiredSession();
       }
 
       // Handle 429 Too Many Requests — retry with backoff

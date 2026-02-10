@@ -4,6 +4,7 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const API_KEY = process.env.API_KEY;
+const API_SERVICE_NAME = process.env.API_SERVICE_NAME || 'dashboard-frontend';
 
 interface ApiResponse<T> {
   data?: T;
@@ -28,6 +29,7 @@ async function apiRequest<T>(
   // Add API key for tracking bot authentication
   if (API_KEY) {
     headers['X-API-Key'] = API_KEY;
+    headers['X-Service-Name'] = API_SERVICE_NAME;
   }
 
   if (token) {

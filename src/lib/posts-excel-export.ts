@@ -45,6 +45,13 @@ const ROW_HEADERS: Array<keyof PostExportRow> = [
 ]
 
 const textEncoder = new TextEncoder()
+const CSV_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: '2-digit',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+})
 
 const crcTable = (() => {
   const table = new Uint32Array(256)
@@ -75,11 +82,18 @@ function toNumberOrEmpty(value: unknown): number | '' {
   return typeof value === 'number' && Number.isFinite(value) ? value : ''
 }
 
+function formatPostedAt(value: string | null): string {
+  if (!value) return ''
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return CSV_DATE_FORMATTER.format(parsed)
+}
+
 function toPostExportRow(post: Post): PostExportRow {
   return {
     Link: post.url ?? '',
     Views: toNumberOrEmpty(post.metrics?.views),
-    'Posted At': post.posted_at ?? post.submitted_at ?? '',
+    'Posted At': formatPostedAt(post.posted_at ?? post.submitted_at ?? null),
     Likes: toNumberOrEmpty(post.metrics?.likes),
     Comments: toNumberOrEmpty(post.metrics?.comments),
     Shares: toNumberOrEmpty(post.metrics?.shares),
@@ -101,29 +115,63 @@ function cellReference(columnIndex: number, rowIndex: number): string {
   return `${columnToLetter(columnIndex)}${rowIndex + 1}`
 }
 
-function createCellXml(columnIndex: number, rowIndex: number, value: string | number | ''): string {
+function isHttpUrl(value: string): boolean {
+  const trimmed = value.trim().toLowerCase()
+  return trimmed.startsWith('http://') || trimmed.startsWith('https://')
+}
+
+function escapeFormulaString(value: string): string {
+  return value.replace(/"/g, '""')
+}
+
+function createCellXml(
+  columnIndex: number,
+  rowIndex: number,
+  header: keyof PostExportRow,
+  value: string | number | '',
+  isHeader: boolean
+): string {
   const ref = cellReference(columnIndex, rowIndex)
 
-  if (typeof value === 'number') {
+  if (!isHeader && header === 'Link' && typeof value === 'string' && isHttpUrl(value)) {
+    const formulaUrl = escapeFormulaString(value)
+    const safeValue = escapeXml(value)
+    return `<c r="${ref}" t="str"><f>HYPERLINK("${formulaUrl}","${formulaUrl}")</f><v>${safeValue}</v></c>`
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
     return `<c r="${ref}"><v>${value}</v></c>`
   }
 
-  const safeValue = escapeXml(value)
+  const safeValue = escapeXml(String(value))
   return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${safeValue}</t></is></c>`
 }
 
 function createSheetXml(rows: PostExportRow[]): string {
-  const headerRowXml = `<row r="1">${ROW_HEADERS.map((header, index) => createCellXml(index, 0, header)).join('')}</row>`
+  const headerRowXml = `<row r="1">${ROW_HEADERS.map((header, index) => createCellXml(index, 0, header, header, true)).join('')}</row>`
 
   const bodyRowsXml = rows.map((row, rowIndex) => {
     const xmlRowIndex = rowIndex + 1
-    const cells = ROW_HEADERS.map((header, columnIndex) => createCellXml(columnIndex, xmlRowIndex, row[header]))
+    const cells = ROW_HEADERS.map((header, columnIndex) =>
+      createCellXml(columnIndex, xmlRowIndex, header, row[header], false)
+    )
     return `<row r="${xmlRowIndex + 1}">${cells.join('')}</row>`
   }).join('')
 
+  const lastRow = Math.max(1, rows.length + 1)
+
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <cols>
+    <col min="1" max="1" width="64" customWidth="1"/>
+    <col min="2" max="2" width="12" customWidth="1"/>
+    <col min="3" max="3" width="24" customWidth="1"/>
+    <col min="4" max="4" width="12" customWidth="1"/>
+    <col min="5" max="5" width="12" customWidth="1"/>
+    <col min="6" max="6" width="12" customWidth="1"/>
+  </cols>
   <sheetData>${headerRowXml}${bodyRowsXml}</sheetData>
+  <autoFilter ref="A1:F${lastRow}"/>
 </worksheet>`
 }
 

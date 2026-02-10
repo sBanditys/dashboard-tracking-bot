@@ -33,9 +33,9 @@ export function ExportDropdown({
       // For posts "All data", keep schema aligned with /export metrics output.
       if (dataType === 'posts' && mode === 'all' && (format === 'csv' || format === 'xlsx')) {
         if (format === 'csv') {
-          const exportedCount = await exportAllPostsMetricsCsv(guildId, `export_metrics_${Date.now()}`)
+          const result = await exportAllPostsMetricsCsv(guildId, `export_metrics_${Date.now()}`)
           toast.success('Posts exported', {
-            description: `${exportedCount.toLocaleString()} records downloaded`,
+            description: `${result.recordCount.toLocaleString()} records in ${result.fileCount} CSV file${result.fileCount === 1 ? '' : 's'} (ZIP)`,
           })
         } else {
           const result = await exportAllPostsMetricsWorkbook(guildId, `export_metrics_${Date.now()}`)

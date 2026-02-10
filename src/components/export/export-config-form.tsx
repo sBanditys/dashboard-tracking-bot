@@ -62,9 +62,9 @@ export function ExportConfigForm({
       if (dataType === 'posts' && mode === 'all' && (format === 'csv' || format === 'xlsx')) {
         setIsDirectExporting(true)
         if (format === 'csv') {
-          const exportedCount = await exportAllPostsMetricsCsv(guildId, filename || getDefaultFilename(guildName, 'posts'))
+          const result = await exportAllPostsMetricsCsv(guildId, filename || getDefaultFilename(guildName, 'posts'))
           toast.success('Posts exported', {
-            description: `${exportedCount.toLocaleString()} records downloaded`,
+            description: `${result.recordCount.toLocaleString()} records in ${result.fileCount} CSV file${result.fileCount === 1 ? '' : 's'} (ZIP)`,
           })
         } else {
           const result = await exportAllPostsMetricsWorkbook(guildId, filename || getDefaultFilename(guildName, 'posts'))

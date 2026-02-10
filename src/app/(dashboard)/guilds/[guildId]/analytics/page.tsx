@@ -121,6 +121,8 @@ export default function AnalyticsPage() {
     : []
 
   const totalDailyViews = chartData.reduce((sum, d) => sum + d.value, 0)
+  const latestDailyViews = chartData.length > 0 ? chartData[chartData.length - 1].value : 0
+  const dailyViewsText = `Daily views: ${formatCompact(latestDailyViews)}`
 
   // Transform time series data for submissions count chart
   const submissionsChartData: ChartDataPoint[] = analytics?.time_series
@@ -132,6 +134,10 @@ export default function AnalyticsPage() {
     : []
 
   const totalSubmissions = submissionsChartData.reduce((sum, d) => sum + d.value, 0)
+  const latestDailySubmissions = submissionsChartData.length > 0
+    ? submissionsChartData[submissionsChartData.length - 1].value
+    : 0
+  const dailySubmissionsText = `Daily submissions: ${latestDailySubmissions.toLocaleString()}`
 
   // Refresh tracking status
   const refreshEnabled = guild?.auto_refresh?.enabled ?? false
@@ -219,6 +225,7 @@ export default function AnalyticsPage() {
             <AnalyticsChart
               data={submissionsChartData}
               title="Daily Post Submissions"
+              centerText={dailySubmissionsText}
               totalValue={totalSubmissions}
               tooltipLabel="posts"
               granularity={analytics.granularity}
@@ -232,6 +239,7 @@ export default function AnalyticsPage() {
             <AnalyticsChart
               data={chartData}
               title="Daily Views"
+              centerText={dailyViewsText}
               totalValue={totalDailyViews}
               tooltipLabel="views"
               granularity={analytics.granularity}

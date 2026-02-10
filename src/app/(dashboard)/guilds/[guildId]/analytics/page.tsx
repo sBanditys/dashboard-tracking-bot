@@ -67,6 +67,12 @@ export default function AnalyticsPage() {
     (leaderboardLoading && !leaderboard) ||
     (shouldFetchLastWeekLeaderboard && lastWeekLeaderboardLoading && !lastWeekLeaderboard)
 
+  const formatCompact = (num: number): string => {
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`
+    if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`
+    return num.toLocaleString()
+  }
+
   const weeklyWeeksSorted = weeklyData?.weeks
     ? [...weeklyData.weeks].sort(
         (a, b) => parseISO(a.week_start).getTime() - parseISO(b.week_start).getTime()
@@ -83,17 +89,27 @@ export default function AnalyticsPage() {
   const totalWeeklyViews = weeklyViewsChartData.reduce((sum, d) => sum + d.value, 0)
   const latestWeek = weeklyWeeksSorted.length > 0 ? weeklyWeeksSorted[weeklyWeeksSorted.length - 1] : null
   const previousWeek = weeklyWeeksSorted.length > 1 ? weeklyWeeksSorted[weeklyWeeksSorted.length - 2] : null
-  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000
-  const latestWeekIsRecent = latestWeek
-    ? (Date.now() - parseISO(latestWeek.week_start).getTime() < sevenDaysMs)
-    : false
-  const shouldUseLastWeekSummary =
-    range === 7 && (usingLastWeekLeaderboard || !latestWeekIsRecent || (latestWeek?.total_views ?? 0) === 0)
-  const weekSummary = shouldUseLastWeekSummary
-    ? (previousWeek ?? latestWeek)
-    : latestWeek
-  const weekSummaryValue = weekSummary?.total_views ?? 0
-  const weekSummaryLabel = shouldUseLastWeekSummary ? 'Last week view:' : 'This week view:'
+  const weeklyAllTimeText = `All time views: ${formatCompact(totalWeeklyViews)}`
+
+  // 7d summary value:
+  // - If we already detected "no new submissions this week", use latest available week as last-week fallback.
+  // - Otherwise use current week when present; if empty, fall back to previous week.
+  const weekSummaryValue = (() => {
+    if (usingLastWeekLeaderboard) {
+      return latestWeek?.total_views ?? 0
+    }
+
+    if ((latestWeek?.total_views ?? 0) > 0) {
+      return latestWeek!.total_views
+    }
+
+    return previousWeek?.total_views ?? latestWeek?.total_views ?? 0
+  })()
+
+  const weekSummaryLabel =
+    usingLastWeekLeaderboard || (latestWeek?.total_views ?? 0) === 0
+      ? 'Last week view:'
+      : 'This week view:'
 
   // Transform views series data for chart (daily VideoMetrics)
   const chartData: ChartDataPoint[] = analytics?.views_series
@@ -186,7 +202,7 @@ export default function AnalyticsPage() {
             <AnalyticsChart
               data={weeklyViewsChartData}
               title="Weekly Submission Views"
-              centerText="All time views:"
+              centerText={weeklyAllTimeText}
               statusBadge={range === 7 ? (
                 <span className="text-sm font-medium text-gray-300">{weekSummaryLabel}</span>
               ) : undefined}

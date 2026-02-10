@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils'
 import { useCreateExport } from '@/hooks/use-exports'
 import { ExportProgress } from '@/components/export/export-progress'
 import { useExportProgress } from '@/hooks/use-exports'
+import { exportAllPostsMetricsCsv } from '@/lib/posts-csv-export'
+import { toast } from 'sonner'
 import type { ExportFormat, ExportMode, ExportRecord } from '@/types/export'
 
 interface ExportConfigFormProps {
@@ -41,6 +43,7 @@ export function ExportConfigForm({
   const [mode, setMode] = useState<ExportMode>('all')
   const [filename, setFilename] = useState(getDefaultFilename(guildName, 'accounts'))
   const [activeExportId, setActiveExportId] = useState<string | null>(null)
+  const [isDirectExporting, setIsDirectExporting] = useState(false)
 
   const createExport = useCreateExport(guildId)
   const exportProgress = useExportProgress(guildId, activeExportId)
@@ -54,6 +57,16 @@ export function ExportConfigForm({
     e.preventDefault()
 
     try {
+      // For posts CSV "Export all data", generate the same metrics file schema as /export metrics.
+      if (dataType === 'posts' && format === 'csv' && mode === 'all') {
+        setIsDirectExporting(true)
+        const exportedCount = await exportAllPostsMetricsCsv(guildId, filename || getDefaultFilename(guildName, 'posts'))
+        toast.success('Posts exported', {
+          description: `${exportedCount.toLocaleString()} records downloaded`,
+        })
+        return
+      }
+
       const result = await createExport.mutateAsync({
         format,
         mode,
@@ -62,8 +75,14 @@ export function ExportConfigForm({
       })
       setActiveExportId(result.id)
       onExportStarted?.(result)
-    } catch {
-      // Error handled by mutation state
+    } catch (error) {
+      if (dataType === 'posts' && format === 'csv' && mode === 'all') {
+        toast.error('Failed to export posts', {
+          description: error instanceof Error ? error.message : 'Unknown error',
+        })
+      }
+    } finally {
+      setIsDirectExporting(false)
     }
   }
 
@@ -184,13 +203,13 @@ export function ExportConfigForm({
         {/* Submit */}
         <button
           type="submit"
-          disabled={createExport.isPending || isExportActive}
+          disabled={createExport.isPending || isExportActive || isDirectExporting}
           className={cn(
             'bg-accent-purple hover:bg-accent-purple/90 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors',
-            (createExport.isPending || isExportActive) && 'opacity-50 cursor-not-allowed'
+            (createExport.isPending || isExportActive || isDirectExporting) && 'opacity-50 cursor-not-allowed'
           )}
         >
-          {createExport.isPending ? 'Starting...' : 'Start Export'}
+          {isDirectExporting ? 'Exporting...' : createExport.isPending ? 'Starting...' : 'Start Export'}
         </button>
       </form>
 

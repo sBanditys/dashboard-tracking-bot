@@ -186,13 +186,12 @@ export default function PostsPage({ params }: PageProps) {
         }
 
         const rows = selectedPosts.map((post) => ({
-            platform: post.platform,
-            link: post.url,
-            views: post.metrics?.views ?? '',
-            postedAt: post.posted_at ?? post.submitted_at ?? '',
-            likes: post.metrics?.likes ?? '',
-            comments: post.metrics?.comments ?? '',
-            shares: post.metrics?.shares ?? '',
+            Link: post.url,
+            Views: post.metrics?.views ?? '',
+            'Posted At': post.posted_at ?? post.submitted_at ?? '',
+            Likes: post.metrics?.likes ?? '',
+            Comments: post.metrics?.comments ?? '',
+            Shares: post.metrics?.shares ?? '',
         }))
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-')

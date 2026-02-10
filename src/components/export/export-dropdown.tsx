@@ -4,6 +4,8 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { useState } from 'react'
 import type { ExportFormat, ExportMode } from '@/types/export'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
+import { exportAllPostsMetricsCsv } from '@/lib/posts-csv-export'
+import { toast } from 'sonner'
 
 interface ExportDropdownProps {
   guildId: string
@@ -27,6 +29,15 @@ export function ExportDropdown({
     setLoadingFormat(key)
 
     try {
+      // For posts CSV "All data", keep schema aligned with /export metrics output.
+      if (dataType === 'posts' && mode === 'all' && format === 'csv') {
+        const exportedCount = await exportAllPostsMetricsCsv(guildId, `export_metrics_${Date.now()}`)
+        toast.success('Posts exported', {
+          description: `${exportedCount.toLocaleString()} records downloaded`,
+        })
+        return
+      }
+
       const response = await fetchWithRetry(`/api/guilds/${guildId}/exports`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -47,6 +58,9 @@ export function ExportDropdown({
       }
     } catch (error) {
       console.error('Export creation failed:', error)
+      toast.error('Export failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
     } finally {
       setLoadingFormat(null)
     }

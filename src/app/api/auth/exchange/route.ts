@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/server/backend-fetch'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { extractDashboardSessionCookies } from '@/lib/server/dashboard-session-cookies'
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
       headers.Cookie = buildCookieHeader(OAUTH_CONTEXT_COOKIE_NAME, bindingCookie)
     }
 
-    const upstream = await fetch(`${API_URL}/api/v1/auth/exchange`, {
+    const upstream = await backendFetch(`${API_URL}/api/v1/auth/exchange`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ code }),

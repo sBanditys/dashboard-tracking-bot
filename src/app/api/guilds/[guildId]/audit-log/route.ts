@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/server/backend-fetch'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   try {
     const { searchParams } = new URL(request.url)
-    const response = await fetch(`${API_URL}/api/v1/guilds/${guildId}/audit-log?${searchParams.toString()}`, {
+    const response = await backendFetch(`${API_URL}/api/v1/guilds/${guildId}/audit-log?${searchParams.toString()}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },

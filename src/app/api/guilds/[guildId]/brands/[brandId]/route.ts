@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/server/backend-fetch'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
@@ -15,7 +16,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const response = await fetch(`${API_URL}/api/v1/guilds/${guildId}/brands/${brandId}`, {
+    const response = await backendFetch(`${API_URL}/api/v1/guilds/${guildId}/brands/${brandId}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,

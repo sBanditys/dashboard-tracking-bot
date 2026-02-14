@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/server/backend-fetch'
 import { cookies } from 'next/headers'
 
 export const runtime = 'nodejs'
@@ -17,7 +18,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     }
 
     try {
-        const response = await fetch(
+        const response = await backendFetch(
             `${API_URL}/api/v1/guilds/${guildId}/status/stream`,
             {
                 headers: {

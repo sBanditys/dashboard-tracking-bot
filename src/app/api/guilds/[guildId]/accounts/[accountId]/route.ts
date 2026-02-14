@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/server/backend-fetch'
 // src/app/api/guilds/[guildId]/accounts/[accountId]/route.ts
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -17,7 +18,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const response = await fetch(`${API_URL}/api/v1/guilds/${guildId}/accounts/${accountId}`, {
+    const response = await backendFetch(`${API_URL}/api/v1/guilds/${guildId}/accounts/${accountId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,

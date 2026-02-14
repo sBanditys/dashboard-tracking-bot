@@ -28,6 +28,11 @@ async function apiRequest<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  // Add internal service secret for SSR rate-limiting bypass
+  if (process.env.INTERNAL_API_SECRET) {
+    headers['X-Internal-Secret'] = process.env.INTERNAL_API_SECRET;
+  }
+
   try {
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...fetchOptions,

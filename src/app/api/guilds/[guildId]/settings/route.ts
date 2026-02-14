@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/server/backend-fetch'
 // Source: Codebase src/app/api/guilds/[guildId]/route.ts pattern
 // File: src/app/api/guilds/[guildId]/settings/route.ts
 
@@ -20,7 +21,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const body = await request.json()
 
-    const response = await fetch(`${API_URL}/api/v1/guilds/${guildId}/settings`, {
+    const response = await backendFetch(`${API_URL}/api/v1/guilds/${guildId}/settings`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,

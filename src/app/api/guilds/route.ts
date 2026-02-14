@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/server/backend-fetch'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
@@ -12,7 +13,7 @@ export async function GET(_request: NextRequest) {
     }
 
     try {
-        const response = await fetch(`${API_URL}/api/v1/guilds`, {
+        const response = await backendFetch(`${API_URL}/api/v1/guilds`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },

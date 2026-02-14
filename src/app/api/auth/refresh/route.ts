@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/server/backend-fetch'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { extractDashboardSessionCookies } from '@/lib/server/dashboard-session-cookies'
@@ -58,7 +59,7 @@ export async function POST() {
       headers['X-CSRF-Token'] = csrfToken
     }
 
-    const upstream = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+    const upstream = await backendFetch(`${API_URL}/api/v1/auth/refresh`, {
       method: 'POST',
       headers,
       body: JSON.stringify({}), // Empty body -- backend reads tokens from cookies

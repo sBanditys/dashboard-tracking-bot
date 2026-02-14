@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/server/backend-fetch'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       // Restore endpoint does not require a body; ignore parse errors for empty bodies.
     }
 
-    const response = await fetch(`${API_URL}/api/v1/guilds/${guildId}/trash/${itemId}/restore`, {
+    const response = await backendFetch(`${API_URL}/api/v1/guilds/${guildId}/trash/${itemId}/restore`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/server/backend-fetch'
 import { NextRequest, NextResponse } from 'next/server'
 import { extractSetCookieByName } from '@/lib/server/dashboard-session-cookies'
 
@@ -48,7 +49,7 @@ function getCookieDomain(request: NextRequest): string | undefined {
 
 export async function GET(request: NextRequest) {
   try {
-    const upstream = await fetch(`${API_URL}/api/v1/auth/discord`, {
+    const upstream = await backendFetch(`${API_URL}/api/v1/auth/discord`, {
       method: 'GET',
       redirect: 'manual',
       cache: 'no-store',

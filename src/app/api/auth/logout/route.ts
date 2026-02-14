@@ -1,3 +1,4 @@
+import { backendFetch } from '@/lib/server/backend-fetch'
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
@@ -10,7 +11,7 @@ export async function POST() {
     const refreshToken = cookieStore.get('refresh_token')?.value;
 
     if (authToken) {
-      await fetch(`${API_URL}/api/v1/auth/logout`, {
+      await backendFetch(`${API_URL}/api/v1/auth/logout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

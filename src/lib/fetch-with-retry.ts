@@ -5,6 +5,16 @@
  * or falls back to exponential backoff (1s, 2s, 4s...) capped at 30s.
  *
  * Adds jitter (0-50% randomization) to prevent thundering herd.
+ *
+ * Session Refresh Flow:
+ * 1. Client makes API request via fetchWithRetry
+ * 2. If 401 received, call refreshSession() -> POST /api/auth/refresh
+ * 3. Next.js refresh route reads refresh_token from its cookie store
+ * 4. Next.js forwards refresh_token as Cookie header to backend API
+ * 5. Backend validates refresh token, issues new token pair
+ * 6. Next.js stores new tokens in its cookie store
+ * 7. fetchWithRetry retries original request with new auth_token cookie
+ * 8. If retry also returns 401, session is unrecoverable -> redirect to login
  */
 
 const DEFAULT_MAX_RETRIES = 3;
@@ -188,6 +198,9 @@ export async function fetchWithRetry(
         const refreshed = await refreshSession();
         if (refreshed) {
           didRetryAfterRefresh = true;
+          // After successful token refresh, retry the original request.
+          // The refreshed auth_token cookie is sent automatically if
+          // the caller includes credentials: 'include' in the options.
           continue;
         }
 

@@ -6,6 +6,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 const DEFAULT_ACCESS_MAX_AGE_SECONDS = 60 * 60
 const DEFAULT_REFRESH_MAX_AGE_SECONDS = 90 * 24 * 60 * 60
 
+// Cookie names used by the backend API (env-configurable for consistency)
+const DASHBOARD_ACCESS_COOKIE_NAME = (process.env.DASHBOARD_ACCESS_COOKIE_NAME || 'dashboard_at').trim()
+const DASHBOARD_REFRESH_COOKIE_NAME = (process.env.DASHBOARD_REFRESH_COOKIE_NAME || 'dashboard_rt').trim()
+
 interface LegacyTokenPayload {
   access_token?: string
   refresh_token?: string
@@ -30,17 +34,34 @@ export async function POST() {
       return NextResponse.json({ error: 'No refresh token' }, { status: 401 })
     }
 
+    // Build Cookie header to forward tokens to backend
+    // The backend's /api/v1/auth/refresh endpoint reads tokens from cookies only (not from JSON body)
+    const cookieParts: string[] = []
+    if (refreshToken) {
+      cookieParts.push(`${DASHBOARD_REFRESH_COOKIE_NAME}=${encodeURIComponent(refreshToken)}`)
+    }
+    if (accessToken) {
+      cookieParts.push(`${DASHBOARD_ACCESS_COOKIE_NAME}=${encodeURIComponent(accessToken)}`)
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'Cookie': cookieParts.join('; '),
     }
     if (accessToken) {
       headers.Authorization = `Bearer ${accessToken}`
     }
 
+    // Forward CSRF token if available (backend validates CSRF for cookie-authenticated requests)
+    const csrfToken = cookieStore.get('csrf_token')?.value
+    if (csrfToken) {
+      headers['X-CSRF-Token'] = csrfToken
+    }
+
     const upstream = await fetch(`${API_URL}/api/v1/auth/refresh`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ refresh_token: refreshToken }),
+      body: JSON.stringify({}), // Empty body -- backend reads tokens from cookies
       cache: 'no-store',
     })
 

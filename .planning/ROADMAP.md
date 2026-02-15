@@ -1,199 +1,40 @@
 # Roadmap: Tracking Dashboard
 
-## Overview
+## Milestones
 
-This roadmap transforms an API-backed Discord tracking bot into a standalone web dashboard. The journey starts with authentication foundations, progresses through guild management and data display, adds real-time updates and configuration capabilities, then layers on analytics and data management features. Each phase delivers a coherent, independently verifiable capability that builds toward a complete SaaS dashboard independent of bot uptime.
+- ✅ **v1.0 MVP** — Phases 1-8 (shipped 2026-02-16)
 
 ## Phases
 
-**Phase Numbering:**
-- Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+<details>
+<summary>✅ v1.0 MVP (Phases 1-8) — SHIPPED 2026-02-16</summary>
 
-Decimal phases appear between their surrounding integers in numeric order.
+- [x] Phase 1: Foundation & Authentication (5/5 plans) — completed 2026-01-29
+- [x] Phase 2: Guild Management (2/2 plans) — completed 2026-01-30
+- [x] Phase 3: Tracking Data Display (6/6 plans) — completed 2026-02-01
+- [x] Phase 4: Real-Time Updates (3/3 plans) — completed 2026-02-03
+- [x] Phase 5: Configuration & Mutations (7/7 plans) — completed 2026-02-05
+- [x] Phase 6: Analytics (6/6 plans) — completed 2026-02-07
+- [x] Phase 7: Data Management (9/9 plans) — completed 2026-02-07
+- [x] Phase 8: Polish & Optimization (9/9 plans) — completed 2026-02-14
 
-- [x] **Phase 1: Foundation & Authentication** - Secure login, session management, base UI structure
-- [x] **Phase 2: Guild Management** - Guild list, detail views, multi-tenant data model
-- [x] **Phase 3: Tracking Data Display** - View tracked accounts, posts, brands with pagination
-- [x] **Phase 4: Real-Time Updates** - Bot status indicators with live updates
-- [x] **Phase 5: Configuration & Mutations** - Add/edit/remove tracked items and settings
-- [x] **Phase 6: Analytics** - Counters, time-series graphs, activity timelines
-- [x] **Phase 7: Data Management** - Exports, bulk operations, soft delete with trash
-- [ ] **Phase 8: Polish & Optimization** - Performance tuning, edge cases, production readiness
+Full details: `milestones/v1.0-ROADMAP.md`
 
-## Phase Details
-
-### Phase 1: Foundation & Authentication
-**Goal**: Users can securely access the dashboard with persistent sessions
-**Depends on**: Nothing (first phase)
-**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, UX-01, UX-02, LEGAL-01, LEGAL-02
-**Success Criteria** (what must be TRUE):
-  1. User can log in via Discord OAuth and see their username/avatar
-  2. User session persists across browser refresh without re-login
-  3. User can log out from any page and is redirected to login
-  4. Dashboard displays in dark mode with responsive layout on mobile devices
-  5. Terms of service and privacy policy pages are accessible
-**Plans**: 5 plans
-
-Plans:
-- [x] 01-01-PLAN.md — Project setup with Next.js, Tailwind, React Query, and theme providers
-- [x] 01-02-PLAN.md — Terms of Service and Privacy Policy pages
-- [x] 01-03-PLAN.md — Discord OAuth authentication flow with persistent sessions
-- [x] 01-04-PLAN.md — Dashboard shell with sidebar, topbar, mobile drawer, and theme toggle
-- [x] 01-05-PLAN.md — Visual and functional verification checkpoint
-
-### Phase 2: Guild Management
-**Goal**: Users can view and switch between their accessible Discord guilds
-**Depends on**: Phase 1
-**Requirements**: GUILD-01, GUILD-02, GUILD-03
-**Success Criteria** (what must be TRUE):
-  1. User sees a list of guilds where they have manage permissions
-  2. User can select a guild and view its details (settings, usage stats)
-  3. User can switch between guilds via a guild switcher without page reload
-  4. Guild list shows only guilds user currently has access to (no stale permissions)
-**Plans**: 2 plans
-
-Plans:
-- [x] 02-01-PLAN.md — Guild switcher component with Headless UI integration
-- [x] 02-02-PLAN.md — Visual and functional verification checkpoint
-
-### Phase 3: Tracking Data Display
-**Goal**: Users can view all tracked content within their selected guild
-**Depends on**: Phase 2
-**Requirements**: TRACK-01, TRACK-02, TRACK-03, TRACK-04
-**Success Criteria** (what must be TRUE):
-  1. User can view tracked accounts with pagination (50 per page)
-  2. User can view tracked posts with pagination (50 per page)
-  3. User can view brands configured within the guild
-  4. User can search and filter tracked items by name, platform, or date
-  5. Empty states guide users to add their first tracked item
-**Plans**: 6 plans
-
-Plans:
-- [x] 03-01-PLAN.md — Foundation setup (deps, useDebounce, PlatformIcon, EmptyState)
-- [x] 03-02-PLAN.md — Filter components (FilterBar, SearchInput, PlatformSelect, DateRangePicker)
-- [x] 03-03-PLAN.md — Infinite scroll hooks and ScrollToTop component
-- [x] 03-04-PLAN.md — Card components (AccountCard, PostCard with skeletons)
-- [x] 03-05-PLAN.md — Refactor tracking pages to cards and infinite scroll
-- [x] 03-06-PLAN.md — Visual and functional verification checkpoint
-
-### Phase 4: Real-Time Updates
-**Goal**: Users can see bot health status that updates automatically
-**Depends on**: Phase 2
-**Requirements**: GUILD-04
-**Success Criteria** (what must be TRUE):
-  1. User sees bot online/offline status indicator that updates in real-time
-  2. Bot status changes reflect within 5 seconds without manual refresh
-  3. User sees last seen timestamp when bot is offline
-  4. Dashboard remains functional when bot is down (independent uptime)
-**Plans**: 3 plans
-
-Plans:
-- [x] 04-01-PLAN.md — SSE infrastructure (proxy route and useSSE hook)
-- [x] 04-02-PLAN.md — Integrate SSE with status display
-- [x] 04-03-PLAN.md — Visual and functional verification checkpoint
-
-### Phase 5: Configuration & Mutations
-**Goal**: Users can modify guild settings and manage tracked items
-**Depends on**: Phase 3
-**Requirements**: CONF-01, CONF-02, CONF-03, CONF-04, CONF-05
-**Success Criteria** (what must be TRUE):
-  1. User can edit guild settings and see changes reflected immediately
-  2. User can add new tracked accounts/brands and see them in the list
-  3. User can remove tracked items with confirmation dialog
-  4. User can select Discord channels for notifications via dropdown
-  5. User can view audit log showing who changed what and when
-**Plans**: 7 plans
-
-Plans:
-- [x] 05-01-PLAN.md — Confirmation modal and delete mutations for accounts/brands
-- [x] 05-02-PLAN.md — Searchable channel combobox component and API
-- [x] 05-03-PLAN.md — Audit log system (types, hook, table, Activity page)
-- [x] 05-04-PLAN.md — Guild settings form with channel selection
-- [x] 05-05-PLAN.md — Add account and brand modals with validation
-- [x] 05-06-PLAN.md — Wire add/delete to tracking pages
-- [x] 05-07-PLAN.md — Visual and functional verification checkpoint
-
-### Phase 6: Analytics
-**Goal**: Users can see usage metrics and activity insights
-**Depends on**: Phase 3
-**Requirements**: ANAL-01, ANAL-02, ANAL-03
-**Success Criteria** (what must be TRUE):
-  1. User sees basic counters (total tracked accounts, total posts captured)
-  2. User sees time-series graph of posts per day/week over last 30 days
-  3. User sees activity timeline of recent events (posts added, settings changed)
-  4. Graphs render correctly with zero data (empty state message)
-**Plans**: 6 plans
-
-Plans:
-- [x] 06-01-PLAN.md — Install Recharts, analytics types, API proxy routes, data hooks
-- [x] 06-02-PLAN.md — Counter cards and time range selector components
-- [x] 06-03-PLAN.md — Area chart and mini sparkline components
-- [x] 06-04-PLAN.md — Leaderboard and activity timeline components
-- [x] 06-05-PLAN.md — Full analytics page, sidebar link, guild overview enhancement
-- [x] 06-06-PLAN.md — Visual and functional verification checkpoint
-
-### Phase 7: Data Management
-**Goal**: Users can export and bulk-manage their tracking data with soft delete and trash recovery
-**Depends on**: Phase 5
-**Requirements**: DATA-01, DATA-02
-**Success Criteria** (what must be TRUE):
-  1. User can request and download data exports (CSV/JSON/XLSX format)
-  2. User can select multiple items and perform bulk operations (delete/reassign)
-  3. Export includes all tracked accounts, posts, and configuration
-  4. Bulk operations show confirmation with count of affected items
-**Plans**: 9 plans
-
-Plans:
-- [x] 07-01-PLAN.md — Foundation types, useShiftSelection hook, TypeToConfirmModal
-- [x] 07-02-PLAN.md — API proxy routes for exports, bulk operations, and trash
-- [x] 07-03-PLAN.md — React Query hooks for exports, bulk ops, and trash
-- [x] 07-04-PLAN.md — Selectable card wrappers, SelectionBar, BulkResultsToast
-- [x] 07-05-PLAN.md — ExportDropdown, ExportProgress, ReassignModal components
-- [x] 07-06-PLAN.md — Wire selection and bulk ops into Accounts and Posts pages
-- [x] 07-07-PLAN.md — Dedicated Exports page with config form and history table
-- [x] 07-08-PLAN.md — Trash page with restore and permanent delete
-- [x] 07-09-PLAN.md — Navigation integration and visual verification checkpoint
-
-### Phase 8: Polish & Optimization
-**Goal**: Dashboard performs well under real-world usage patterns
-**Depends on**: Phase 7
-**Requirements**: None (derived from research pitfalls and production testing)
-**Success Criteria** (what must be TRUE):
-  1. Dashboard initial load completes within 2 seconds on 3G connection
-  2. Page transitions feel instant (under 100ms perceived latency)
-  3. Large guilds (1000+ tracked items) render without performance degradation
-  4. Error boundaries gracefully handle API failures with actionable messages
-  5. All edge cases (empty states, network errors, permission changes) have clear UX
-**Plans**: 9 plans
-
-Plans:
-- [ ] 08-01-PLAN.md — Install deps, fetchWithRetry, progress bar, toast, gcTime
-- [ ] 08-02-PLAN.md — Error boundaries, offline banner, keyboard shortcuts
-- [ ] 08-03-PLAN.md — Persistent state, unsaved changes, SSE tab visibility
-- [ ] 08-04-PLAN.md — Optimistic updates, toast notifications, fetchWithRetry integration
-- [ ] 08-05-PLAN.md — State preservation on data pages, skeleton flash fix, loaded count
-- [ ] 08-06-PLAN.md — Code splitting, avatar optimization, bulk operation cap
-- [ ] 08-07-PLAN.md — Expired exports, zero-guild state, concurrent edit detection
-- [ ] 08-08-PLAN.md — Keyboard shortcut wiring, unsaved changes wiring, CSS transitions
-- [ ] 08-09-PLAN.md — Build verification and visual verification checkpoint
+</details>
 
 ## Progress
 
-**Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Foundation & Authentication | 5/5 | ✓ Complete | 2026-01-29 |
-| 2. Guild Management | 2/2 | ✓ Complete | 2026-01-30 |
-| 3. Tracking Data Display | 5/6 | In Progress | - |
-| 4. Real-Time Updates | 3/3 | ✓ Complete | 2026-02-03 |
-| 5. Configuration & Mutations | 0/7 | Not started | - |
-| 6. Analytics | 6/6 | ✓ Complete | 2026-02-07 |
-| 7. Data Management | 9/9 | ✓ Complete | 2026-02-07 |
-| 8. Polish & Optimization | 0/9 | Not started | - |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Foundation & Authentication | v1.0 | 5/5 | Complete | 2026-01-29 |
+| 2. Guild Management | v1.0 | 2/2 | Complete | 2026-01-30 |
+| 3. Tracking Data Display | v1.0 | 6/6 | Complete | 2026-02-01 |
+| 4. Real-Time Updates | v1.0 | 3/3 | Complete | 2026-02-03 |
+| 5. Configuration & Mutations | v1.0 | 7/7 | Complete | 2026-02-05 |
+| 6. Analytics | v1.0 | 6/6 | Complete | 2026-02-07 |
+| 7. Data Management | v1.0 | 9/9 | Complete | 2026-02-07 |
+| 8. Polish & Optimization | v1.0 | 9/9 | Complete | 2026-02-14 |
 
 ---
 *Created: 2026-01-24*
-*Last updated: 2026-02-07*
+*Last updated: 2026-02-16 after v1.0 milestone*

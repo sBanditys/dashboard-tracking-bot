@@ -2,24 +2,23 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2025-01-24)
+See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface — independent of bot uptime.
-**Current focus:** Phase 7 Data Management - Complete, Phase 8 next
+**Current focus:** v1.0 MVP shipped — planning next milestone
 
 ## Current Position
 
-Phase: 8 of 8 (Polish & Optimization) — IN PROGRESS
-Plan: 7 of 9 complete
-Status: In progress — Edge case handling complete (expired exports, zero-guild state, concurrent edits)
-Last activity: 2026-02-08 — Completed 08-07-PLAN.md
+Phase: v1.0 complete (8 phases, 47 plans)
+Status: Milestone shipped
+Last activity: 2026-02-16 — Completed v1.0 milestone archival
 
-Progress: [█████████░] ~98% (43 plans complete across 8 phases)
+Progress: [██████████] 100% — v1.0 MVP shipped
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 43
+- Total plans completed: 47
 - Average duration: 2m 02s (code plans only, excluding verification)
 - Total execution time: ~89m 43s
 
@@ -36,280 +35,27 @@ Progress: [█████████░] ~98% (43 plans complete across 8 phas
 | 07 | 9 | 15m 30s | 1m 43s |
 | 08 | 7 | 16m 25s | 2m 21s |
 
-**Recent Trend:**
-- Last 5 plans: 08-04 (2m 24s), 08-05 (4m 45s), 08-07 (3m 24s), 08-08 (2m 50s)
-- Trend: Strong velocity maintained
-
 *Updated after each plan completion*
 
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- Separate repository from bot — Dashboard stays up when bot crashes
-- Tailwind without component library — Full design control for SaaS branding
-- API as single gateway — No direct DB access from dashboard, security boundary enforced
-- SSE for real-time updates — Simpler than WebSockets for status updates
-
-**From 01-01 execution:**
-- DEV-001: Class-based dark mode strategy (enables programmatic theme control)
-- DEV-002: React Query 5-minute stale time (reduces API calls)
-- DEV-003: No component library (full design control per PROJECT.md)
-
-**From 01-02 execution:**
-- DEV-004: Server Components for legal pages (static content, better SEO)
-- DEV-005: Placeholder values [Company Name], [Contact Email] for easy updates
-- DEV-006: Auto-display current date for legal page timestamps
-
-**From 01-03 execution:**
-- DEV-007: API route proxy pattern for auth (backend owns OAuth secret)
-- DEV-008: 30-day cookie expiry (balances UX and security)
-- DEV-009: Suspense boundary for useSearchParams (Next.js 14 requirement)
-
-**From 01-04 execution:**
-- DEV-010: Always-expanded sidebar (per CONTEXT.md, no collapse to icons)
-- DEV-011: Logout confirmation in dropdown (quick inline confirmation vs modal)
-- DEV-012: Theme toggle in topbar (frequent action, accessible placement)
-
-**From 02-01 execution:**
-- DEV-013: Headless UI Menu for ARIA compliance (automatic keyboard nav, focus management)
-- DEV-014: py-3 touch targets for mobile accessibility
-- DEV-015: Auto-hide switcher when no guilds (clean UX)
-
-**From 03-01 execution:**
-- DEV-016: Generic useDebounce over lodash.debounce (smaller bundle, React-native pattern)
-- DEV-017: Link icon fallback for unknown platforms (graceful handling)
-- DEV-018: Separate EmptyState vs NoResults (different UX for no data vs no matches)
-
-**From 03-03 execution:**
-- DEV-019: Separate query builder helpers for filter params (consistent pattern)
-- DEV-020: PostFiltersExtended extends PostFilters with search (type-safe extension)
-
-**From 03-04 execution:**
-- DEV-021: CSS Grid expansion animation (grid-rows-[1fr]/[0fr] for smooth expand/collapse)
-- DEV-022: Skeleton count prop pattern (render multiple loading cards easily)
-- DEV-023: Status color mapping standardized (green/yellow/blue/red/gray)
-
-**From 03-05 execution:**
-- DEV-024: StatusSelect as Headless UI Listbox (consistent accessibility with PlatformSelect)
-- DEV-025: Separate empty state vs no results (different UX for data absence vs filter mismatch)
-- DEV-026: Inline SVG icons for empty states (no additional icon library needed)
-
-**From 04-01 execution:**
-- DEV-027: Native EventSource over @microsoft/fetch-event-source (simpler, no extra dependency)
-
-**From 04-03 execution:**
-- DEV-028: Backend SSE endpoint added to API (GET /guilds/:guildId/status/stream)
-
-**From 05-01 execution:**
-- DEV-029: Reusable ConfirmationModal with configurable confirmLabel prop
-- DEV-030: Cache invalidation invalidates both specific list and parent guild
-
-**From 05-02 execution:**
-- DEV-031: Channel combobox filters to text channels only (type === 0)
-- DEV-032: Show permission warning inline for channels without bot access
-
-**From 05-03 execution:**
-- DEV-033: Guild-context navigation pattern (regex pathname matching)
-- DEV-034: Action humanization strategy (account.create → Created account)
-- DEV-035: Diff display color scheme (red strikethrough → green)
-
-**From 05-04 execution:**
-- DEV-039: Auto-save on channel change instead of save button (immediate feedback, better UX)
-- DEV-040: Inline status indicators with 3-second auto-clear (saving/success/error)
-- DEV-041: Settings component receives data as props (parent handles fetching, avoids duplicate queries)
-
-**From 05-05 execution:**
-- DEV-036: Purple submit buttons for modals (bg-accent-purple for primary actions)
-- DEV-037: Username @ prefix stripping (handles both formats automatically)
-- DEV-038: Slug auto-generation (optional field, backend generates from label)
-
-**From 05-06 execution:**
-- DEV-042: Delete button placement varies by context (card header for accounts, next to expand for brands)
-- DEV-043: Delete buttons use red color scheme (text-red-500 hover:text-red-400)
-- DEV-044: Modal integration pattern: state → button → modal at component end
-
-**From 06-02 execution:**
-- DEV-045: Trend delta calculation with previousValue > 0 guard
-- DEV-046: Platform name capitalization in breakdown badges
-- DEV-047: TimeRange type defined locally for Wave 1 parallel execution
-
-**From 06-01 execution:**
-- DEV-052: Analytics staleTime by data volatility (5min for analytics/leaderboard, 1min for activity)
-- DEV-053: maxPages limit on infinite queries (prevent memory bloat)
-- DEV-054: TimeRange as union type (7 | 30 | 90)
-
-**From 06-02 execution:**
-- DEV-045: Trend delta calculation with previousValue > 0 guard
-- DEV-046: Platform name capitalization in breakdown badges
-- DEV-047: TimeRange type defined locally for Wave 1 parallel execution
-
-**From 06-03 execution:**
-- DEV-048: Custom tooltip interface instead of Recharts TooltipProps for better type safety
-- DEV-049: Explicit h-[300px] container height per Recharts best practices
-- DEV-050: Empty state for zero data (centered message instead of empty chart)
-- DEV-051: MiniSparkline returns null for insufficient data instead of rendering error state
-
-**From 06-04 execution:**
-- DEV-055: Medal colors for top 3 leaderboard ranks (gold/silver/bronze visual hierarchy)
-- DEV-056: Event type to page link mapping (post_captured → /posts, account_added → /accounts)
-- DEV-057: Day grouping uses reduce pattern for O(n) grouping
-
-**From 06-05 execution:**
-- DEV-058: Default 30-day range for analytics page (balances trends with data volume)
-- DEV-059: Platform Split counter with breakdown badges (shows distribution inline)
-- DEV-060: Analytics preview after Quick Access cards (maintains primary action flow)
-
-**From 07-01 execution:**
-- DEV-061: ID-based shift selection over index-based (stable range selection on filtered/sorted lists)
-- DEV-062: Set<string> for selectedIds (O(1) lookup vs O(n) for array includes)
-- DEV-063: Three color variants for TypeToConfirmModal (danger/warning/default for different operations)
-- DEV-064: Case-sensitive confirmation text (forces user attention, "12" not "twelve")
-
-**From 07-02 execution:**
-- DEV-065: SSE proxy pattern reuse for export progress (consistent streaming implementation from status/stream)
-- DEV-066: Status code forwarding for bulk operations (frontend needs to distinguish 200 vs 207 Multi-Status for partial failures)
-
-**From 07-04 execution:**
-- DEV-067: Composition over modification for selectable cards (wrap existing components vs modifying them)
-- DEV-068: Sticky selection bar positioning (md:left-64 avoids sidebar overlap)
-- DEV-069: Context-aware action buttons (reassign only shown for accounts)
-- DEV-070: Expandable error details in BulkResultsToast (better UX for bulk operation results)
-
-**From 07-03 execution:**
-- DEV-027 reuse: Native EventSource pattern for export progress (consistent with status stream)
-- Dynamic refetchInterval: useExportStatus polls 2s while export active, stops when complete/failed
-- Granular cache invalidation: Mutations invalidate specific data types + guild details + parent queries
-
-**From 07-05 execution:**
-- DEV-071: Inline export creation in dropdown (no separate modal, immediate API call)
-- DEV-072: Simple modal-local brand fetching over shared hook (keeps ReassignModal self-contained)
-- DEV-073: Numeric confirmation for reassign (selectedCount as string, not words)
-
-**From 07-06 execution:**
-- DEV-074: Bulk export from SelectionBar sends selected IDs as CSV filter parameter (simple approach)
-- DEV-075: Posts mapped with id=url for useShiftSelection compatibility
-
-**From 07-07 execution:**
-- DEV-076: Radio-card pattern for format selection (border-accent-purple active state)
-- DEV-077: Suffix badge for filename extension (auto-appended .csv/.json/.xlsx shown outside input)
-- DEV-078: Dual progress tracking on exports page (form inline + page-level via useExportStatus)
-
-**From 07-08 execution:**
-- DEV-079: Color-coded left border for urgency (yellow for <= 7 days, red for <= 1 day)
-- DEV-080: Per-item restore loading state tracked by restoringId (avoids all cards showing spinner)
-
-**From 08-01 execution:**
-- DEV-088: nprogress over BProgress (BProgress doesn't exist on npm, nprogress is de facto standard)
-- DEV-089: Inline NProgress style injection for accent-purple customization (ensures color consistency)
-- DEV-090: gcTime set to 10 minutes (balances memory usage with cache performance)
-- DEV-091: Max 3 visible toasts (prevents notification overflow)
-
-**From 08-02 execution:**
-- DEV-081: Three-level error boundary hierarchy (global → dashboard → guild for targeted error recovery)
-- DEV-082: Inline styles for global-error (Tailwind may not load during catastrophic failures)
-- DEV-083: Navigator.onLine API for offline detection (native browser API with reliable event listeners)
-- DEV-084: Keyboard shortcuts hook pattern (data-search-input selector enables loose coupling)
-
-**From 08-03 execution:**
-- DEV-085: sessionStorage over localStorage for state persistence (session-scoped, cleared on tab close)
-- DEV-086: beforeunload limitation acknowledged (Next.js App Router doesn't expose beforeRouteChange)
-- DEV-087: Clear retry timeouts on visibility close (prevents background reconnection attempts)
-
-### Phase 1 Deliverables
-
-Completed foundation ready for Phase 2:
-
-- **Authentication:** Discord OAuth flow, JWT cookies, middleware protection
-- **Dashboard Shell:** Sidebar, topbar, mobile drawer, breadcrumbs
-- **Theme System:** Dark mode default, toggle with persistence
-- **Legal Pages:** Terms of Service, Privacy Policy
-- **User Hooks:** useUser, useLogout for session management
-- **API Client:** Type-safe wrapper for backend calls
-
-### Phase 2 Deliverables
-
-Completed guild management ready for Phase 3:
-
-- **Guild List:** Cards showing accessible guilds with status indicators
-- **Guild Detail:** Bot status, usage stats, brands preview
-- **Guild Switcher:** Accessible dropdown in topbar for multi-guild navigation
-- **API Integration:** Proxy routes for backend guild data with permission filtering
-
-### Phase 3 Deliverables
-
-Completed tracking data display (5/6 plans, pending verification):
-
-- **Foundation:** PlatformIcon, Skeleton, useDebounce, EmptyState, NoResults
-- **Filter Components:** PlatformSelect, StatusSelect, DateRangeFilter, PageSizeSelect
-- **Data Hooks:** useAccountsInfinite, usePostsInfinite with infinite scroll
-- **Card Components:** AccountCard, PostCard with expandable details, skeletons
-- **Page Integration:** Accounts, Posts, Brands pages refactored with cards and infinite scroll
-
-### Phase 4 Deliverables (Complete)
-
-Completed real-time updates:
-
-- **SSE Infrastructure:** Proxy route and useSSE hook with exponential backoff
-- **Status Integration:** useGuildStatusRealtime hook, BotStatus with connection states
-- **Backend SSE:** GET /guilds/:guildId/status/stream endpoint added to API
-- **Verified:** All 4 success criteria met (real-time indicator, 5s updates, last seen, independent uptime)
-
-### Phase 5 Deliverables (Complete)
-
-Configuration mutations and settings UI:
-
-- **Delete Mutations (05-01):** useDeleteAccount, useDeleteBrand hooks with confirmation modal, cache invalidation
-- **Channel Selection (05-02):** ChannelSelect combobox with search, text-channel filtering, permission warnings
-- **Audit Log (05-03):** Complete vertical slice with types, hook, API, table with filters, Activity page
-- **Guild Settings (05-04):** GuildSettingsForm with ChannelSelect dropdowns, auto-save, useUpdateGuildSettings mutation
-- **Create Modals (05-05):** AddAccountModal, AddBrandModal with validation, cache invalidation
-- **UI Integration (05-06):** Accounts and Brands pages with Add/Delete buttons, modal wiring, complete CRUD flow
-- **Type Infrastructure:** Channel and ChannelsResponse types, useGuildChannels hook, audit types
-
-### Phase 6 Deliverables (Complete)
-
-Analytics dashboard with metrics and visualizations:
-
-- **Foundation (06-01):** Analytics types (AnalyticsData, LeaderboardResponse, ActivityResponse), three API proxy routes, React Query hooks (useAnalytics, useAnalyticsLeaderboard, useAnalyticsActivity), Recharts dependency
-- **Counter Components (06-02):** CounterCard with trend indicators and platform breakdown, TimeRangeSelector toggle (7d/30d/90d)
-- **Chart Components (06-03):** AnalyticsChart area chart with Recharts, purple gradient, dark theme tooltips, click navigation, MiniSparkline for guild overview
-- **Leaderboard & Timeline (06-04):** Leaderboard with medal-colored top 3 ranks, "View all" link, ActivityTimeline with day grouping (Today/Yesterday/date), infinite scroll, clickable event navigation
-- **Page Assembly (06-05):** Full analytics page at /guilds/:id/analytics with complete layout (counters → chart+leaderboard → timeline), sidebar Analytics link, guild overview preview with sparkline and top 5 leaderboard
-
-
-### Phase 7 Deliverables (Complete)
-
-Data management with export and bulk operations:
-
-- **Foundations (07-01):** Export types (CSV/JSON/XLSX), bulk operation types (delete/reassign/export), useShiftSelection hook with ID-stable range selection, TypeToConfirmModal with three color variants
-- **API Proxy Routes (07-02):** 7 routes for exports (POST create, GET history/status, GET SSE progress), bulk operations (POST delete/reassign), trash management (GET list, POST restore, DELETE permanent)
-- **Frontend Hooks (07-03):** Export hooks with SSE progress tracking (useCreateExport, useExportHistory, useExportStatus, useExportProgress), bulk operation hooks (useBulkDelete, useBulkReassign), trash management hooks (useTrashItems, useRestoreItem, usePermanentDelete)
-- **Selection UI (07-04):** SelectableAccountCard and SelectablePostCard wrappers with checkbox selection, SelectionBar sticky bottom bar with context-aware actions (export, reassign, delete), BulkResultsToast with three result states
-- **Export & Reassign Components (07-05):** ExportDropdown with format selection (CSV/JSON/Excel) and mode grouping (current view/all data), ExportProgress with animated status bar and download links, ReassignModal with brand/group selection and type-to-confirm
-- **Page Integration (07-06):** Accounts page with SelectableAccountCard, shift-click selection, SelectionBar (delete/export/reassign), ExportDropdown, TypeToConfirmModal, ReassignModal; Posts page with same pattern minus reassign, postsWithId mapping for URL-based selection
-- **Exports Page (07-07):** Dedicated exports page with ExportConfigForm (data type/format/mode/filename), ExportHistoryTable with status badges and download links, sidebar Exports navigation link
-- **Trash Management (07-08):** TrashItemCard with platform icon, type badge, expiry countdown (color-coded urgency), TrashList with Accounts/Posts tabs and TypeToConfirmModal for permanent delete, Trash page at /guilds/[guildId]/settings/trash
-- **Navigation Integration (07-09):** Sidebar Deleted Items link, GuildTabs Exports tab, guild overview Data Management quick access cards (Exports + Deleted Items)
-
-### Pending Todos
-
-None yet.
+All v1.0 decisions documented in PROJECT.md Key Decisions table with outcomes.
 
 ### Blockers/Concerns
 
-None - execution proceeding smoothly.
+None.
+
+### Pending Todos
+
+None.
 
 ## Session Continuity
 
-Last session: 2026-02-08 14:45 UTC
-Stopped at: Completed 08-07 (Edge case handling - expired exports, zero-guild state, concurrent edits)
-Resume file: .planning/phases/08-polish-optimization/08-07-SUMMARY.md
-
-**Next action:** Continue Phase 8 execution (1 plan remaining: 08-09)
+Last session: 2026-02-16
+Stopped at: v1.0 milestone completion
+**Next action:** `/gsd:new-milestone` — define v1.1 requirements and roadmap
 
 ---
-*Last updated: 2026-02-08*
+*Last updated: 2026-02-16*

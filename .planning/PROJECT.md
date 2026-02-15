@@ -38,7 +38,22 @@ Server admins can access their tracking data and bot status through a reliable w
 
 ### Active
 
-(None — define with `/gsd:new-milestone`)
+## Current Milestone: v1.1 Security Hardening & Backend Alignment
+
+**Goal:** Harden authentication/security, fix refresh token persistence, block unverified Discord accounts, align all backend endpoints with the dashboard, and address critical concerns from codebase audit.
+
+**Target features:**
+- Fix JWT refresh token flow so sessions survive access token expiry
+- Block login from unverified Discord accounts (no verified email)
+- Add CSRF token support for all frontend mutations
+- Add Content-Security-Policy headers
+- Audit and fix SQL injection risks in raw queries
+- Sanitize backend error messages in proxy layer
+- Implement bonus system UI (rounds, payments, results, leaderboard)
+- Implement alert threshold management UI
+- Implement account import/export UI (CSV upload, template download)
+- Implement session management UI (list sessions, revoke, logout-all)
+- Address critical concerns from backend CONCERNS.md audit
 
 ### Out of Scope
 
@@ -104,4 +119,4 @@ Tech stack: Next.js 14 (App Router), Tailwind CSS, React Query, Recharts, Headle
 | sessionStorage for state persistence | Session-scoped, prevents stale data across tabs | ✓ Good — filters persist within session |
 
 ---
-*Last updated: 2026-02-16 after v1.0 milestone*
+*Last updated: 2026-02-16 after v1.1 milestone definition*

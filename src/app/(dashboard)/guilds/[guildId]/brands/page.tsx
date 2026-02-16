@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { use, useState } from 'react'
 import { useBrands } from '@/hooks/use-tracking'
 import { GuildTabs } from '@/components/guild-tabs'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -12,7 +12,7 @@ import { useDeleteBrand } from '@/hooks/use-guilds'
 import { cn } from '@/lib/utils'
 
 interface PageProps {
-    params: { guildId: string }
+    params: Promise<{ guildId: string }>
 }
 
 // Tag icon for empty state
@@ -30,7 +30,7 @@ function TagIcon() {
 }
 
 export default function BrandsPage({ params }: PageProps) {
-    const { guildId } = params
+    const { guildId } = use(params)
     const { data, isLoading, isError } = useBrands(guildId)
     const [expandedBrand, setExpandedBrand] = useState<string | null>(null)
     const [showAddModal, setShowAddModal] = useState(false)

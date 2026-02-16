@@ -1,5 +1,6 @@
 'use client'
 
+import { use } from 'react'
 import dynamic from 'next/dynamic'
 import { useGuild, useGuildStatusRealtime, useGuildUsage } from '@/hooks/use-guilds'
 import { useAnalytics, useWeeklySubmissions, useAnalyticsLeaderboard } from '@/hooks/use-analytics'
@@ -19,11 +20,11 @@ const MiniSparkline = dynamic(
 )
 
 interface PageProps {
-    params: { guildId: string }
+    params: Promise<{ guildId: string }>
 }
 
 export default function GuildDetailPage({ params }: PageProps) {
-    const { guildId } = params
+    const { guildId } = use(params)
     const { data: guild, isLoading, error, isError } = useGuild(guildId)
     const { data: status, connectionState, reconnect } = useGuildStatusRealtime(guildId)
     const { data: usage } = useGuildUsage(guildId)

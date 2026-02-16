@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { use, useState, useEffect, useCallback, useMemo } from 'react'
 import { useInView } from 'react-intersection-observer'
 import type { DateRange } from 'react-day-picker'
 import { usePostsInfinite, useBrands, type PostFiltersExtended } from '@/hooks/use-tracking'
@@ -30,11 +30,11 @@ import { downloadCsv } from '@/lib/csv-download'
 import type { BulkOperationResult } from '@/types/bulk'
 
 interface PageProps {
-    params: { guildId: string }
+    params: Promise<{ guildId: string }>
 }
 
 export default function PostsPage({ params }: PageProps) {
-    const { guildId } = params
+    const { guildId } = use(params)
 
     // Filter state with persistent state
     const [search, setSearch] = usePersistentState(`${guildId}-posts-search`, '')

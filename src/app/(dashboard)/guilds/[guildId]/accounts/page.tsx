@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { use, useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useInView } from 'react-intersection-observer'
 import { useAccountsInfinite, useBrands, type AccountFilters } from '@/hooks/use-tracking'
@@ -24,7 +24,7 @@ import { downloadCsv } from '@/lib/csv-download'
 import type { BulkOperationResult } from '@/types/bulk'
 
 interface PageProps {
-    params: { guildId: string }
+    params: Promise<{ guildId: string }>
 }
 
 function getProfileUrl(platform: string, username: string): string {
@@ -45,7 +45,7 @@ function getProfileUrl(platform: string, username: string): string {
 }
 
 export default function AccountsPage({ params }: PageProps) {
-    const { guildId } = params
+    const { guildId } = use(params)
     const searchParams = useSearchParams()
 
     // Filter state with persistent state (URL takes precedence for group)

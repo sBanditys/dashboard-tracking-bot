@@ -1,25 +1,22 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { CsrfError, createCsrfProtect } from '@edge-csrf/nextjs';
 import { getSecurityHeaders } from '@/lib/server/security-headers';
 
-// Initialize CSRF protection with double-submit cookie pattern
-const csrfProtect = createCsrfProtect({
-  cookie: {
-    name: '_csrf_token',
+/**
+ * Double-submit cookie CSRF protection.
+ * Generates a random token, sets it as a cookie, and validates
+ * the X-CSRF-Token header against the cookie on mutation requests.
+ */
+function setCsrfCookie(response: NextResponse, token: string): void {
+  response.cookies.set('_csrf_token', token, {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     httpOnly: false, // Client JS must read the token to send in header
-  },
-  token: {
-    responseHeader: 'X-CSRF-Token',
-  },
-  // Exclude auth routes from CSRF validation (OAuth flow)
-  excludePathPrefixes: ['/api/auth/', '/_next/'],
-  ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
-});
+    path: '/',
+  });
+}
 
-export async function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Generate CSP nonce for this request
@@ -31,6 +28,19 @@ export async function middleware(request: NextRequest) {
   const isAuthRoute = pathname.startsWith('/api/auth/');
   const requestMethod = request.method.toUpperCase();
   const isMutationMethod = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(requestMethod);
+
+  // CSRF validation for mutation API requests (excluding auth routes)
+  if (isApiRoute && !isAuthRoute && isMutationMethod) {
+    const cookieToken = request.cookies.get('_csrf_token')?.value;
+    const headerToken = request.headers.get('X-CSRF-Token');
+
+    if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+      return NextResponse.json(
+        { error: 'Invalid CSRF token', code: 'EBADCSRFTOKEN' },
+        { status: 403 }
+      );
+    }
+  }
 
   // Create response - will be modified with headers at the end
   let response: NextResponse;
@@ -44,31 +54,8 @@ export async function middleware(request: NextRequest) {
     response = NextResponse.next();
   }
 
-  // CSRF validation for mutation API requests
-  if (isApiRoute && !isAuthRoute && isMutationMethod) {
-    try {
-      await csrfProtect(request, response);
-    } catch (err) {
-      if (err instanceof CsrfError) {
-        return NextResponse.json(
-          { error: 'Invalid CSRF token', code: 'EBADCSRFTOKEN' },
-          { status: 403 }
-        );
-      }
-      throw err;
-    }
-  } else {
-    // For non-mutation requests and page routes, just set the CSRF token cookie
-    // This ensures the token is available before the first mutation
-    try {
-      await csrfProtect(request, response);
-    } catch (err) {
-      // Ignore CSRF errors for GET/HEAD/OPTIONS and page routes
-      if (!(err instanceof CsrfError)) {
-        throw err;
-      }
-    }
-  }
+  // Always set a fresh CSRF token cookie
+  setCsrfCookie(response, crypto.randomUUID());
 
   // Existing auth redirect logic
   const authToken = request.cookies.get('auth_token');

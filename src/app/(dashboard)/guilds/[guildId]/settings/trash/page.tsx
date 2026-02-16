@@ -1,14 +1,15 @@
 'use client'
 
+import { use } from 'react'
 import { GuildTabs } from '@/components/guild-tabs'
 import { TrashList } from '@/components/trash/trash-list'
 
 interface PageProps {
-  params: { guildId: string }
+  params: Promise<{ guildId: string }>
 }
 
 export default function TrashPage({ params }: PageProps) {
-  const { guildId } = params
+  const { guildId } = use(params)
 
   return (
     <div className="space-y-6">

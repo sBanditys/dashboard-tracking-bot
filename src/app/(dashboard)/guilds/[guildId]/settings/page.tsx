@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation'
 
 interface PageProps {
-  params: { guildId: string }
+  params: Promise<{ guildId: string }>
 }
 
-export default function GuildSettingsIndexPage({ params }: PageProps) {
-  redirect(`/guilds/${params.guildId}/settings/trash`)
+export default async function GuildSettingsIndexPage({ params }: PageProps) {
+  const { guildId } = await params
+  redirect(`/guilds/${guildId}/settings/trash`)
 }

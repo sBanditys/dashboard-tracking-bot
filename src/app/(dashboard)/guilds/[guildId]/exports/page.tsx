@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { use, useState } from 'react'
 import { GuildTabs } from '@/components/guild-tabs'
 import { ExportConfigForm } from '@/components/export/export-config-form'
 import { ExportHistoryTable } from '@/components/export/export-history-table'
@@ -10,11 +10,11 @@ import { useExportStatus } from '@/hooks/use-exports'
 import type { ExportRecord } from '@/types/export'
 
 interface PageProps {
-  params: { guildId: string }
+  params: Promise<{ guildId: string }>
 }
 
 export default function ExportsPage({ params }: PageProps) {
-  const { guildId } = params
+  const { guildId } = use(params)
   const { data: guild } = useGuild(guildId)
   const [activeExportId, setActiveExportId] = useState<string | null>(null)
   const { data: activeExport } = useExportStatus(guildId, activeExportId)

@@ -1,13 +1,14 @@
 'use client'
 
+import { use } from 'react'
 import { AuditLogTable } from '@/components/audit/audit-log-table'
 
 interface PageProps {
-  params: { guildId: string }
+  params: Promise<{ guildId: string }>
 }
 
 export default function ActivityPage({ params }: PageProps) {
-  const { guildId } = params
+  const { guildId } = use(params)
 
   return (
     <div className="space-y-6">

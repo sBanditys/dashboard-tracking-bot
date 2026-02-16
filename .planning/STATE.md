@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 9 of 13 (Authentication Security)
-Plan: 2 of 3 completed in current phase
-Status: Executing
-Last activity: 2026-02-16 — Completed 09-01-PLAN.md (Verified Email Enforcement)
+Plan: 3 of 3 completed in current phase
+Status: Complete
+Last activity: 2026-02-16 — Completed 09-03-PLAN.md (Dashboard Auth UX Improvements)
 
-Progress: [████████░░░░░░░░░░░░] 49/TBD (Phase 1-8 complete from v1.0, Phase 9: 2/3 plans)
+Progress: [████████░░░░░░░░░░░░] 50/TBD (Phase 1-8 complete from v1.0, Phase 9: 3/3 plans complete)
 
 ## Performance Metrics
 
@@ -37,11 +37,12 @@ Progress: [████████░░░░░░░░░░░░] 49/TBD 
 | 08 | 7 | 16m 25s | 2m 21s |
 
 **v1.1 Status:**
-- Phase 9 in progress (2 of 3 plans completed)
+- Phase 9 complete (3 of 3 plans completed)
 - Plan velocity tracking started
 
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
+| 09-03 | 3m 11s | 2 | 5 |
 | 09-02 | 2m 33s | 2 | 2 |
 | 09-01 | 6m 6s | 2 | 7 |
 
@@ -55,6 +56,7 @@ Recent decisions affecting current work:
 - **v1.0 Architecture**: Dashboard acts as middleware proxy to backend API at ~/Desktop/Tracking Data Bot/
 - **v1.0 Security**: Multi-tenant isolation enforced at API layer, dashboard validates JWT guild access
 - **v1.1 Focus**: Security hardening FIRST (AUTH requirements in Phases 9-10) before feature work
+- **09-03 (Auth UX)**: sessionStorage for callbackUrl through OAuth flow, 2.5s toast delay, dedicated unverified-email page
 - **09-02 (SQL Injection)**: All raw SQL queries confirmed safe - use Prisma.sql template tags for parameterization
 - **09-01 (Verified Email)**: Email verification enforced via JWT email_verified claim, backward compatible migration (60min expiry)
 
@@ -64,11 +66,11 @@ None yet.
 
 ### Blockers/Concerns
 
-**Phase 9 (Backend Security):**
-- ✅ AUTH-01 (refresh token) - Already implemented with rotate-every-use + transaction-based claim (per must_haves truth in 09-01-PLAN.md)
+**Phase 9 (Backend Security):** ✅ COMPLETE
+- ✅ AUTH-01 (refresh token) - Already implemented with rotate-every-use + transaction-based claim
 - ✅ AUTH-02 (verified email) - Completed in 09-01 (OAuth scope check + JWT middleware enforcement)
+- ✅ AUTH-03 (dashboard UX) - Completed in 09-03 (graceful session expiry + return URL + unverified email page)
 - ✅ AUTH-06 (SQL injection audit) - Completed in 09-02 (all queries use Prisma.sql parameterization)
-- Backend API changes coordinated via commits in ~/Desktop/Tracking Data Bot/ repo
 
 **Phase 10 (Frontend Security):**
 - AUTH-03 (CSRF) depends on understanding backend CSRF middleware implementation
@@ -76,9 +78,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-16T00:45:02Z (plan execution)
-Stopped at: Completed 09-01-PLAN.md (Verified Email Enforcement)
-Resume file: .planning/phases/09-authentication-security/09-01-SUMMARY.md
+Last session: 2026-02-16T00:51:05Z (plan execution)
+Stopped at: Completed 09-03-PLAN.md (Dashboard Auth UX Improvements) - Phase 9 complete
+Resume file: .planning/phases/09-authentication-security/09-03-SUMMARY.md
 
 ---
 *Last updated: 2026-02-16*

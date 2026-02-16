@@ -1,8 +1,60 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { CsrfError, createCsrfProtect } from '@edge-csrf/nextjs';
 
-export function middleware(request: NextRequest) {
+// Initialize CSRF protection with double-submit cookie pattern
+const csrfProtect = createCsrfProtect({
+  cookie: {
+    name: '_csrf_token',
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    httpOnly: false, // Client JS must read the token to send in header
+  },
+  token: {
+    responseHeader: 'X-CSRF-Token',
+  },
+  // Exclude auth routes from CSRF validation (OAuth flow)
+  excludePathPrefixes: ['/api/auth/', '/_next/'],
+  ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
+});
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const response = NextResponse.next();
+
+  // CSRF validation runs BEFORE auth redirect logic
+  // Only validate CSRF on API routes (page routes don't need it)
+  const isApiRoute = pathname.startsWith('/api/');
+  const isAuthRoute = pathname.startsWith('/api/auth/');
+  const requestMethod = request.method.toUpperCase();
+  const isMutationMethod = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(requestMethod);
+
+  if (isApiRoute && !isAuthRoute && isMutationMethod) {
+    try {
+      await csrfProtect(request, response);
+    } catch (err) {
+      if (err instanceof CsrfError) {
+        return NextResponse.json(
+          { error: 'Invalid CSRF token', code: 'EBADCSRFTOKEN' },
+          { status: 403 }
+        );
+      }
+      throw err;
+    }
+  } else {
+    // For non-mutation requests and page routes, just set the CSRF token cookie
+    // This ensures the token is available before the first mutation
+    try {
+      await csrfProtect(request, response);
+    } catch (err) {
+      // Ignore CSRF errors for GET/HEAD/OPTIONS and page routes
+      if (!(err instanceof CsrfError)) {
+        throw err;
+      }
+    }
+  }
+
+  // Existing auth redirect logic
   const authToken = request.cookies.get('auth_token');
   const refreshToken = request.cookies.get('refresh_token');
   const hasSessionCookie = Boolean(authToken || refreshToken);
@@ -11,11 +63,11 @@ export function middleware(request: NextRequest) {
   // We allow refresh_token-only sessions so client refresh flow can renew auth_token.
   const isDashboardRoute = pathname.startsWith('/dashboard') || pathname === '/' || pathname.startsWith('/guilds') || pathname.startsWith('/settings');
   const isLoginRoute = pathname === '/login';
-  const isAuthRoute = pathname.startsWith('/auth/');
+  const isAuthPageRoute = pathname.startsWith('/auth/');
 
   // Allow access to /auth/* routes without authentication (e.g., /auth/unverified-email, /auth/callback)
-  if (isAuthRoute) {
-    return NextResponse.next();
+  if (isAuthPageRoute) {
+    return response;
   }
 
   if (isDashboardRoute && !hasSessionCookie) {
@@ -32,20 +84,19 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
   matcher: [
     /*
      * Match all request paths except:
-     * - api routes
      * - legal routes
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico
      * - images and other static assets
      */
-    '/((?!api|legal|_next/static|_next/image|favicon.ico|.*\\.png$).*)',
+    '/((?!legal|_next/static|_next/image|favicon.ico|.*\\.png$).*)',
   ],
 };

@@ -79,36 +79,36 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| AUTH-03 | — | Pending |
-| AUTH-04 | — | Pending |
-| AUTH-05 | — | Pending |
-| AUTH-06 | — | Pending |
-| SESS-01 | — | Pending |
-| SESS-02 | — | Pending |
-| SESS-03 | — | Pending |
-| BONUS-01 | — | Pending |
-| BONUS-02 | — | Pending |
-| BONUS-03 | — | Pending |
-| BONUS-04 | — | Pending |
-| BONUS-05 | — | Pending |
-| BONUS-06 | — | Pending |
-| BONUS-07 | — | Pending |
-| ALERT-01 | — | Pending |
-| ALERT-02 | — | Pending |
-| ALERT-03 | — | Pending |
-| ALERT-04 | — | Pending |
-| IMPEX-01 | — | Pending |
-| IMPEX-02 | — | Pending |
-| IMPEX-03 | — | Pending |
-| IMPEX-04 | — | Pending |
+| AUTH-01 | Phase 9 | Pending |
+| AUTH-02 | Phase 9 | Pending |
+| AUTH-06 | Phase 9 | Pending |
+| AUTH-03 | Phase 10 | Pending |
+| AUTH-04 | Phase 10 | Pending |
+| AUTH-05 | Phase 10 | Pending |
+| SESS-01 | Phase 11 | Pending |
+| SESS-02 | Phase 11 | Pending |
+| SESS-03 | Phase 11 | Pending |
+| BONUS-01 | Phase 12 | Pending |
+| BONUS-02 | Phase 12 | Pending |
+| BONUS-03 | Phase 12 | Pending |
+| BONUS-04 | Phase 12 | Pending |
+| BONUS-05 | Phase 12 | Pending |
+| BONUS-06 | Phase 12 | Pending |
+| BONUS-07 | Phase 12 | Pending |
+| ALERT-01 | Phase 13 | Pending |
+| ALERT-02 | Phase 13 | Pending |
+| ALERT-03 | Phase 13 | Pending |
+| ALERT-04 | Phase 13 | Pending |
+| IMPEX-01 | Phase 13 | Pending |
+| IMPEX-02 | Phase 13 | Pending |
+| IMPEX-03 | Phase 13 | Pending |
+| IMPEX-04 | Phase 13 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 24 total
-- Mapped to phases: 0
-- Unmapped: 24
+- Mapped to phases: 24
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-16*
-*Last updated: 2026-02-16 after initial definition*
+*Last updated: 2026-02-16 after roadmap creation*

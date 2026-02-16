@@ -99,7 +99,7 @@ function ThemedToaster() {
   )
 }
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children, nonce }: { children: React.ReactNode; nonce?: string }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -116,7 +116,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={true}>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={true} nonce={nonce}>
         <NavigationProgress />
         <ThemedToaster />
         {children}

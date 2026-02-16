@@ -28,14 +28,14 @@ export default async function RootLayout({
 }>) {
   // Reading headers forces dynamic rendering so Next.js can extract
   // the CSP nonce from request headers and apply it to all script tags.
-  await headers();
+  const nonce = (await headers()).get("x-nonce") ?? "";
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>
+        <Providers nonce={nonce}>
           <OfflineBanner />
           {children}
         </Providers>

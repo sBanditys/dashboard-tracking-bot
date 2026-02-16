@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getSecurityHeaders } from '@/lib/server/security-headers';
+import { buildCspHeader, getSecurityHeaders } from '@/lib/server/security-headers';
 
 /**
  * Double-submit cookie CSRF protection.
@@ -45,10 +45,13 @@ export function proxy(request: NextRequest) {
   // Create response - will be modified with headers at the end
   let response: NextResponse;
 
-  // For page loads (non-API routes), inject nonce via request header for Next.js
+  // For page loads (non-API routes), inject nonce and CSP via request headers.
+  // Next.js parses the CSP request header to extract the nonce and automatically
+  // applies it to all framework scripts and inline scripts it generates.
   if (!isApiRoute) {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-nonce', nonce);
+    requestHeaders.set('Content-Security-Policy', buildCspHeader(nonce));
     response = NextResponse.next({ request: { headers: requestHeaders } });
   } else {
     response = NextResponse.next();

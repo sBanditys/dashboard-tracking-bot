@@ -44,7 +44,10 @@ Full details: `milestones/v1.0-ROADMAP.md`
   2. User with unverified Discord email receives clear rejection message when attempting login
   3. All dashboard-related backend routes using raw SQL have been audited and converted to parameterized queries
   4. Dashboard displays clear error when login fails due to unverified email
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 09-01-PLAN.md — Backend verified email enforcement (OAuth scope + JWT + middleware)
+- [ ] 09-02-PLAN.md — SQL injection audit of all dashboard backend routes
+- [ ] 09-03-PLAN.md — Dashboard auth failure UX (toast, return URL, unverified email page)
 
 ### Phase 10: Frontend Security Hardening
 **Goal**: Dashboard frontend implements CSRF protection, serves CSP headers, and sanitizes backend errors
@@ -112,7 +115,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13
 | 6. Analytics | v1.0 | 6/6 | Complete | 2026-02-07 |
 | 7. Data Management | v1.0 | 9/9 | Complete | 2026-02-07 |
 | 8. Polish & Optimization | v1.0 | 9/9 | Complete | 2026-02-14 |
-| 9. Authentication Security | v1.1 | 0/TBD | Not started | - |
+| 9. Authentication Security | v1.1 | 0/3 | Not started | - |
 | 10. Frontend Security Hardening | v1.1 | 0/TBD | Not started | - |
 | 11. Session Management | v1.1 | 0/TBD | Not started | - |
 | 12. Bonus System | v1.1 | 0/TBD | Not started | - |

@@ -1,4 +1,5 @@
 import { backendFetch } from '@/lib/server/backend-fetch'
+import { sanitizeError, internalError } from '@/lib/server/error-sanitizer'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
@@ -30,8 +31,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     )
 
     const data = await response.json()
-    return NextResponse.json(data, { status: response.status })
+    if (!response.ok) {
+      const sanitized = sanitizeError(response.status, data, 'load leaderboard')
+      return NextResponse.json(sanitized, { status: response.status })
+    }
+    return NextResponse.json(data)
   } catch {
-    return NextResponse.json({ error: 'Failed to fetch leaderboard' }, { status: 500 })
+    return NextResponse.json(internalError('load leaderboard'), { status: 500 })
   }
 }

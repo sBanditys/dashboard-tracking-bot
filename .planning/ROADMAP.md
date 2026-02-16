@@ -28,7 +28,7 @@ Full details: `milestones/v1.0-ROADMAP.md`
 **Milestone Goal:** Harden authentication and security layers, fix session persistence, block unverified accounts, and deliver complete UI for bonus system, alert management, session management, and account import/export.
 
 - [ ] **Phase 9: Authentication Security** - Backend security fixes (refresh tokens, verified email, SQL injection audit)
-- [ ] **Phase 10: Frontend Security Hardening** - CSRF protection, CSP headers, error sanitization
+- [x] **Phase 10: Frontend Security Hardening** - CSRF protection, CSP headers, error sanitization (completed 2026-02-16)
 - [ ] **Phase 11: Session Management** - View and revoke active sessions
 - [ ] **Phase 12: Bonus System** - Complete bonus rounds UI with payments and leaderboard
 - [ ] **Phase 13: Alert & Import Management** - Alert thresholds and CSV import/export
@@ -119,7 +119,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13
 | 7. Data Management | v1.0 | 9/9 | Complete | 2026-02-07 |
 | 8. Polish & Optimization | v1.0 | 9/9 | Complete | 2026-02-14 |
 | 9. Authentication Security | v1.1 | 0/3 | Not started | - |
-| 10. Frontend Security Hardening | v1.1 | 0/3 | Not started | - |
+| 10. Frontend Security Hardening | v1.1 | Complete    | 2026-02-16 | - |
 | 11. Session Management | v1.1 | 0/TBD | Not started | - |
 | 12. Bonus System | v1.1 | 0/TBD | Not started | - |
 | 13. Alert & Import Management | v1.1 | 0/TBD | Not started | - |

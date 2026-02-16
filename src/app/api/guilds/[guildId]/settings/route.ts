@@ -1,4 +1,5 @@
 import { backendFetch } from '@/lib/server/backend-fetch'
+import { sanitizeError, internalError } from '@/lib/server/error-sanitizer'
 // Source: Codebase src/app/api/guilds/[guildId]/route.ts pattern
 // File: src/app/api/guilds/[guildId]/settings/route.ts
 
@@ -31,8 +32,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     })
 
     const data = await response.json()
-    return NextResponse.json(data, { status: response.status })
+    if (!response.ok) {
+      const sanitized = sanitizeError(response.status, data, 'update settings')
+      return NextResponse.json(sanitized, { status: response.status })
+    }
+    return NextResponse.json(data)
   } catch {
-    return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 })
+    return NextResponse.json(internalError('update settings'), { status: 500 })
   }
 }

@@ -1,4 +1,5 @@
 import { backendFetch } from '@/lib/server/backend-fetch'
+import { sanitizeError, internalError } from '@/lib/server/error-sanitizer'
 // src/app/api/guilds/[guildId]/accounts/[accountId]/route.ts
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -26,8 +27,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     })
 
     const data = await response.json()
-    return NextResponse.json(data, { status: response.status })
+    if (!response.ok) {
+      const sanitized = sanitizeError(response.status, data, 'delete account')
+      return NextResponse.json(sanitized, { status: response.status })
+    }
+    return NextResponse.json(data)
   } catch {
-    return NextResponse.json({ error: 'Failed to delete account' }, { status: 500 })
+    return NextResponse.json(internalError('delete account'), { status: 500 })
   }
 }

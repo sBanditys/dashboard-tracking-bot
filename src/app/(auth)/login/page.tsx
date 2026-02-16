@@ -13,6 +13,7 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   server_error: 'Authentication service is temporarily unavailable.',
   access_denied: 'Discord sign-in was cancelled.',
   session_expired: 'Your session expired. Please sign in again.',
+  unverified_email: 'Your Discord account requires a verified email address.',
 };
 
 function LoginContent() {
@@ -37,6 +38,13 @@ function LoginContent() {
   const handleDiscordLogin = () => {
     setIsLoading(true);
     setError(null);
+
+    // Save callbackUrl from query params to sessionStorage for post-login redirect
+    const callbackUrl = searchParams.get('callbackUrl');
+    if (callbackUrl) {
+      sessionStorage.setItem('auth_callback_url', callbackUrl);
+    }
+
     // Use same-origin auth bootstrap so OAuth context cookies can be proxied
     // and enforced during code exchange.
     window.location.href = '/api/auth/login';

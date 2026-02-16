@@ -61,6 +61,12 @@ function AuthCallbackContent() {
       const error = searchParams.get('error')
       const errorDescription = searchParams.get('error_description')
       if (error) {
+        // Handle unverified email error by redirecting to dedicated page
+        if (error === 'unverified_email') {
+          router.replace('/auth/unverified-email')
+          return
+        }
+
         const params = new URLSearchParams({ error })
         if (errorDescription) {
           params.set('error_description', errorDescription)
@@ -113,7 +119,18 @@ function AuthCallbackContent() {
 
         setStatus('Setting secure session...')
         await setSession(tokens)
-        router.replace('/')
+
+        // Check for return URL from sessionStorage (set by login page)
+        const callbackUrl = typeof window !== 'undefined'
+          ? sessionStorage.getItem('auth_callback_url')
+          : null
+
+        if (callbackUrl) {
+          sessionStorage.removeItem('auth_callback_url')
+          router.replace(callbackUrl)
+        } else {
+          router.replace('/')
+        }
       } catch {
         router.replace('/login?error=server_error')
       }

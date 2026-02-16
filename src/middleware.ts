@@ -11,6 +11,12 @@ export function middleware(request: NextRequest) {
   // We allow refresh_token-only sessions so client refresh flow can renew auth_token.
   const isDashboardRoute = pathname.startsWith('/dashboard') || pathname === '/' || pathname.startsWith('/guilds') || pathname.startsWith('/settings');
   const isLoginRoute = pathname === '/login';
+  const isAuthRoute = pathname.startsWith('/auth/');
+
+  // Allow access to /auth/* routes without authentication (e.g., /auth/unverified-email, /auth/callback)
+  if (isAuthRoute) {
+    return NextResponse.next();
+  }
 
   if (isDashboardRoute && !hasSessionCookie) {
     const loginUrl = new URL('/login', request.url);

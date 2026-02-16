@@ -17,6 +17,8 @@
  * 8. If retry also returns 401, session is unrecoverable -> redirect to login
  */
 
+import { toast } from 'sonner';
+
 const DEFAULT_MAX_RETRIES = 3;
 const MAX_BACKOFF_MS = 30000; // 30 seconds
 const BASE_BACKOFF_MS = 1000; // 1 second
@@ -156,7 +158,17 @@ async function recoverExpiredSession(): Promise<void> {
     }).catch(() => undefined);
 
     if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-      window.location.replace('/login?error=session_expired');
+      // Show toast notification before redirect
+      toast.error('Session expired, please log in again');
+
+      // Save current URL as return URL for post-login redirect
+      const returnUrl = window.location.pathname + window.location.search;
+      const loginUrl = `/login?callbackUrl=${encodeURIComponent(returnUrl)}`;
+
+      // Wait 2.5 seconds for user to see the toast
+      await new Promise(r => setTimeout(r, 2500));
+
+      window.location.replace(loginUrl);
     }
   } finally {
     sessionRecoveryInProgress = false;
@@ -210,6 +222,24 @@ export async function fetchWithRetry(
 
       if (response.status === 401 && didRetryAfterRefresh && !isAuthEndpoint(url)) {
         await recoverExpiredSession();
+      }
+
+      // Handle 403 unverified_email errors — redirect to dedicated error page
+      if (response.status === 403 && !isAuthEndpoint(url)) {
+        try {
+          // Clone response to read body without consuming original
+          const clonedResponse = response.clone();
+          const body = await clonedResponse.json().catch(() => null);
+
+          if (body?.code === 'unverified_email') {
+            if (typeof window !== 'undefined') {
+              window.location.replace('/auth/unverified-email');
+            }
+            return response;
+          }
+        } catch {
+          // If parsing fails, continue with normal response handling
+        }
       }
 
       // Handle 429 Too Many Requests — retry with backoff

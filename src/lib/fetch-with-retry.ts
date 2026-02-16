@@ -28,6 +28,7 @@ const RATE_LIMIT_FALLBACK_MS = 15000; // 15 seconds if backend does not send Ret
 const LONG_RATE_LIMIT_THRESHOLD_MS = 10000; // fail fast when cooldown is clearly not transient
 const RETRYABLE_SERVER_STATUSES = new Set([500, 502, 503, 504]);
 const RETRYABLE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+const CSRF_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 let refreshPromise: Promise<boolean> | null = null;
 let sessionRecoveryInProgress = false;
 let globalRateLimitUntil = 0;
@@ -108,6 +109,14 @@ function formatDuration(ms: number): string {
 
 function isAuthEndpoint(url: string): boolean {
   return url.includes('/api/auth/');
+}
+
+function getCsrfToken(): string | undefined {
+  if (typeof document === 'undefined') return undefined;
+  return document.cookie
+    .split('; ')
+    .find(row => row.startsWith('_csrf_token='))
+    ?.split('=')[1];
 }
 
 function getRateLimitRemainingMs(): number {
@@ -201,10 +210,22 @@ export async function fetchWithRetry(
 
   let lastError: Error | null = null;
   let didRetryAfterRefresh = false;
+  let didRetryAfterCsrf = false;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const response = await fetch(url, options);
+      // Inject CSRF token for mutation requests (not auth endpoints)
+      let requestOptions = options;
+      if (CSRF_METHODS.has(requestMethod) && !isAuthEndpoint(url)) {
+        const csrfToken = getCsrfToken();
+        if (csrfToken) {
+          const headers = new Headers(options?.headers);
+          headers.set('X-CSRF-Token', csrfToken);
+          requestOptions = { ...options, headers };
+        }
+      }
+
+      const response = await fetch(url, requestOptions);
 
       if (response.status === 401 && !didRetryAfterRefresh && !isAuthEndpoint(url)) {
         const refreshed = await refreshSession();
@@ -222,6 +243,42 @@ export async function fetchWithRetry(
 
       if (response.status === 401 && didRetryAfterRefresh && !isAuthEndpoint(url)) {
         await recoverExpiredSession();
+      }
+
+      // Handle 403 CSRF token errors — silent retry with fresh token
+      if (response.status === 403 && !didRetryAfterCsrf && !isAuthEndpoint(url)) {
+        try {
+          const clonedResponse = response.clone();
+          const body = await clonedResponse.json().catch(() => null);
+
+          if (body?.code === 'EBADCSRFTOKEN') {
+            // Trigger middleware to refresh CSRF cookie via lightweight GET request
+            await fetch('/api/auth/session', { method: 'GET', credentials: 'include' });
+
+            // Wait briefly for cookie to propagate
+            await sleep(100);
+
+            didRetryAfterCsrf = true;
+            continue; // Retry with fresh token
+          }
+        } catch {
+          // If CSRF retry setup fails, continue with normal 403 handling
+        }
+      }
+
+      // If CSRF retry also failed, show persistent error
+      if (response.status === 403 && didRetryAfterCsrf && !isAuthEndpoint(url)) {
+        try {
+          const clonedResponse = response.clone();
+          const body = await clonedResponse.json().catch(() => null);
+
+          if (body?.code === 'EBADCSRFTOKEN') {
+            toast.error('Session error, please refresh the page');
+            return response;
+          }
+        } catch {
+          // Continue with normal 403 handling
+        }
       }
 
       // Handle 403 unverified_email errors — redirect to dedicated error page

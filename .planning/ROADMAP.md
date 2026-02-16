@@ -72,7 +72,9 @@ Full details: `milestones/v1.0-ROADMAP.md`
   2. User can revoke an individual session and see it removed from list immediately
   3. User can click "logout all devices" and all sessions are terminated (requires re-login)
   4. Revoked session cannot access protected routes (returns 401)
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 11-01-PLAN.md — Session data layer (types, API proxy routes with UA parsing, React Query hooks)
+- [ ] 11-02-PLAN.md — Session management UI (session cards, revoke dialog, sessions page)
 
 ### Phase 12: Bonus System
 **Goal**: Users can view bonus rounds, payments, and results; admins can create rounds and manage payments
@@ -120,10 +122,10 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13
 | 8. Polish & Optimization | v1.0 | 9/9 | Complete | 2026-02-14 |
 | 9. Authentication Security | v1.1 | 0/3 | Not started | - |
 | 10. Frontend Security Hardening | v1.1 | Complete    | 2026-02-16 | - |
-| 11. Session Management | v1.1 | 0/TBD | Not started | - |
+| 11. Session Management | v1.1 | 0/2 | Not started | - |
 | 12. Bonus System | v1.1 | 0/TBD | Not started | - |
 | 13. Alert & Import Management | v1.1 | 0/TBD | Not started | - |
 
 ---
 *Created: 2026-01-24*
-*Last updated: 2026-02-16 after Phase 10 planning*
+*Last updated: 2026-02-16 after Phase 11 planning*

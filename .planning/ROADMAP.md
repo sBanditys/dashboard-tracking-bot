@@ -58,7 +58,10 @@ Full details: `milestones/v1.0-ROADMAP.md`
   2. Dashboard serves Content-Security-Policy headers that prevent inline script execution
   3. Backend error responses are sanitized in proxy layer (no stack traces or internal paths leak to client)
   4. User sees user-friendly error messages instead of raw backend errors
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 10-01-PLAN.md — CSRF protection (double-submit cookie + fetchWithRetry integration)
+- [ ] 10-02-PLAN.md — Backend error sanitization in proxy layer
+- [ ] 10-03-PLAN.md — CSP headers and security headers suite
 
 ### Phase 11: Session Management
 **Goal**: Users can view their active sessions and revoke access from specific devices
@@ -116,11 +119,11 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13
 | 7. Data Management | v1.0 | 9/9 | Complete | 2026-02-07 |
 | 8. Polish & Optimization | v1.0 | 9/9 | Complete | 2026-02-14 |
 | 9. Authentication Security | v1.1 | 0/3 | Not started | - |
-| 10. Frontend Security Hardening | v1.1 | 0/TBD | Not started | - |
+| 10. Frontend Security Hardening | v1.1 | 0/3 | Not started | - |
 | 11. Session Management | v1.1 | 0/TBD | Not started | - |
 | 12. Bonus System | v1.1 | 0/TBD | Not started | - |
 | 13. Alert & Import Management | v1.1 | 0/TBD | Not started | - |
 
 ---
 *Created: 2026-01-24*
-*Last updated: 2026-02-16 after v1.1 roadmap creation*
+*Last updated: 2026-02-16 after Phase 10 planning*

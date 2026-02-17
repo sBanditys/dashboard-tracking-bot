@@ -1,10 +1,11 @@
 import { backendFetch } from '@/lib/server/backend-fetch'
+import { BACKEND_API_URL } from '@/lib/server/api-url'
 import { NextResponse } from 'next/server'
 import { cookies, headers } from 'next/headers'
 import { extractDashboardSessionCookies } from '@/lib/server/dashboard-session-cookies'
 import { getClientIpFromHeaders } from '@/lib/server/client-context'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const API_URL = BACKEND_API_URL
 const DEFAULT_ACCESS_MAX_AGE_SECONDS = 60 * 60
 const DEFAULT_REFRESH_MAX_AGE_SECONDS = 90 * 24 * 60 * 60
 

@@ -4,7 +4,8 @@ import { buildCspHeader, getSecurityHeaders } from '@/lib/server/security-header
 import { extractDashboardSessionCookies } from '@/lib/server/dashboard-session-cookies';
 import { getClientIpFromRequest } from '@/lib/server/client-context';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+import { BACKEND_API_URL } from '@/lib/server/api-url';
+const API_URL = BACKEND_API_URL;
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET;
 const DASHBOARD_REFRESH_COOKIE_NAME = (process.env.DASHBOARD_REFRESH_COOKIE_NAME || 'dashboard_rt').trim();
 const DASHBOARD_ACCESS_COOKIE_NAME = (process.env.DASHBOARD_ACCESS_COOKIE_NAME || 'dashboard_at').trim();

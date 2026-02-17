@@ -1,8 +1,9 @@
 import { backendFetch } from '@/lib/server/backend-fetch'
+import { BACKEND_API_URL } from '@/lib/server/api-url'
 import { NextRequest, NextResponse } from 'next/server'
 import { extractSetCookieByName } from '@/lib/server/dashboard-session-cookies'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const API_URL = BACKEND_API_URL
 const OAUTH_CONTEXT_COOKIE_NAME = (process.env.OAUTH_CONTEXT_COOKIE_NAME || 'oauth_ctx').trim() || 'oauth_ctx'
 const OAUTH_COOKIE_FALLBACK_MAX_AGE_SECONDS = 10 * 60 // 10 minutes
 const OAUTH_CONTEXT_COOKIE_DOMAIN = process.env.OAUTH_CONTEXT_COOKIE_DOMAIN?.trim()

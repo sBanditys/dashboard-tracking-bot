@@ -1,8 +1,9 @@
 import { backendFetch } from '@/lib/server/backend-fetch'
+import { BACKEND_API_URL } from '@/lib/server/api-url'
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = BACKEND_API_URL;
 
 export async function POST() {
   try {

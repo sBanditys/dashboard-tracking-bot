@@ -1,8 +1,9 @@
 /**
  * Type-safe API client for backend communication
  */
+import { BACKEND_API_URL } from '@/lib/server/api-url'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = BACKEND_API_URL;
 
 interface ApiResponse<T> {
   data?: T;

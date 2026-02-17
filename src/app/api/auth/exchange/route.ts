@@ -1,10 +1,11 @@
 import { backendFetch } from '@/lib/server/backend-fetch'
+import { BACKEND_API_URL } from '@/lib/server/api-url'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { extractDashboardSessionCookies } from '@/lib/server/dashboard-session-cookies'
 import { buildClientContextHeaders } from '@/lib/server/client-context'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const API_URL = BACKEND_API_URL
 const OAUTH_CONTEXT_COOKIE_NAME = (process.env.OAUTH_CONTEXT_COOKIE_NAME || 'oauth_ctx').trim() || 'oauth_ctx'
 const OAUTH_CONTEXT_COOKIE_DOMAIN = process.env.OAUTH_CONTEXT_COOKIE_DOMAIN?.trim()
 const DEFAULT_ACCESS_MAX_AGE_SECONDS = 60 * 60

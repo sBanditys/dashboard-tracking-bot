@@ -1,10 +1,11 @@
 import { backendFetch } from '@/lib/server/backend-fetch';
+import { BACKEND_API_URL } from '@/lib/server/api-url';
 import { NextResponse } from 'next/server';
 import { cookies, headers } from 'next/headers';
 import { UAParser } from 'ua-parser-js';
 import { BackendSession, ParsedSession, DeviceType } from '@/types/session';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = BACKEND_API_URL;
 
 /**
  * GET /api/auth/sessions

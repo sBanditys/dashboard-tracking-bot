@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useUser } from '@/hooks/use-user'
-import { useActiveThresholdCount } from '@/hooks/use-alerts'
+// TODO: re-enable once backend alert-thresholds route is fixed
+// import { useActiveThresholdCount } from '@/hooks/use-alerts'
 
 interface SidebarProps {
   onNavigate?: () => void
@@ -22,8 +23,8 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const guildEntry = guildId ? user?.guilds?.find((g) => g.id === guildId) : undefined
   const isGuildAdmin = guildEntry !== undefined && (Number(guildEntry.permissions) & 0x8) !== 0
 
-  // Active alert threshold count for badge (only loads when guildId is set)
-  const { count: alertCount } = useActiveThresholdCount(guildId ?? '')
+  // TODO: re-enable once backend alert-thresholds route is fixed
+  const alertCount = 0
 
   const navItems = [
     {

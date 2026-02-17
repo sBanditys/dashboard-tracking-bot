@@ -1,0 +1,73 @@
+import { backendFetch } from '@/lib/server/backend-fetch'
+import { sanitizeError, internalError } from '@/lib/server/error-sanitizer'
+import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+
+type RouteParams = { params: Promise<{ guildId: string; groupId: string; thresholdId: string }> }
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const { guildId, groupId, thresholdId } = await params
+  const cookieStore = await cookies()
+  const token = cookieStore.get('auth_token')?.value
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const response = await backendFetch(
+      `${API_URL}/api/v1/guilds/${guildId}/groups/${groupId}/alert-thresholds/${thresholdId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+
+    if (!response.ok) {
+      const data = await response.json()
+      const sanitized = sanitizeError(response.status, data, 'delete alert threshold')
+      return NextResponse.json(sanitized, { status: response.status })
+    }
+    return NextResponse.json({ success: true })
+  } catch {
+    return NextResponse.json(internalError('delete alert threshold'), { status: 500 })
+  }
+}
+
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  const { guildId, groupId, thresholdId } = await params
+  const cookieStore = await cookies()
+  const token = cookieStore.get('auth_token')?.value
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const body = await request.json()
+    const response = await backendFetch(
+      `${API_URL}/api/v1/guilds/${guildId}/groups/${groupId}/alert-thresholds/${thresholdId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      }
+    )
+
+    const data = await response.json()
+    if (!response.ok) {
+      const sanitized = sanitizeError(response.status, data, 'update alert threshold')
+      return NextResponse.json(sanitized, { status: response.status })
+    }
+    return NextResponse.json(data)
+  } catch {
+    return NextResponse.json(internalError('update alert threshold'), { status: 500 })
+  }
+}

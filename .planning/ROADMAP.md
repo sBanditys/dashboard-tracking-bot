@@ -103,7 +103,14 @@ Full details: `milestones/v1.0-ROADMAP.md`
   6. User can download CSV import template with correct column headers
   7. Admin can upload CSV for import, see validation preview with error highlighting
   8. Admin can confirm import after preview and see progress indicator during execution
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [ ] 13-01-PLAN.md — Backend fixes + types + all proxy routes
+- [ ] 13-02-PLAN.md — Hooks + manage section routing + admin guard + sidebar
+- [ ] 13-03-PLAN.md — Alerts page core (cards, filters, infinite scroll, create, delete)
+- [ ] 13-04-PLAN.md — Alerts page extended (bulk ops, email config, alert settings)
+- [ ] 13-05-PLAN.md — Data page - Import tab (upload, validation, progress)
+- [ ] 13-06-PLAN.md — Data page - Export tab (type selector, filters, history, GDPR)
 
 ## Progress
 
@@ -124,7 +131,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13
 | 10. Frontend Security Hardening | v1.1 | Complete    | 2026-02-16 | - |
 | 11. Session Management | v1.1 | 0/2 | Not started | - |
 | 12. Bonus System | v1.1 | 0/TBD | Not started | - |
-| 13. Alert & Import Management | v1.1 | 0/TBD | Not started | - |
+| 13. Alert & Import Management | v1.1 | 0/6 | Not started | - |
 
 ---
 *Created: 2026-01-24*

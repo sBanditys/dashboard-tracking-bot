@@ -1,6 +1,6 @@
 import { backendFetch } from '@/lib/server/backend-fetch'
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { extractDashboardSessionCookies } from '@/lib/server/dashboard-session-cookies'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
@@ -45,23 +45,35 @@ export async function POST() {
       cookieParts.push(`${DASHBOARD_ACCESS_COOKIE_NAME}=${encodeURIComponent(accessToken)}`)
     }
 
-    const headers: Record<string, string> = {
+    // Read browser headers to forward to backend (needed for context binding validation)
+    const headerStore = await headers()
+    const browserUserAgent = headerStore.get('user-agent')
+    const forwardedFor = headerStore.get('x-forwarded-for') || headerStore.get('x-real-ip')
+
+    const backendHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
       'Cookie': cookieParts.join('; '),
     }
     if (accessToken) {
-      headers.Authorization = `Bearer ${accessToken}`
+      backendHeaders.Authorization = `Bearer ${accessToken}`
+    }
+    // Forward browser User-Agent and IP so backend context binding matches the original session
+    if (browserUserAgent) {
+      backendHeaders['User-Agent'] = browserUserAgent
+    }
+    if (forwardedFor) {
+      backendHeaders['X-Forwarded-For'] = forwardedFor
     }
 
     // Forward CSRF token if available (backend validates CSRF for cookie-authenticated requests)
     const csrfToken = cookieStore.get('csrf_token')?.value
     if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken
+      backendHeaders['X-CSRF-Token'] = csrfToken
     }
 
     const upstream = await backendFetch(`${API_URL}/api/v1/auth/refresh`, {
       method: 'POST',
-      headers,
+      headers: backendHeaders,
       body: JSON.stringify({}), // Empty body -- backend reads tokens from cookies
       cache: 'no-store',
     })

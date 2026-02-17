@@ -2,6 +2,7 @@ import { backendFetch } from '@/lib/server/backend-fetch'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { extractDashboardSessionCookies } from '@/lib/server/dashboard-session-cookies'
+import { buildClientContextHeaders } from '@/lib/server/client-context'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 const OAUTH_CONTEXT_COOKIE_NAME = (process.env.OAUTH_CONTEXT_COOKIE_NAME || 'oauth_ctx').trim() || 'oauth_ctx'
@@ -82,8 +83,12 @@ export async function POST(request: Request) {
     const cookieStore = await cookies()
     const bindingCookie = cookieStore.get(OAUTH_CONTEXT_COOKIE_NAME)?.value
 
+    // Forward client context (IP + User-Agent) so the backend sees the real
+    // client identity for context binding validation, not the Next.js server's.
+    const clientContext = buildClientContextHeaders(request.headers)
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      ...clientContext,
     }
     if (bindingCookie) {
       headers.Cookie = buildCookieHeader(OAUTH_CONTEXT_COOKIE_NAME, bindingCookie)

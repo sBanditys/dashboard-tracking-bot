@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { buildCspHeader, getSecurityHeaders } from '@/lib/server/security-headers';
 import { extractDashboardSessionCookies } from '@/lib/server/dashboard-session-cookies';
+import { getClientIpFromRequest } from '@/lib/server/client-context';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET;
@@ -51,12 +52,14 @@ async function refreshTokensFromMiddleware(
       Cookie: cookieParts.join('; '),
     };
 
-    // Forward browser User-Agent and IP for backend context binding
+    // Forward browser User-Agent and client IP for backend context binding.
+    // We extract only the original client IP (first XFF entry) rather than the
+    // full chain, because the backend has trust proxy: 1 and the extra Next.js
+    // hop would cause it to resolve the wrong IP.
     const ua = request.headers.get('user-agent');
     if (ua) fetchHeaders['User-Agent'] = ua;
-    const forwardedFor =
-      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '';
-    if (forwardedFor) fetchHeaders['X-Forwarded-For'] = forwardedFor;
+    const clientIp = getClientIpFromRequest(request);
+    if (clientIp) fetchHeaders['X-Forwarded-For'] = clientIp;
     if (accessTokenValue)
       fetchHeaders.Authorization = `Bearer ${accessTokenValue}`;
     if (INTERNAL_SECRET)

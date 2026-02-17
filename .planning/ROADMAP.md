@@ -31,7 +31,7 @@ Full details: `milestones/v1.0-ROADMAP.md`
 - [x] **Phase 10: Frontend Security Hardening** - CSRF protection, CSP headers, error sanitization (completed 2026-02-16)
 - [ ] **Phase 11: Session Management** - View and revoke active sessions
 - [ ] **Phase 12: Bonus System** - Complete bonus rounds UI with payments and leaderboard
-- [ ] **Phase 13: Alert & Import Management** - Alert thresholds and CSV import/export
+- [x] **Phase 13: Alert & Import Management** - Alert thresholds and CSV import/export (completed 2026-02-17)
 
 ## Phase Details
 
@@ -131,7 +131,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13
 | 10. Frontend Security Hardening | v1.1 | Complete    | 2026-02-16 | - |
 | 11. Session Management | v1.1 | 0/2 | Not started | - |
 | 12. Bonus System | v1.1 | 0/TBD | Not started | - |
-| 13. Alert & Import Management | v1.1 | 0/6 | Not started | - |
+| 13. Alert & Import Management | v1.1 | Complete    | 2026-02-17 | - |
 
 ---
 *Created: 2026-01-24*

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { ImportTab } from '@/components/import-export/import-tab'
+import { ExportTab } from '@/components/import-export/export-tab'
 
 type TabId = 'import' | 'export'
 
@@ -81,8 +82,8 @@ export default function DataPage() {
 
         {/* Export tab */}
         {activeTab === 'export' && (
-          <div role="tabpanel" aria-label="Export tab" className="py-12 text-center">
-            <p className="text-gray-400 text-sm">Export tab coming soon</p>
+          <div role="tabpanel" aria-label="Export tab">
+            <ExportTab guildId={guildId} />
           </div>
         )}
       </div>

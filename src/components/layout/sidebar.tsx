@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { useUser } from '@/hooks/use-user'
+import { useActiveThresholdCount } from '@/hooks/use-alerts'
 
 interface SidebarProps {
   onNavigate?: () => void
@@ -10,10 +12,18 @@ interface SidebarProps {
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname()
+  const { user } = useUser()
 
   // Detect if we're on a guild page to show guild-specific nav
   const guildMatch = pathname.match(/\/guilds\/([^\/]+)/)
   const guildId = guildMatch?.[1]
+
+  // Check ADMINISTRATOR permission bit (0x8) for current guild
+  const guildEntry = guildId ? user?.guilds?.find((g) => g.id === guildId) : undefined
+  const isGuildAdmin = guildEntry !== undefined && (Number(guildEntry.permissions) & 0x8) !== 0
+
+  // Active alert threshold count for badge (only loads when guildId is set)
+  const { count: alertCount } = useActiveThresholdCount(guildId ?? '')
 
   const navItems = [
     {
@@ -132,6 +142,47 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                 <span className="text-lg">🗑️</span>
                 Deleted Items
               </Link>
+
+              {/* Manage section — admin only */}
+              {isGuildAdmin && (
+                <>
+                  <div className="my-3 border-t border-border" />
+                  <p className="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Manage
+                  </p>
+                  <Link
+                    href={`/guilds/${guildId}/manage/alerts`}
+                    onClick={onNavigate}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-colors',
+                      pathname.includes('/manage/alerts')
+                        ? 'bg-accent-purple text-white'
+                        : 'text-gray-300 hover:bg-surface/50 hover:text-white'
+                    )}
+                  >
+                    <span className="text-lg">🔔</span>
+                    Alerts
+                    {alertCount > 0 && (
+                      <span className="ml-auto text-xs bg-accent-purple rounded-full px-2 py-0.5 text-white">
+                        {alertCount}
+                      </span>
+                    )}
+                  </Link>
+                  <Link
+                    href={`/guilds/${guildId}/manage/data`}
+                    onClick={onNavigate}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-colors',
+                      pathname.includes('/manage/data')
+                        ? 'bg-accent-purple text-white'
+                        : 'text-gray-300 hover:bg-surface/50 hover:text-white'
+                    )}
+                  >
+                    <span className="text-lg">📁</span>
+                    Data
+                  </Link>
+                </>
+              )}
             </>
           )}
         </div>

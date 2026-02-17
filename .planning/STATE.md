@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 13 of 13 (Alert & Import Management)
-Plan: 3 of 3 completed in current phase
+Plan: 4 of 4 completed in current phase
 Status: In Progress
-Last activity: 2026-02-17 — Completed 13-05-PLAN.md (Data Page Shell and Import Tab UI)
+Last activity: 2026-02-17 — Completed 13-04-PLAN.md (Alert Bulk Operations, Email Config, Group Settings)
 
 Progress: [█████████░░░░░░░░░░░] 57/TBD (Phase 1-8 complete from v1.0, Phase 9: 3/3 plans complete, Phase 10: 3/3 plans complete, Phase 11: 2/2 plans complete, Phase 13: 2/3 plans complete)
 
@@ -54,6 +54,7 @@ Progress: [█████████░░░░░░░░░░░] 57/TBD 
 | 13-02 | 3m | 2 | 7 |
 | 13-05 | 2m 59s | 2 | 5 |
 | 13-03 | 3m | 3 | 6 |
+| 13-04 | 2min | 2 | 4 |
 
 ## Accumulated Context
 
@@ -78,6 +79,7 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-02: useConfirmImport uses fetch + ReadableStream (not EventSource) for POST-SSE streaming; ManageLayout is client component for useUser() permission check; no optimistic update for useToggleThreshold
 - **13-05 (Import UI)**: ImportTab uses 8-state flow machine; 409 conflict detected via error message string matching; ImportHistory shows stub when no entries; data page uses local useState for tab switching
 - **13-03 (Alert Thresholds UI)**: Non-optimistic toggle with spinner; page-level TypeToConfirmModal with removingId fade-out animation; groups list derived from loaded threshold data; duplicate detection warns but does not block submission
+- [Phase 13]: 13-04: activeAction prop on ThresholdBulkBar shows spinner only on triggered button; EmailConfigSection uses confirm() for remove; AlertSettingsPanel tracks pendingField for per-toggle spinners; selection clears on filter change
 
 ### Pending Todos
 
@@ -99,8 +101,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-17 (execute-phase)
-Stopped at: Completed 13-03-PLAN.md (Alert Thresholds Core UI)
-Resume file: .planning/phases/13-alert-import-management/13-04-PLAN.md (or next available plan)
+Stopped at: Completed 13-04-PLAN.md (Alert Bulk Operations, Email Config, Group Settings)
+Resume file: .planning/phases/13-alert-import-management/ (next available plan)
 
 ---
 *Last updated: 2026-02-17*

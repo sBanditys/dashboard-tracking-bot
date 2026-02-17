@@ -8,10 +8,12 @@ export type ExportMode = 'current_view' | 'all'
 
 export type ExportStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'expired'
 
+export type ExportDataType = 'accounts' | 'posts' | 'metrics' | 'analytics' | 'audit' | 'gdpr'
+
 export interface ExportRequest {
   format: ExportFormat
   mode: ExportMode
-  dataType: 'accounts' | 'posts'
+  dataType: ExportDataType
   filters?: Record<string, string>
   filename?: string
 }
@@ -19,7 +21,7 @@ export interface ExportRequest {
 export interface ExportRecord {
   id: string
   format: ExportFormat
-  dataType: 'accounts' | 'posts'
+  dataType: ExportDataType
   status: ExportStatus
   filename: string | null
   recordCount: number | null

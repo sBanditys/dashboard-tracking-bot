@@ -66,6 +66,13 @@ async function refreshTokensFromMiddleware(
     if (INTERNAL_SECRET)
       fetchHeaders['X-Internal-Secret'] = INTERNAL_SECRET;
 
+    // Forward CSRF token so backend double-submit check passes when no Bearer token
+    const csrfToken = request.cookies.get('_csrf_token')?.value;
+    if (csrfToken) {
+      fetchHeaders['X-CSRF-Token'] = csrfToken;
+      cookieParts.push(`csrf_token=${encodeURIComponent(csrfToken)}`);
+    }
+
     const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
       method: 'POST',
       headers: fetchHeaders,

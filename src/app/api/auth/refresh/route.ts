@@ -47,6 +47,13 @@ export async function POST() {
       cookieParts.push(`${DASHBOARD_ACCESS_COOKIE_NAME}=${encodeURIComponent(accessToken)}`)
     }
 
+    // Forward CSRF token if available (backend validates CSRF for cookie-authenticated requests)
+    // The dashboard proxy sets the cookie as '_csrf_token', but the backend expects 'csrf_token'
+    const csrfToken = cookieStore.get('_csrf_token')?.value
+    if (csrfToken) {
+      cookieParts.push(`csrf_token=${encodeURIComponent(csrfToken)}`)
+    }
+
     // Read browser headers to forward to backend (needed for context binding validation).
     // Extract only the original client IP (first XFF entry) to avoid trust proxy hop issues.
     const headerStore = await headers()
@@ -60,18 +67,15 @@ export async function POST() {
     if (accessToken) {
       backendHeaders.Authorization = `Bearer ${accessToken}`
     }
+    if (csrfToken) {
+      backendHeaders['X-CSRF-Token'] = csrfToken
+    }
     // Forward browser User-Agent and client IP so backend context binding matches the original session
     if (browserUserAgent) {
       backendHeaders['User-Agent'] = browserUserAgent
     }
     if (clientIp) {
       backendHeaders['X-Forwarded-For'] = clientIp
-    }
-
-    // Forward CSRF token if available (backend validates CSRF for cookie-authenticated requests)
-    const csrfToken = cookieStore.get('csrf_token')?.value
-    if (csrfToken) {
-      backendHeaders['X-CSRF-Token'] = csrfToken
     }
 
     const upstream = await backendFetch(`${API_URL}/api/v1/auth/refresh`, {

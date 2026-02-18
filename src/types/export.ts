@@ -33,12 +33,21 @@ export interface ExportRecord {
   completedAt: string | null
 }
 
+export interface ExportQuotaInfo {
+  remaining: number
+  resetAt: string
+}
+
 export interface ExportHistoryResponse {
   exports: ExportRecord[]
   pagination: {
     page: number
     limit: number
     total: number
+  }
+  quota?: {
+    standard: ExportQuotaInfo
+    gdpr: ExportQuotaInfo
   }
 }
 

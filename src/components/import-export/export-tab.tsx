@@ -226,17 +226,12 @@ function ProgressSection({
 
 // ── Quota helper ─────────────────────────────────────────────────────────────
 
-function useQuotaEstimate(guildId: string, quotaMax: number, dataType: ExportDataType | 'gdpr-only') {
-  const { data } = useExportHistory(guildId, 1, 100)
-  const today = new Date().toDateString()
-  const todayExports = (data?.exports ?? []).filter((e) => {
-    const isToday = new Date(e.createdAt).toDateString() === today
-    if (dataType === 'gdpr-only') return isToday && e.dataType === 'gdpr'
-    return isToday && e.dataType !== 'gdpr'
-  })
-  const used = todayExports.length
-  const remaining = Math.max(0, quotaMax - used)
-  return { remaining, used }
+function useQuota(guildId: string) {
+  const { data } = useExportHistory(guildId, 1, 1)
+  return {
+    standardRemaining: data?.quota?.standard.remaining ?? DAILY_EXPORT_QUOTA,
+    gdprRemaining: data?.quota?.gdpr.remaining ?? DAILY_GDPR_QUOTA,
+  }
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -276,9 +271,7 @@ export function ExportTab({ guildId }: ExportTabProps) {
   const createExport = useCreateExport(guildId)
   const gdprCreateExport = useCreateExport(guildId)
   const { data: brandsData, isLoading: brandsLoading } = useBrands(guildId)
-  const { remaining: remainingQuota } = useQuotaEstimate(guildId, DAILY_EXPORT_QUOTA, 'gdpr-only')
-  const { remaining: remainingStdQuota } = useQuotaEstimate(guildId, DAILY_EXPORT_QUOTA, selectedType ?? 'accounts')
-  const { remaining: remainingGdprQuota } = useQuotaEstimate(guildId, DAILY_GDPR_QUOTA, 'gdpr-only')
+  const { standardRemaining: remainingStdQuota, gdprRemaining: remainingGdprQuota } = useQuota(guildId)
 
   const visibleFilters = getVisibleFilters(selectedType)
 

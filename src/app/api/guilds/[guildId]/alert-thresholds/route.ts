@@ -19,8 +19,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   try {
     const url = new URL(request.url)
+    const backendUrl = `${API_URL}/api/v1/guilds/${guildId}/alert-thresholds${url.search}`
+    console.log('[DEBUG alert-thresholds] URL:', backendUrl, '| API_URL:', API_URL, '| token:', token ? `${token.slice(0, 20)}...` : 'NONE')
     const response = await backendFetch(
-      `${API_URL}/api/v1/guilds/${guildId}/alert-thresholds${url.search}`,
+      backendUrl,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -29,6 +31,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     )
 
     const data = await response.json()
+    console.log('[DEBUG alert-thresholds] Response:', response.status, JSON.stringify(data).slice(0, 200))
     if (!response.ok) {
       const sanitized = sanitizeError(response.status, data, 'load alert thresholds')
       return NextResponse.json(sanitized, { status: response.status })

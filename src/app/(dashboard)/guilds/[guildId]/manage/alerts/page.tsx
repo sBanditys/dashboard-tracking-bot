@@ -9,6 +9,7 @@ import {
   useBulkToggleThresholds,
   useBulkDeleteThresholds,
 } from '@/hooks/use-alerts'
+import { useBrands } from '@/hooks/use-tracking'
 import { usePersistentState } from '@/hooks/use-persistent-state'
 import { useShiftSelection } from '@/hooks/use-selection'
 import { ThresholdCard } from '@/components/alerts/threshold-card'
@@ -87,21 +88,15 @@ export default function AlertsPage({ params }: PageProps) {
   const loadedCount = allThresholds.length
   const totalCount = data?.pages[0]?.pagination.total ?? 0
 
-  // Unique groups across all loaded pages (for filter dropdown and create modal)
+  // Fetch all account groups from brands (independent of thresholds)
+  const { data: brandsData } = useBrands(guildId)
+
   const groups = useMemo(() => {
-    const seen = new Set<string>()
-    const result: { id: string; label: string }[] = []
-    for (const threshold of allThresholds) {
-      if (!seen.has(threshold.accountGroupId)) {
-        seen.add(threshold.accountGroupId)
-        result.push({
-          id: threshold.accountGroupId,
-          label: threshold.accountGroup.label,
-        })
-      }
-    }
-    return result
-  }, [allThresholds])
+    if (!brandsData?.brands) return []
+    return brandsData.brands.flatMap((brand) =>
+      brand.groups.map((g) => ({ id: g.id, label: g.label }))
+    )
+  }, [brandsData])
 
   // Discord channel info (from first threshold)
   const discordChannelId = allThresholds[0]?.accountGroup?.discordChannelId

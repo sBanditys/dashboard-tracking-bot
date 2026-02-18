@@ -31,7 +31,12 @@ export function useCreateExport(guildId: string) {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(request),
-            })
+            }, { skipGlobalCooldown: true })
+
+            if (response.status === 429) {
+                const data = await response.json().catch(() => ({}))
+                throw new Error(data.error || 'Too many exports. Please try again later.')
+            }
 
             if (!response.ok) {
                 const error = await response.json()

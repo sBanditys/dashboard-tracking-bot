@@ -31,7 +31,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const data = await response.json()
     if (!response.ok) {
       const sanitized = sanitizeError(response.status, data, 'create export')
-      return NextResponse.json(sanitized, { status: response.status })
+      const responseHeaders: HeadersInit = {}
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After')
+        if (retryAfter) responseHeaders['Retry-After'] = retryAfter
+      }
+      return NextResponse.json(sanitized, { status: response.status, headers: responseHeaders })
     }
     return NextResponse.json(data)
   } catch {

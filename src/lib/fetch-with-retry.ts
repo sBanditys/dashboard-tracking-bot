@@ -189,19 +189,21 @@ async function recoverExpiredSession(): Promise<void> {
  *
  * @param url - URL to fetch
  * @param options - Fetch options
- * @param maxRetries - Maximum number of retries (default: 3)
+ * @param config - Max retries (number) or config object with maxRetries and skipGlobalCooldown
  * @returns Response object
  * @throws Error if all retries exhausted
  */
 export async function fetchWithRetry(
   url: string,
   options?: RequestInit,
-  maxRetries: number = DEFAULT_MAX_RETRIES
+  config?: number | { maxRetries?: number; skipGlobalCooldown?: boolean }
 ): Promise<Response> {
+  const maxRetries = typeof config === 'number' ? config : config?.maxRetries ?? DEFAULT_MAX_RETRIES;
+  const skipGlobalCooldown = typeof config === 'number' ? false : config?.skipGlobalCooldown ?? false;
   const requestMethod = (options?.method || 'GET').toUpperCase();
   const canRetryRequest = RETRYABLE_METHODS.has(requestMethod);
 
-  if (!isAuthEndpoint(url)) {
+  if (!skipGlobalCooldown && !isAuthEndpoint(url)) {
     const cooldownMs = getRateLimitRemainingMs();
     if (cooldownMs > 0) {
       throw new RateLimitError(cooldownMs);
@@ -303,7 +305,7 @@ export async function fetchWithRetry(
       if (response.status === 429) {
         const retryAfter = response.headers.get('Retry-After');
         const delay = parseRetryAfter(retryAfter) ?? RATE_LIMIT_FALLBACK_MS;
-        setRateLimitCooldown(delay);
+        if (!skipGlobalCooldown) setRateLimitCooldown(delay);
 
         const rateLimitRetryCap = Math.min(MAX_RATE_LIMIT_RETRIES, maxRetries);
         const shouldFailFast =

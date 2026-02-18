@@ -33,14 +33,12 @@ export function useCreateExport(guildId: string) {
                 body: JSON.stringify(request),
             }, { skipGlobalCooldown: true })
 
-            if (response.status === 429) {
-                const data = await response.json().catch(() => ({}))
-                throw new Error(data.error || 'Too many exports. Please try again later.')
-            }
-
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to create export')
+                const data = await response.json().catch(() => ({}))
+                if (response.status === 429) {
+                    throw new Error(data.error || 'Too many exports. Please try again later.')
+                }
+                throw new Error(data.error || data.message || 'Failed to create export')
             }
 
             const payload = await response.json()
@@ -56,10 +54,11 @@ export function useCreateExport(guildId: string) {
             toast.success('Export created successfully', {
                 description: 'Processing will begin shortly',
             })
-            // Invalidate export history to show new export
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'exports'] })
         },
         onError: (error) => {
+            // Refresh quota display after failed export attempt
+            queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'exports'] })
             toast.error('Failed to create export', {
                 description: error instanceof Error ? error.message : 'Unknown error',
             })

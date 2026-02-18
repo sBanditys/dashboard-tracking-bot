@@ -317,36 +317,40 @@ export function ExportTab({ guildId }: ExportTabProps) {
   const handleStartExport = async () => {
     if (!selectedType || exportDisabled) return
 
-    const record = await createExport.mutateAsync({
-      dataType: selectedType,
-      format,
-      mode: 'all',
-      filters: buildFilters(),
-    })
+    try {
+      const record = await createExport.mutateAsync({
+        dataType: selectedType,
+        format,
+        mode: 'all',
+        filters: buildFilters(),
+      })
 
-    setProgressState({ phase: 'in_progress', exportId: record.id })
+      setProgressState({ phase: 'in_progress', exportId: record.id })
 
-    // Watch progress via SSE manually to detect completion/error and update state
-    const es = new EventSource(`/api/guilds/${guildId}/exports/${record.id}/progress`)
-    eventSourceRef.current = es
+      // Watch progress via SSE manually to detect completion/error and update state
+      const es = new EventSource(`/api/guilds/${guildId}/exports/${record.id}/progress`)
+      eventSourceRef.current = es
 
-    es.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        if (data.status === 'completed') {
-          es.close()
-          setProgressState({ phase: 'complete', downloadUrl: data.downloadUrl ?? null })
-        } else if (data.status === 'failed') {
-          es.close()
-          setProgressState({ phase: 'error', message: data.message ?? 'Export failed' })
+      es.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          if (data.status === 'completed') {
+            es.close()
+            setProgressState({ phase: 'complete', downloadUrl: data.downloadUrl ?? null })
+          } else if (data.status === 'failed') {
+            es.close()
+            setProgressState({ phase: 'error', message: data.message ?? 'Export failed' })
+          }
+        } catch {
+          // ignore parse errors
         }
-      } catch {
-        // ignore parse errors
       }
-    }
 
-    es.onerror = () => {
-      es.close()
+      es.onerror = () => {
+        es.close()
+      }
+    } catch {
+      // Error already handled by mutation onError (toast)
     }
   }
 
@@ -364,34 +368,38 @@ export function ExportTab({ guildId }: ExportTabProps) {
   const handleGdprExport = async () => {
     if (gdprExportDisabled) return
 
-    const record = await gdprCreateExport.mutateAsync({
-      dataType: 'gdpr',
-      format: gdprFormat,
-      mode: 'all',
-    })
+    try {
+      const record = await gdprCreateExport.mutateAsync({
+        dataType: 'gdpr',
+        format: gdprFormat,
+        mode: 'all',
+      })
 
-    setGdprProgressState({ phase: 'in_progress', exportId: record.id })
+      setGdprProgressState({ phase: 'in_progress', exportId: record.id })
 
-    const es = new EventSource(`/api/guilds/${guildId}/exports/${record.id}/progress`)
-    gdprEventSourceRef.current = es
+      const es = new EventSource(`/api/guilds/${guildId}/exports/${record.id}/progress`)
+      gdprEventSourceRef.current = es
 
-    es.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        if (data.status === 'completed') {
-          es.close()
-          setGdprProgressState({ phase: 'complete', downloadUrl: data.downloadUrl ?? null })
-        } else if (data.status === 'failed') {
-          es.close()
-          setGdprProgressState({ phase: 'error', message: data.message ?? 'Export failed' })
+      es.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          if (data.status === 'completed') {
+            es.close()
+            setGdprProgressState({ phase: 'complete', downloadUrl: data.downloadUrl ?? null })
+          } else if (data.status === 'failed') {
+            es.close()
+            setGdprProgressState({ phase: 'error', message: data.message ?? 'Export failed' })
+          }
+        } catch {
+          // ignore
         }
-      } catch {
-        // ignore
       }
-    }
 
-    es.onerror = () => {
-      es.close()
+      es.onerror = () => {
+        es.close()
+      }
+    } catch {
+      // Error already handled by mutation onError (toast)
     }
   }
 

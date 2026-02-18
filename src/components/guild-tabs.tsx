@@ -15,7 +15,6 @@ const tabs = [
     { name: 'Accounts', href: '/accounts' },
     { name: 'Posts', href: '/posts' },
     { name: 'Analytics', href: '/analytics' },
-    { name: 'Exports', href: '/exports' },
 ]
 
 export function GuildTabs({ guildId, className }: GuildTabsProps) {

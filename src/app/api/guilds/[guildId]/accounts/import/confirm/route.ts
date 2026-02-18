@@ -28,6 +28,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
+        signal: request.signal,
       }
     )
 
@@ -45,7 +46,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         'Connection': 'keep-alive',
       },
     })
-  } catch {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return new NextResponse(null, { status: 499 })
+    }
     return NextResponse.json(internalError('confirm import'), { status: 500 })
   }
 }

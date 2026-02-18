@@ -26,6 +26,7 @@ export async function GET(request: Request, { params }: RouteParams) {
                     Authorization: `Bearer ${token}`,
                     Accept: 'text/event-stream',
                 },
+                signal: request.signal,
             }
         )
 
@@ -42,7 +43,10 @@ export async function GET(request: Request, { params }: RouteParams) {
                 'X-Accel-Buffering': 'no',
             },
         })
-    } catch {
+    } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+            return new Response(null, { status: 499 })
+        }
         return new Response('Failed to connect', { status: 502 })
     }
 }

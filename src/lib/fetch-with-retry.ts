@@ -303,9 +303,14 @@ export async function fetchWithRetry(
 
       // Handle 429 Too Many Requests — retry with backoff
       if (response.status === 429) {
+        // When skipGlobalCooldown is set, return the raw response so the
+        // caller can read the body and show a domain-specific error message
+        // instead of the generic RateLimitError.
+        if (skipGlobalCooldown) return response;
+
         const retryAfter = response.headers.get('Retry-After');
         const delay = parseRetryAfter(retryAfter) ?? RATE_LIMIT_FALLBACK_MS;
-        if (!skipGlobalCooldown) setRateLimitCooldown(delay);
+        setRateLimitCooldown(delay);
 
         const rateLimitRetryCap = Math.min(MAX_RATE_LIMIT_RETRIES, maxRetries);
         const shouldFailFast =

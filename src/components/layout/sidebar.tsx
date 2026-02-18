@@ -4,8 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useUser } from '@/hooks/use-user'
-// Disabled: alert-thresholds backend route not matching from Next.js SSR fetch
-// import { useActiveThresholdCount } from '@/hooks/use-alerts'
+import { useActiveThresholdCount } from '@/hooks/use-alerts'
 
 interface SidebarProps {
   onNavigate?: () => void
@@ -23,8 +22,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const guildEntry = guildId ? user?.guilds?.find((g) => g.id === guildId) : undefined
   const isGuildAdmin = guildEntry !== undefined && (Number(guildEntry.permissions) & 0x8) !== 0
 
-  // Disabled: alert-thresholds backend route not matching from Next.js SSR fetch
-  const alertCount = 0
+  const { count: alertCount } = useActiveThresholdCount(guildId ?? '')
 
   const navItems = [
     {

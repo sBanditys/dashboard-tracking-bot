@@ -2,6 +2,7 @@ import { backendFetch } from '@/lib/server/backend-fetch'
 import { BACKEND_API_URL } from '@/lib/server/api-url'
 import { NextRequest, NextResponse } from 'next/server'
 import { extractSetCookieByName } from '@/lib/server/dashboard-session-cookies'
+import { buildClientContextHeaders } from '@/lib/server/client-context'
 
 const API_URL = BACKEND_API_URL
 const OAUTH_CONTEXT_COOKIE_NAME = (process.env.OAUTH_CONTEXT_COOKIE_NAME || 'oauth_ctx').trim() || 'oauth_ctx'
@@ -50,10 +51,14 @@ function getCookieDomain(request: NextRequest): string | undefined {
 
 export async function GET(request: NextRequest) {
   try {
+    // Forward client context (IP + User-Agent) so the backend's OAuth context
+    // binding uses the real client identity, not the Next.js server's.
+    const clientContext = buildClientContextHeaders(request.headers)
+
     const upstream = await backendFetch(`${API_URL}/api/v1/auth/discord`, {
       method: 'GET',
       redirect: 'manual',
-      cache: 'no-store',
+      headers: clientContext,
     })
 
     const location = upstream.headers.get('location')

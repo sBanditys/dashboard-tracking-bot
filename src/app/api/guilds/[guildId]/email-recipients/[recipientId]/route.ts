@@ -19,7 +19,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
   try {
     const response = await backendFetch(
-      `${API_URL}/api/v1/guilds/${guildId}/email-alerts/recipients/${recipientId}`,
+      `${API_URL}/api/v1/guilds/${guildId}/email-recipients/${recipientId}`,
       {
         method: 'DELETE',
         headers: {

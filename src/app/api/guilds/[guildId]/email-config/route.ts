@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   try {
     const response = await backendFetch(
-      `${API_URL}/api/v1/guilds/${guildId}/email-alerts/config`,
+      `${API_URL}/api/v1/guilds/${guildId}/email-config`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -50,7 +50,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const body = await request.json()
     const response = await backendFetch(
-      `${API_URL}/api/v1/guilds/${guildId}/email-alerts/config`,
+      `${API_URL}/api/v1/guilds/${guildId}/email-config`,
       {
         method: 'PUT',
         headers: {

@@ -19,7 +19,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
   try {
     const response = await backendFetch(
-      `${API_URL}/api/v1/guilds/${guildId}/email-alerts/recipients/${recipientId}/resend-verification`,
+      `${API_URL}/api/v1/guilds/${guildId}/email-recipients/${recipientId}/resend-verification`,
       {
         method: 'POST',
         headers: {

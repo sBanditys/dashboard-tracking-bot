@@ -20,7 +20,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const body = await request.json()
     const response = await backendFetch(
-      `${API_URL}/api/v1/guilds/${guildId}/email-alerts/recipients`,
+      `${API_URL}/api/v1/guilds/${guildId}/email-recipients`,
       {
         method: 'POST',
         headers: {

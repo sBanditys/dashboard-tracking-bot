@@ -318,7 +318,7 @@ export function ExportTab({ guildId }: ExportTabProps) {
     if (!selectedType || exportDisabled) return
 
     try {
-      const record = await createExport.mutateAsync({
+      const { record } = await createExport.mutateAsync({
         dataType: selectedType,
         format,
         mode: 'all',
@@ -369,7 +369,7 @@ export function ExportTab({ guildId }: ExportTabProps) {
     if (gdprExportDisabled) return
 
     try {
-      const record = await gdprCreateExport.mutateAsync({
+      const { record } = await gdprCreateExport.mutateAsync({
         dataType: 'gdpr',
         format: gdprFormat,
         mode: 'all',

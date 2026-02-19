@@ -12,6 +12,11 @@ import type {
     ExportStatus,
 } from '@/types/export'
 
+interface CreateExportPayload {
+    export?: ExportRecord
+    quota?: ExportHistoryResponse['quota']
+}
+
 function normalizeExportRecord(payload: unknown): ExportRecord {
     const candidate = (payload as { export?: ExportRecord })?.export ?? payload
     return candidate as ExportRecord
@@ -41,19 +46,28 @@ export function useCreateExport(guildId: string) {
                 throw new Error(data.error || data.message || 'Failed to create export')
             }
 
-            const payload = await response.json()
+            const payload: CreateExportPayload = await response.json()
             const record = normalizeExportRecord(payload)
 
             if (!record?.id) {
                 throw new Error('Export created but no export ID returned')
             }
 
-            return record
+            return { record, quota: payload.quota }
         },
-        onSuccess: () => {
+        onSuccess: ({ quota }) => {
             toast.success('Export created successfully', {
                 description: 'Processing will begin shortly',
             })
+
+            // Immediately update quota in all cached export history queries
+            if (quota) {
+                queryClient.setQueriesData<ExportHistoryResponse>(
+                    { queryKey: ['guild', guildId, 'exports'] },
+                    (old) => old ? { ...old, quota } : old,
+                )
+            }
+
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'exports'] })
         },
         onError: (error) => {

@@ -67,7 +67,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       const sanitized = sanitizeError(response.status, data, 'load export history')
       return NextResponse.json(sanitized, { status: response.status })
     }
-    return NextResponse.json(data)
+    return NextResponse.json(data, {
+      headers: { 'Cache-Control': 'no-store' },
+    })
   } catch {
     return NextResponse.json(internalError('load export history'), { status: 500 })
   }

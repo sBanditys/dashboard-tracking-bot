@@ -42,13 +42,13 @@ export default function AnalyticsPage() {
   const { data: leaderboard, isLoading: leaderboardLoading } = useAnalyticsLeaderboard(
     guildId,
     range,
-    10
+    100
   )
   const shouldFetchLastWeekLeaderboard = range === 7 && !!leaderboard && leaderboard.leaderboard.length === 0
   const { data: lastWeekLeaderboard, isLoading: lastWeekLeaderboardLoading } = useAnalyticsLeaderboard(
     guildId,
     14,
-    10,
+    100,
     { enabled: shouldFetchLastWeekLeaderboard }
   )
   const { data: topAccounts, isLoading: topAccountsLoading } = useTopAccounts(guildId, range, 10)
@@ -264,7 +264,6 @@ export default function AnalyticsPage() {
             <Leaderboard
               entries={leaderboardEntries}
               guildId={guildId}
-              limit={10}
               subtitle={usingLastWeekLeaderboard ? 'Showing last week performance (no new submissions this week)' : undefined}
             />
           ) : null}

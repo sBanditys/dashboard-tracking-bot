@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { ShieldCheck, AlertCircle, RefreshCw, CheckCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ExportTypeSelector } from './export-type-selector'
@@ -224,16 +224,6 @@ function ProgressSection({
   )
 }
 
-// ── Quota helper ─────────────────────────────────────────────────────────────
-
-function useQuota(guildId: string) {
-  const { data } = useExportHistory(guildId, 1, 1)
-  return {
-    standardRemaining: data?.quota?.standard.remaining ?? DAILY_EXPORT_QUOTA,
-    gdprRemaining: data?.quota?.gdpr.remaining ?? DAILY_GDPR_QUOTA,
-  }
-}
-
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface ExportTabProps {
@@ -268,10 +258,29 @@ export function ExportTab({ guildId }: ExportTabProps) {
   const eventSourceRef = useRef<EventSource | null>(null)
   const gdprEventSourceRef = useRef<EventSource | null>(null)
 
+  // Quota state — seeded from the export history query, updated from mutation responses
+  const [quotaOverride, setQuotaOverride] = useState<{
+    standard: number
+    gdpr: number
+  } | null>(null)
+
+  const { data: historyData } = useExportHistory(guildId, 1, 1)
+
+  // Sync quota from query data on load and when it refetches
+  const queryStd = historyData?.quota?.standard.remaining
+  const queryGdpr = historyData?.quota?.gdpr.remaining
+  useEffect(() => {
+    if (queryStd !== undefined && queryGdpr !== undefined) {
+      setQuotaOverride({ standard: queryStd, gdpr: queryGdpr })
+    }
+  }, [queryStd, queryGdpr])
+
+  const remainingStdQuota = quotaOverride?.standard ?? DAILY_EXPORT_QUOTA
+  const remainingGdprQuota = quotaOverride?.gdpr ?? DAILY_GDPR_QUOTA
+
   const createExport = useCreateExport(guildId)
   const gdprCreateExport = useCreateExport(guildId)
   const { data: brandsData, isLoading: brandsLoading } = useBrands(guildId)
-  const { standardRemaining: remainingStdQuota, gdprRemaining: remainingGdprQuota } = useQuota(guildId)
 
   const visibleFilters = getVisibleFilters(selectedType)
 
@@ -318,12 +327,20 @@ export function ExportTab({ guildId }: ExportTabProps) {
     if (!selectedType || exportDisabled) return
 
     try {
-      const { record } = await createExport.mutateAsync({
+      const { record, quota } = await createExport.mutateAsync({
         dataType: selectedType,
         format,
         mode: 'all',
         filters: buildFilters(),
       })
+
+      // Immediately update local quota from the POST response
+      if (quota) {
+        setQuotaOverride({
+          standard: quota.standard.remaining,
+          gdpr: quota.gdpr.remaining,
+        })
+      }
 
       setProgressState({ phase: 'in_progress', exportId: record.id })
 
@@ -369,11 +386,19 @@ export function ExportTab({ guildId }: ExportTabProps) {
     if (gdprExportDisabled) return
 
     try {
-      const { record } = await gdprCreateExport.mutateAsync({
+      const { record, quota } = await gdprCreateExport.mutateAsync({
         dataType: 'gdpr',
         format: gdprFormat,
         mode: 'all',
       })
+
+      // Immediately update local quota from the POST response
+      if (quota) {
+        setQuotaOverride({
+          standard: quota.standard.remaining,
+          gdpr: quota.gdpr.remaining,
+        })
+      }
 
       setGdprProgressState({ phase: 'in_progress', exportId: record.id })
 

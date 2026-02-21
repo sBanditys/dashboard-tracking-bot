@@ -57,6 +57,7 @@ Progress: [█████████░░░░░░░░░░░] 60/TBD 
 | 13-04 | 2min | 2 | 4 |
 | 13-06 | 2m 42s | 2 | 4 |
 | Phase 12-bonus-system P01 | 4m 7s | 2 tasks | 8 files |
+| Phase 12-bonus-system P02 | 4m 22s | 2 tasks | 11 files |
 | Phase 12-bonus-system P03 | 3m 37s | 2 tasks | 2 files |
 | Phase 12-bonus-system P04 | 3m 20s | 2 tasks | 2 files |
 
@@ -89,6 +90,7 @@ Recent decisions affecting current work:
 - [Phase 12-bonus-system]: Leaderboard All time uses weeks=52 (backend leaderboardQuerySchema max is 52)
 - [Phase 12-bonus-system]: All time preset uses weeks=52 (not 9999) per backend leaderboardQuerySchema max constraint
 - [Phase 12-bonus-system]: LeaderboardTab createModalOpen state pre-declared in page.tsx so Plan 03 activation only requires uncommenting import+JSX
+- **12-02 (Bonus UI Core)**: Inner tabs lazy-render (only active tab mounted); BulkConfirmModal inline (shows amount); Notes textarea below group name for space efficiency; LeaderboardTab/WeekPicker/CreateRoundModal pre-created by IDE linter ahead of Plans 03/04
 - **12-03 (Bonus Creation Form)**: Groups fetched from useBrands() brands[].groups[] flatten — no dedicated groups endpoint; window.confirm() for retroactive extra confirmation; overriddenGroups Set tracks per-group target overrides
 
 ### Pending Todos

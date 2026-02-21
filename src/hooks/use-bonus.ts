@@ -387,6 +387,52 @@ export function useBulkUpdatePayments(guildId: string) {
 }
 
 /**
+ * Evaluate (or re-evaluate) a bonus round with current data.
+ * Works for both unevaluated rounds (first evaluation) and already-evaluated rounds (refresh).
+ * On success: invalidates rounds list and round detail queries, shows success toast.
+ */
+export function useEvaluateBonusRound(guildId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ roundId }: { roundId: string }) => {
+      const res = await fetchWithRetry(
+        `/api/guilds/${guildId}/bonus/rounds/${roundId}/evaluate`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(
+          (data as { error?: string }).error || 'Failed to evaluate bonus round'
+        )
+      }
+      return res.json()
+    },
+    onSuccess: (_data, { roundId }) => {
+      // Invalidate rounds list and this round's detail
+      queryClient.invalidateQueries({
+        queryKey: ['guild', guildId, 'bonus', 'rounds'],
+      })
+      queryClient.invalidateQueries({
+        queryKey: bonusKeys.roundDetail(guildId, roundId),
+      })
+      queryClient.invalidateQueries({
+        queryKey: bonusKeys.results(guildId, roundId),
+      })
+      toast.success('Bonus round evaluated with latest data')
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to evaluate bonus round', {
+        description: error.message,
+      })
+    },
+  })
+}
+
+/**
  * Auto-save payment notes on blur.
  *
  * Sends the full payload (paid + notes) to avoid race conditions when

@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { ChevronDown, ChevronUp, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { ChevronDown, ChevronUp, CheckCircle, XCircle, Clock, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { centsToDisplay, useBonusRoundDetail } from '@/hooks/use-bonus'
+import { centsToDisplay, useBonusRoundDetail, useEvaluateBonusRound } from '@/hooks/use-bonus'
 import { TargetsTab } from '@/components/bonus/targets-tab'
 import { PaymentsTab } from '@/components/bonus/payments-tab'
 import { ResultsTab } from '@/components/bonus/results-tab'
@@ -69,6 +69,7 @@ export function RoundCard({ round, expanded, onToggle, guildId, isAdmin }: Round
     round.id,
     expanded
   )
+  const evaluate = useEvaluateBonusRound(guildId)
 
   const weekStart = format(new Date(round.week_start), 'MMM d')
   const weekEnd = format(new Date(round.week_end), 'MMM d, yyyy')
@@ -137,7 +138,7 @@ export function RoundCard({ round, expanded, onToggle, guildId, isAdmin }: Round
       {expanded && (
         <div className="border-t border-border">
           {/* Inner tab bar */}
-          <div className="px-4 pt-3 pb-0">
+          <div className="px-4 pt-3 pb-0 flex items-center justify-between">
             <div className="inline-flex bg-surface-hover border border-border rounded-md p-0.5 gap-0.5">
               {INNER_TABS.map((tab) => (
                 <button
@@ -155,6 +156,26 @@ export function RoundCard({ round, expanded, onToggle, guildId, isAdmin }: Round
                 </button>
               ))}
             </div>
+
+            {isAdmin && (
+              <button
+                type="button"
+                disabled={evaluate.isPending}
+                onClick={() => evaluate.mutate({ roundId: round.id })}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded border transition-colors',
+                  'border-border text-gray-400 hover:text-white hover:border-gray-500',
+                  evaluate.isPending && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                <RefreshCw className={cn('h-3 w-3', evaluate.isPending && 'animate-spin')} />
+                {evaluate.isPending
+                  ? 'Evaluating...'
+                  : round.evaluated
+                  ? 'Re-evaluate'
+                  : 'Evaluate Now'}
+              </button>
+            )}
           </div>
 
           {/* Inner tab content */}

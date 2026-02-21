@@ -89,6 +89,7 @@ Recent decisions affecting current work:
 - [Phase 12-bonus-system]: Leaderboard All time uses weeks=52 (backend leaderboardQuerySchema max is 52)
 - [Phase 12-bonus-system]: All time preset uses weeks=52 (not 9999) per backend leaderboardQuerySchema max constraint
 - [Phase 12-bonus-system]: LeaderboardTab createModalOpen state pre-declared in page.tsx so Plan 03 activation only requires uncommenting import+JSX
+- **12-03 (Bonus Creation Form)**: Groups fetched from useBrands() brands[].groups[] flatten — no dedicated groups endpoint; window.confirm() for retroactive extra confirmation; overriddenGroups Set tracks per-group target overrides
 
 ### Pending Todos
 
@@ -114,4 +115,4 @@ Stopped at: Completed 12-04-PLAN.md (Bonus Leaderboard Tab)
 Resume file: Phase 12 complete (all 4 plans done)
 
 ---
-*Last updated: 2026-02-21*
+*Last updated: 2026-02-21 (12-03 complete)*

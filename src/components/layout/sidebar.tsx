@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUser } from '@/hooks/use-user'
 import { useActiveThresholdCount } from '@/hooks/use-alerts'
@@ -128,6 +129,20 @@ export function Sidebar({ onNavigate }: SidebarProps) {
               >
                 <span className="text-lg">🗑️</span>
                 Deleted Items
+              </Link>
+
+              <Link
+                href={`/guilds/${guildId}/bonus`}
+                onClick={onNavigate}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-colors',
+                  pathname.includes('/bonus')
+                    ? 'bg-accent-purple text-white'
+                    : 'text-gray-300 hover:bg-surface/50 hover:text-white'
+                )}
+              >
+                <Trophy className="text-lg h-5 w-5" />
+                Bonus
               </Link>
 
               {/* Manage section — admin only */}

@@ -90,7 +90,7 @@ export default function BonusPage() {
 
       {/* Tab content */}
       {activeTab === 'rounds' ? (
-        <RoundsTab guildId={guildId} isAdmin={isAdmin} />
+        <RoundsTab guildId={guildId} isAdmin={isAdmin} onOpenCreate={() => setCreateModalOpen(true)} />
       ) : (
         <LeaderboardTab guildId={guildId} />
       )}

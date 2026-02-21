@@ -11,6 +11,7 @@ import type { RoundFilter } from '@/types/bonus'
 interface RoundsTabProps {
   guildId: string
   isAdmin: boolean
+  onOpenCreate?: () => void
 }
 
 const FILTER_TABS: { id: RoundFilter; label: string }[] = [
@@ -22,7 +23,7 @@ const FILTER_TABS: { id: RoundFilter; label: string }[] = [
 /**
  * Bonus rounds list with filter tabs, accordion expansion, and Load More pagination.
  */
-export function RoundsTab({ guildId, isAdmin }: RoundsTabProps) {
+export function RoundsTab({ guildId, isAdmin, onOpenCreate }: RoundsTabProps) {
   const [filter, setFilter] = useState<RoundFilter>('all')
   const [expandedRoundId, setExpandedRoundId] = useState<string | null>(null)
 
@@ -105,9 +106,7 @@ export function RoundsTab({ guildId, isAdmin }: RoundsTabProps) {
             <button
               type="button"
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-accent-purple hover:bg-accent-purple/80 text-white transition-colors"
-              onClick={() => {
-                // Round creation modal will be added in Plan 03
-              }}
+              onClick={() => onOpenCreate?.()}
             >
               <Trophy className="h-4 w-4" />
               Create Round

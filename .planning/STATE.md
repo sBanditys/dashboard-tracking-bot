@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface — independent of bot uptime.
-**Current focus:** Phase 13 - Alert & Import Management
+**Current focus:** Phase 12 - Bonus System
 
 ## Current Position
 
-Phase: 13 of 13 (Alert & Import Management)
-Plan: 5 of 5 completed in current phase
-Status: Complete
-Last activity: 2026-02-17 — Completed 13-06-PLAN.md (Export Tab UI)
+Phase: 12 of 13 (Bonus System)
+Plan: 1 of 4 completed in current phase
+Status: In Progress
+Last activity: 2026-02-21 — Completed 12-01-PLAN.md (Bonus Data Layer)
 
-Progress: [█████████░░░░░░░░░░░] 59/TBD (Phase 1-8 complete from v1.0, Phase 9: 3/3 plans complete, Phase 10: 3/3 plans complete, Phase 11: 2/2 plans complete, Phase 13: 5/5 plans complete)
+Progress: [█████████░░░░░░░░░░░] 60/TBD (Phase 1-8 complete from v1.0, Phase 9: 3/3 plans complete, Phase 10: 3/3 plans complete, Phase 11: 2/2 plans complete, Phase 12: 1/4 plans complete, Phase 13: 5/5 plans complete)
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [█████████░░░░░░░░░░░] 59/TBD 
 | 13-03 | 3m | 3 | 6 |
 | 13-04 | 2min | 2 | 4 |
 | 13-06 | 2m 42s | 2 | 4 |
+| Phase 12-bonus-system P01 | 4m 7s | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,8 @@ Recent decisions affecting current work:
 - **13-03 (Alert Thresholds UI)**: Non-optimistic toggle with spinner; page-level TypeToConfirmModal with removingId fade-out animation; groups list derived from loaded threshold data; duplicate detection warns but does not block submission
 - [Phase 13]: 13-04: activeAction prop on ThresholdBulkBar shows spinner only on triggered button; EmailConfigSection uses confirm() for remove; AlertSettingsPanel tracks pendingField for per-toggle spinners; selection clears on filter change
 - **13-06 (Export Tab UI)**: Client-side SSE cancel via EventSource.close() in ref; context-aware filters per export type; quota estimated from today's history count; ProgressSection sub-component consumes useExportProgress internally to avoid parent re-renders on SSE ticks
+- [Phase 12-bonus-system]: Week start confirmed as Sunday (weekBoundary.ts dayOfWeek=0); date-fns default weekStartsOn:0 matches — no override needed
+- [Phase 12-bonus-system]: Leaderboard All time uses weeks=52 (backend leaderboardQuerySchema max is 52)
 
 ### Pending Todos
 
@@ -102,9 +105,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-17 (execute-phase)
-Stopped at: Completed 13-06-PLAN.md (Export Tab UI)
-Resume file: Phase 13 complete — no next plan available
+Last session: 2026-02-21 (execute-phase)
+Stopped at: Completed 12-01-PLAN.md (Bonus Data Layer)
+Resume file: 12-02-PLAN.md (next plan in phase 12)
 
 ---
-*Last updated: 2026-02-17*
+*Last updated: 2026-02-21*

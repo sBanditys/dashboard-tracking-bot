@@ -24,13 +24,13 @@ Requirements for security hardening and backend alignment. Each maps to roadmap 
 
 ### Bonus System
 
-- [ ] **BONUS-01**: User can view paginated list of bonus rounds
-- [ ] **BONUS-02**: User can view bonus round details (targets, payment status)
-- [ ] **BONUS-03**: Admin can create a bonus round with targets and amount
-- [ ] **BONUS-04**: Admin can mark individual payments as paid/unpaid
-- [ ] **BONUS-05**: Admin can bulk-update all payments in a round
-- [ ] **BONUS-06**: User can view bonus round results with near-miss reporting
-- [ ] **BONUS-07**: User can view bonus achievement leaderboard
+- [x] **BONUS-01**: User can view paginated list of bonus rounds
+- [x] **BONUS-02**: User can view bonus round details (targets, payment status)
+- [x] **BONUS-03**: Admin can create a bonus round with targets and amount
+- [x] **BONUS-04**: Admin can mark individual payments as paid/unpaid
+- [x] **BONUS-05**: Admin can bulk-update all payments in a round
+- [x] **BONUS-06**: User can view bonus round results with near-miss reporting
+- [x] **BONUS-07**: User can view bonus achievement leaderboard
 
 ### Alert Management
 
@@ -88,13 +88,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SESS-01 | Phase 11 | Pending |
 | SESS-02 | Phase 11 | Pending |
 | SESS-03 | Phase 11 | Pending |
-| BONUS-01 | Phase 12 | Pending |
-| BONUS-02 | Phase 12 | Pending |
-| BONUS-03 | Phase 12 | Pending |
-| BONUS-04 | Phase 12 | Pending |
-| BONUS-05 | Phase 12 | Pending |
-| BONUS-06 | Phase 12 | Pending |
-| BONUS-07 | Phase 12 | Pending |
+| BONUS-01 | Phase 12 | Complete |
+| BONUS-02 | Phase 12 | Complete |
+| BONUS-03 | Phase 12 | Complete |
+| BONUS-04 | Phase 12 | Complete |
+| BONUS-05 | Phase 12 | Complete |
+| BONUS-06 | Phase 12 | Complete |
+| BONUS-07 | Phase 12 | Complete |
 | ALERT-01 | Phase 13 | Pending |
 | ALERT-02 | Phase 13 | Pending |
 | ALERT-03 | Phase 13 | Pending |

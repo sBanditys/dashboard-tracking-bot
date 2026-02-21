@@ -88,7 +88,12 @@ Full details: `milestones/v1.0-ROADMAP.md`
   5. Admin can bulk-update all payments in a round (mark all paid/unpaid)
   6. User can view bonus results page showing near-miss reporting (accounts close to threshold)
   7. User can view bonus leaderboard showing achievement rankings across all rounds
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 12-01-PLAN.md — Data layer (types, proxy routes, React Query hooks)
+- [ ] 12-02-PLAN.md — Bonus page, rounds list, expanded round card with inner tabs (Targets, Payments, Results)
+- [ ] 12-03-PLAN.md — Round creation form wizard (week picker, group selection, target views, review)
+- [ ] 12-04-PLAN.md — Leaderboard tab (podium, ranked table, metric switching, time range filters)
 
 ### Phase 13: Alert & Import Management
 **Goal**: Admins can manage alert thresholds and import/export accounts via CSV

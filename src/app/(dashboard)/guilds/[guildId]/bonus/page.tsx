@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { useUser } from '@/hooks/use-user'
 import { RoundsTab } from '@/components/bonus/rounds-tab'
 import { LeaderboardTab } from '@/components/bonus/leaderboard-tab'
-// TODO(Plan 03): import { CreateRoundModal } from '@/components/bonus/create-round-modal'
+import { CreateRoundModal } from '@/components/bonus/create-round-modal'
 
 type TopTab = 'rounds' | 'leaderboard'
 
@@ -60,8 +60,12 @@ export default function BonusPage() {
         )}
       </div>
 
-      {/* TODO(Plan 03): Render <CreateRoundModal> here when create-round-modal.tsx is created */}
-      {/* <CreateRoundModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} guildId={guildId} existingWeekStarts={[]} /> */}
+      <CreateRoundModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        guildId={guildId}
+        existingWeekStarts={[]}
+      />
 
       {/* Top-level tab switcher */}
       <div className="inline-flex bg-surface border border-border rounded-lg p-1 gap-1">

@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import type {
@@ -96,8 +96,17 @@ export function useBonusRounds(guildId: string, filter: RoundFilter) {
     }
   }
 
-  // Reset when filter or guild changes
+  // Reset when filter or guild changes (skip initial mount — rounds
+  // already start as [] and the accumulate effect needs to populate
+  // them from cached query data without being wiped).
+  const prevFilterRef = useRef(filter)
+  const prevGuildRef = useRef(guildId)
   useEffect(() => {
+    if (prevFilterRef.current === filter && prevGuildRef.current === guildId) {
+      return
+    }
+    prevFilterRef.current = filter
+    prevGuildRef.current = guildId
     setRounds([])
     setCursor(null)
     setHasMore(false)

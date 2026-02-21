@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 12 of 13 (Bonus System)
-Plan: 1 of 4 completed in current phase
+Plan: 4 of 4 completed in current phase (Plans 02, 03, 04 run as Wave 2)
 Status: In Progress
-Last activity: 2026-02-21 — Completed 12-01-PLAN.md (Bonus Data Layer)
+Last activity: 2026-02-21 — Completed 12-04-PLAN.md (Bonus Leaderboard Tab)
 
 Progress: [█████████░░░░░░░░░░░] 60/TBD (Phase 1-8 complete from v1.0, Phase 9: 3/3 plans complete, Phase 10: 3/3 plans complete, Phase 11: 2/2 plans complete, Phase 12: 1/4 plans complete, Phase 13: 5/5 plans complete)
 
@@ -57,6 +57,8 @@ Progress: [█████████░░░░░░░░░░░] 60/TBD 
 | 13-04 | 2min | 2 | 4 |
 | 13-06 | 2m 42s | 2 | 4 |
 | Phase 12-bonus-system P01 | 4m 7s | 2 tasks | 8 files |
+| Phase 12-bonus-system P03 | 3m 37s | 2 tasks | 2 files |
+| Phase 12-bonus-system P04 | 3m 20s | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -85,6 +87,8 @@ Recent decisions affecting current work:
 - **13-06 (Export Tab UI)**: Client-side SSE cancel via EventSource.close() in ref; context-aware filters per export type; quota estimated from today's history count; ProgressSection sub-component consumes useExportProgress internally to avoid parent re-renders on SSE ticks
 - [Phase 12-bonus-system]: Week start confirmed as Sunday (weekBoundary.ts dayOfWeek=0); date-fns default weekStartsOn:0 matches — no override needed
 - [Phase 12-bonus-system]: Leaderboard All time uses weeks=52 (backend leaderboardQuerySchema max is 52)
+- [Phase 12-bonus-system]: All time preset uses weeks=52 (not 9999) per backend leaderboardQuerySchema max constraint
+- [Phase 12-bonus-system]: LeaderboardTab createModalOpen state pre-declared in page.tsx so Plan 03 activation only requires uncommenting import+JSX
 
 ### Pending Todos
 
@@ -106,8 +110,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21 (execute-phase)
-Stopped at: Completed 12-01-PLAN.md (Bonus Data Layer)
-Resume file: 12-02-PLAN.md (next plan in phase 12)
+Stopped at: Completed 12-04-PLAN.md (Bonus Leaderboard Tab)
+Resume file: Phase 12 complete (all 4 plans done)
 
 ---
 *Last updated: 2026-02-21*

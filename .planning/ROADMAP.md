@@ -32,6 +32,7 @@ Full details: `milestones/v1.0-ROADMAP.md`
 - [x] **Phase 11: Session Management** - View and revoke active sessions (completed 2026-02-22)
 - [x] **Phase 12: Bonus System** - Complete bonus rounds UI with payments and leaderboard (completed 2026-02-21)
 - [x] **Phase 13: Alert & Import Management** - Alert thresholds and CSV import/export (completed 2026-02-17)
+- [ ] **Phase 14: Fix Import Confirm CSRF Bypass** - Gap closure: replace raw fetch() with fetchWithRetry() in useConfirmImport
 
 ## Phase Details
 
@@ -117,6 +118,18 @@ Plans:
 - [ ] 13-05-PLAN.md — Data page - Import tab (upload, validation, progress)
 - [ ] 13-06-PLAN.md — Data page - Export tab (type selector, filters, history, GDPR)
 
+### Phase 14: Fix Import Confirm CSRF Bypass
+**Goal**: All mutation requests use fetchWithRetry for CSRF token injection — closing the import confirm gap
+**Depends on**: Phase 13
+**Requirements**: AUTH-03, IMPEX-04
+**Gap Closure:** Closes gaps from v1.1 audit
+**Success Criteria** (what must be TRUE):
+  1. `useConfirmImport` in `src/hooks/use-import.ts` uses `fetchWithRetry` instead of raw `fetch()`
+  2. POST to `/api/guilds/[guildId]/accounts/import/confirm` includes `X-CSRF-Token` header
+  3. Import confirm flow completes without 403 EBADCSRFTOKEN error
+**Plans**: 1 plan
+- [ ] 14-01-PLAN.md — Replace raw fetch() with fetchWithRetry() in useConfirmImport
+
 ## Progress
 
 **Execution Order:**
@@ -137,6 +150,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13
 | 11. Session Management | v1.1 | Complete    | 2026-02-22 | - |
 | 12. Bonus System | 4/4 | Complete    | 2026-02-21 | - |
 | 13. Alert & Import Management | v1.1 | Complete    | 2026-02-17 | - |
+| 14. Fix Import Confirm CSRF Bypass | v1.1 | 0/1 | Not started | - |
 
 ---
 *Created: 2026-01-24*

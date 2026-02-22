@@ -82,7 +82,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-01 | Phase 9 | Pending |
 | AUTH-02 | Phase 9 | Pending |
 | AUTH-06 | Phase 9 | Pending |
-| AUTH-03 | Phase 10 | Pending |
+| AUTH-03 | Phase 14 | Pending |
 | AUTH-04 | Phase 10 | Pending |
 | AUTH-05 | Phase 10 | Pending |
 | SESS-01 | Phase 11 | Pending |
@@ -102,7 +102,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IMPEX-01 | Phase 13 | Pending |
 | IMPEX-02 | Phase 13 | Pending |
 | IMPEX-03 | Phase 13 | Pending |
-| IMPEX-04 | Phase 13 | Pending |
+| IMPEX-04 | Phase 14 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 24 total

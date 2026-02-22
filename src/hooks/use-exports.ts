@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
+import { parseApiError } from '@/lib/api-error'
 import type {
     ExportRequest,
     ExportRecord,
@@ -43,7 +44,7 @@ export function useCreateExport(guildId: string) {
                 if (response.status === 429) {
                     throw new Error(data.error || 'Too many exports. Please try again later.')
                 }
-                throw new Error(data.error || data.message || 'Failed to create export')
+                throw new Error(parseApiError(data, 'Failed to create export'))
             }
 
             const payload: CreateExportPayload = await response.json()

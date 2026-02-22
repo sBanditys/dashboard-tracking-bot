@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
+import { parseApiError } from '@/lib/api-error'
 import type { ImportPreview, ImportProgressEvent } from '@/types/import'
 
 /**
@@ -60,8 +61,8 @@ export function useImportPreview(guildId: string) {
                 }
             )
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to preview import')
+                const body = await response.json()
+                throw new Error(parseApiError(body, 'Failed to preview import'))
             }
             return response.json()
         },
@@ -104,9 +105,7 @@ export function useConfirmImport(guildId: string) {
 
             if (!response.ok) {
                 const errBody = await response.json().catch(() => ({}))
-                throw new Error(
-                    (errBody as { message?: string }).message || 'Failed to confirm import'
-                )
+                throw new Error(parseApiError(errBody, 'Failed to confirm import'))
             }
 
             if (!response.body) {

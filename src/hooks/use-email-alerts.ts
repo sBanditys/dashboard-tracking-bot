@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
+import { parseApiError } from '@/lib/api-error'
 import type { EmailConfigResponse } from '@/types/alert'
 
 /**
@@ -40,8 +41,8 @@ export function useUpdateEmailConfig(guildId: string) {
                 body: JSON.stringify(data),
             })
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to update email config')
+                const body = await response.json()
+                throw new Error(parseApiError(body, 'Failed to update email config'))
             }
             return response.json()
         },
@@ -71,8 +72,8 @@ export function useAddRecipient(guildId: string) {
                 body: JSON.stringify(data),
             })
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to add recipient')
+                const body = await response.json()
+                throw new Error(parseApiError(body, 'Failed to add recipient'))
             }
             return response.json()
         },
@@ -103,8 +104,8 @@ export function useRemoveRecipient(guildId: string) {
                 { method: 'DELETE' }
             )
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to remove recipient')
+                const body = await response.json()
+                throw new Error(parseApiError(body, 'Failed to remove recipient'))
             }
         },
         onSuccess: () => {
@@ -133,8 +134,8 @@ export function useResendVerification(guildId: string) {
                 }
             )
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to resend verification')
+                const body = await response.json()
+                throw new Error(parseApiError(body, 'Failed to resend verification'))
             }
             return response.json()
         },

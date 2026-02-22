@@ -5,6 +5,7 @@ import { useSSE, type ConnectionState } from '@/hooks/use-sse'
 import { useCallback } from 'react'
 import { toast } from 'sonner'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
+import { parseApiError } from '@/lib/api-error'
 import type {
     GuildsResponse,
     GuildDetails,
@@ -156,8 +157,8 @@ export function useUpdateGuildSettings(guildId: string) {
             })
 
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to update settings')
+                const body = await response.json()
+                throw new Error(parseApiError(body, 'Failed to update settings'))
             }
 
             return response.json() as Promise<{ settings: GuildSettings }>
@@ -235,8 +236,8 @@ export function useDeleteAccount(guildId: string) {
                 method: 'DELETE',
             })
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to delete account')
+                const body = await response.json()
+                throw new Error(parseApiError(body, 'Failed to delete account'))
             }
             return response.json()
         },
@@ -265,8 +266,8 @@ export function useDeleteBrand(guildId: string) {
                 method: 'DELETE',
             })
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to delete brand')
+                const body = await response.json()
+                throw new Error(parseApiError(body, 'Failed to delete brand'))
             }
             return response.json()
         },

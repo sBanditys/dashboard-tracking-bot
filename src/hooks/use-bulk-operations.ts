@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
+import { parseApiError } from '@/lib/api-error'
 import type { BulkOperationResult } from '@/types/bulk'
 
 /**
@@ -22,8 +23,8 @@ export function useBulkDelete(guildId: string) {
             })
 
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to delete items')
+                const body = await response.json()
+                throw new Error(parseApiError(body, 'Failed to delete items'))
             }
 
             return response.json() as Promise<BulkOperationResult>
@@ -68,8 +69,8 @@ export function useBulkReassign(guildId: string) {
             })
 
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to reassign accounts')
+                const body = await response.json()
+                throw new Error(parseApiError(body, 'Failed to reassign accounts'))
             }
 
             return response.json() as Promise<BulkOperationResult>

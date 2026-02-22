@@ -2,6 +2,7 @@
 
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
+import { parseApiError } from '@/lib/api-error'
 import type {
     BrandsResponse,
     AccountsResponse,
@@ -214,8 +215,8 @@ export function useDeleteAccount(guildId: string) {
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to delete account')
+        const body = await response.json()
+        throw new Error(parseApiError(body, 'Failed to delete account'))
       }
 
       return response.json()
@@ -263,8 +264,8 @@ export function useAddAccount(guildId: string) {
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to add account');
+                const body = await response.json();
+                throw new Error(parseApiError(body, 'Failed to add account'));
             }
 
             return response.json();
@@ -298,8 +299,8 @@ export function useAddBrand(guildId: string) {
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to add brand');
+                const body = await response.json();
+                throw new Error(parseApiError(body, 'Failed to add brand'));
             }
 
             return response.json();

@@ -3,6 +3,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
+import { parseApiError } from '@/lib/api-error'
 import type {
     AlertThreshold,
     AlertSettings,
@@ -80,8 +81,8 @@ export function useCreateThreshold(guildId: string) {
                 }
             )
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to create threshold')
+                const body = await response.json()
+                throw new Error(parseApiError(body, 'Failed to create threshold'))
             }
             return response.json()
         },
@@ -116,8 +117,8 @@ export function useDeleteThreshold(guildId: string) {
                 { method: 'DELETE' }
             )
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to delete threshold')
+                const body = await response.json()
+                throw new Error(parseApiError(body, 'Failed to delete threshold'))
             }
         },
         onSuccess: () => {
@@ -157,8 +158,8 @@ export function useToggleThreshold(guildId: string) {
                 }
             )
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to toggle threshold')
+                const body = await response.json()
+                throw new Error(parseApiError(body, 'Failed to toggle threshold'))
             }
             return response.json()
         },
@@ -196,8 +197,8 @@ export function useUpdateAlertSettings(guildId: string) {
                 }
             )
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to update alert settings')
+                const body = await response.json()
+                throw new Error(parseApiError(body, 'Failed to update alert settings'))
             }
             return response.json()
         },

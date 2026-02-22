@@ -63,11 +63,11 @@ Full details: `milestones/v1.1-ROADMAP.md`
   2. An `unverified_email` error triggers the email-verification redirect under both old and new envelope shapes
   3. The CSRF cookie the dashboard reads is named `csrf_token`, matching the backend's cookie name
   4. Any deprecated Zod v3 validation patterns (`z.string().email()`, `error.errors`) have been replaced with v4 equivalents
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 17-01: Dual-parse error envelope in sanitizer and fetchWithRetry
-- [ ] 17-02: Align CSRF cookie name and audit Zod v3 patterns
+- [ ] 17-01-PLAN.md — Dual-parse error envelope in sanitizer + fetchWithRetry, CSRF cookie rename, parseApiError helper
+- [ ] 17-02-PLAN.md — Fix all hooks to use parseApiError, Zod v4 audit + shared validators, toast duration
 
 ### Phase 18: SSE Lifecycle Hardening
 **Goal**: SSE connections recover automatically from stalls and tab-switch races without requiring page reload

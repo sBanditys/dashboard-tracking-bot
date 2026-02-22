@@ -3,6 +3,7 @@
 import { use, useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useInView } from 'react-intersection-observer'
+import { RefreshCw } from 'lucide-react'
 import { useAccountsInfinite, useBrands, type AccountFilters } from '@/hooks/use-tracking'
 import { useShiftSelection } from '@/hooks/use-selection'
 import { useBulkDelete, useBulkReassign } from '@/hooks/use-bulk-operations'
@@ -82,6 +83,7 @@ export default function AccountsPage({ params }: PageProps) {
         data,
         isLoading,
         isError,
+        refetch,
         hasNextPage,
         isFetchingNextPage,
         fetchNextPage,
@@ -232,8 +234,16 @@ export default function AccountsPage({ params }: PageProps) {
 
     if (isError) {
         return (
-            <div className="text-center py-12">
-                <p className="text-red-400">Failed to load accounts</p>
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+                <p className="text-sm text-red-400">Failed to load accounts</p>
+                <button
+                    type="button"
+                    onClick={() => refetch()}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-surface border border-border text-gray-300 hover:bg-surface-hover transition-colors"
+                >
+                    <RefreshCw size={14} />
+                    Try again
+                </button>
             </div>
         )
     }

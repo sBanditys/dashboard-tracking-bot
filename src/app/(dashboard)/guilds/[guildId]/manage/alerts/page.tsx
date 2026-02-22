@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect, useMemo } from 'react'
 import { useInView } from 'react-intersection-observer'
-import { Bell } from 'lucide-react'
+import { Bell, RefreshCw } from 'lucide-react'
 import {
   useAlertThresholds,
   useDeleteThreshold,
@@ -50,6 +50,7 @@ export default function AlertsPage({ params }: PageProps) {
     data,
     isLoading,
     isError,
+    refetch,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
@@ -200,8 +201,16 @@ export default function AlertsPage({ params }: PageProps) {
 
   if (isError) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-400">Failed to load alert thresholds</p>
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <p className="text-sm text-red-400">Failed to load alert thresholds</p>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-surface border border-border text-gray-300 hover:bg-surface-hover transition-colors"
+        >
+          <RefreshCw size={14} />
+          Try again
+        </button>
       </div>
     )
   }

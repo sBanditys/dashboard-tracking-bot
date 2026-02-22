@@ -49,7 +49,7 @@ export function EmailConfigSection({ guildId }: EmailConfigSectionProps) {
   const [emailError, setEmailError] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
 
-  const { data, isLoading, isError } = useEmailConfig(guildId)
+  const { data, isLoading, isError, refetch } = useEmailConfig(guildId)
   const updateConfigMutation = useUpdateEmailConfig(guildId)
   const addRecipientMutation = useAddRecipient(guildId)
   const removeRecipientMutation = useRemoveRecipient(guildId)
@@ -139,7 +139,17 @@ export function EmailConfigSection({ guildId }: EmailConfigSectionProps) {
           )}
 
           {isError && (
-            <p className="text-sm text-red-400 pt-4">Failed to load email settings</p>
+            <div className="pt-4 space-y-2">
+              <p className="text-sm text-red-400">Failed to load email settings</p>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md bg-surface border border-border text-gray-300 hover:bg-surface-hover transition-colors"
+              >
+                <RefreshCw size={12} />
+                Try again
+              </button>
+            </div>
           )}
 
           {config && (

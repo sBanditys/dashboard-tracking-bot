@@ -1,6 +1,7 @@
 'use client'
 
 import { use, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { useBrands } from '@/hooks/use-tracking'
 import { GuildTabs } from '@/components/guild-tabs'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -31,7 +32,7 @@ function TagIcon() {
 
 export default function BrandsPage({ params }: PageProps) {
     const { guildId } = use(params)
-    const { data, isLoading, isError } = useBrands(guildId)
+    const { data, isLoading, isError, refetch } = useBrands(guildId)
     const [expandedBrand, setExpandedBrand] = useState<string | null>(null)
     const [showAddModal, setShowAddModal] = useState(false)
     const [brandToDelete, setBrandToDelete] = useState<{ id: string, label: string } | null>(null)
@@ -49,8 +50,16 @@ export default function BrandsPage({ params }: PageProps) {
 
     if (isError) {
         return (
-            <div className="text-center py-12">
-                <p className="text-red-400">Failed to load brands</p>
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+                <p className="text-sm text-red-400">Failed to load brands</p>
+                <button
+                    type="button"
+                    onClick={() => refetch()}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-surface border border-border text-gray-300 hover:bg-surface-hover transition-colors"
+                >
+                    <RefreshCw size={14} />
+                    Try again
+                </button>
             </div>
         )
     }

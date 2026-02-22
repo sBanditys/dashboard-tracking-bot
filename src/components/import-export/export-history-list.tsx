@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, ChevronLeft, ChevronRight, History } from 'lucide-react'
+import { Download, ChevronLeft, ChevronRight, History, RefreshCw } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { useExportHistory } from '@/hooks/use-exports'
@@ -135,7 +135,7 @@ interface ExportHistoryListProps {
  */
 export function ExportHistoryList({ guildId }: ExportHistoryListProps) {
   const [page, setPage] = useState(1)
-  const { data, isLoading, isError } = useExportHistory(guildId, page, 20)
+  const { data, isLoading, isError, refetch } = useExportHistory(guildId, page, 20)
 
   if (isLoading) {
     return (
@@ -149,7 +149,17 @@ export function ExportHistoryList({ guildId }: ExportHistoryListProps) {
 
   if (isError) {
     return (
-      <p className="text-sm text-red-400">Failed to load export history.</p>
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <p className="text-sm text-red-400">Failed to load export history</p>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-surface border border-border text-gray-300 hover:bg-surface-hover transition-colors"
+        >
+          <RefreshCw size={14} />
+          Try again
+        </button>
+      </div>
     )
   }
 

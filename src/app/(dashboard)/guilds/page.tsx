@@ -1,16 +1,25 @@
 'use client'
 
 import Link from 'next/link'
+import { RefreshCw } from 'lucide-react'
 import { useGuilds } from '@/hooks/use-guilds'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function GuildsPage() {
-    const { data, isLoading, isError } = useGuilds()
+    const { data, isLoading, isError, refetch } = useGuilds()
 
     if (isError) {
         return (
-            <div className="p-6 text-center">
-                <p className="text-red-400">Failed to load guilds. Please try again.</p>
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+                <p className="text-sm text-red-400">Failed to load guilds</p>
+                <button
+                    type="button"
+                    onClick={() => refetch()}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-surface border border-border text-gray-300 hover:bg-surface-hover transition-colors"
+                >
+                    <RefreshCw size={14} />
+                    Try again
+                </button>
             </div>
         )
     }

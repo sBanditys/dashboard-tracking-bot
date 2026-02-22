@@ -1,6 +1,6 @@
 'use client'
 
-import { Info } from 'lucide-react'
+import { Info, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { centsToDisplay, useBonusResults } from '@/hooks/use-bonus'
 
@@ -30,7 +30,7 @@ function ResultRowSkeleton() {
  * Shows summary stats and per-target progress bars with near-miss highlighting.
  */
 export function ResultsTab({ roundId, guildId, evaluated }: ResultsTabProps) {
-  const { data, isLoading, isError } = useBonusResults(guildId, roundId, evaluated)
+  const { data, isLoading, isError, refetch } = useBonusResults(guildId, roundId, evaluated)
 
   if (!evaluated) {
     return (
@@ -67,8 +67,16 @@ export function ResultsTab({ roundId, guildId, evaluated }: ResultsTabProps) {
 
   if (isError || !data) {
     return (
-      <div className="text-center py-8 text-red-400 text-sm">
-        Failed to load results.
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <p className="text-sm text-red-400">Failed to load results</p>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-surface border border-border text-gray-300 hover:bg-surface-hover transition-colors"
+        >
+          <RefreshCw size={14} />
+          Try again
+        </button>
       </div>
     )
   }

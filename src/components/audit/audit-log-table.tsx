@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/react'
 import { useAuditLog } from '@/hooks/use-audit-log'
 import { usePersistentState } from '@/hooks/use-persistent-state'
@@ -17,7 +18,7 @@ export function AuditLogTable({ guildId }: AuditLogTableProps) {
   const [actionFilter, setActionFilter] = usePersistentState(`${guildId}-activity-actionFilter`, '')
   const [page, setPage] = useState(1) // Page is ephemeral, not persisted
 
-  const { data, isLoading, isError } = useAuditLog(guildId, {
+  const { data, isLoading, isError, refetch } = useAuditLog(guildId, {
     user: userFilter || undefined,
     action: actionFilter || undefined,
     page,
@@ -56,8 +57,16 @@ export function AuditLogTable({ guildId }: AuditLogTableProps) {
 
   if (isError) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-red-400">Failed to load audit log</div>
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <p className="text-sm text-red-400">Failed to load audit log</p>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-surface border border-border text-gray-300 hover:bg-surface-hover transition-colors"
+        >
+          <RefreshCw size={14} />
+          Try again
+        </button>
       </div>
     )
   }

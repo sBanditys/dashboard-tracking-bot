@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-22)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface — independent of bot uptime.
-**Current focus:** v1.2 Security Audit & Optimization — Phase 17: Error Envelope & API Alignment
+**Current focus:** v1.2 Security Audit & Optimization — Phase 18 (next phase)
 
 ## Current Position
 
-Phase: 17 of 23 (Error Envelope & API Alignment)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-23 — Phase 17 Plan 01 complete (dual-envelope error parsing, CSRF cookie rename)
+Phase: 17 of 23 (Error Envelope & API Alignment) — COMPLETE
+Plan: 2 of 2 in current phase — COMPLETE
+Status: Phase complete — ready for Phase 18
+Last activity: 2026-02-23 — Phase 17 Plan 02 complete (hook error extraction, Zod audit, retry buttons)
 
-Progress: [░░░░░░░░░░] 8% (v1.2) — 70/82 total plans complete across all milestones
+Progress: [█░░░░░░░░░] 15% (v1.2) — 72/82 total plans complete across all milestones
 
 ## Milestones
 
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 8% (v1.2) — 70/82 total plans compl
 | 15-02 | 58m | 2 | 6 |
 | 16-01 | 1m | 2 | 2 |
 | Phase 17 P01 | 2m 21s | 2 tasks | 5 files |
+| Phase 17 P02 | 311s | 3 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,10 @@ Recent decisions affecting v1.2 work:
 - [Phase 17]: Hard switch on CSRF cookie rename from _csrf_token to csrf_token — no fallback to old name
 - [Phase 17]: parseApiError reads .error field (not .message) — proxy SanitizedError always outputs { error: string, code? }
 - [Phase 17]: Proxy continues to output old envelope shape { error: string, code? } to clients — only consumes new shape from backend
+- [Phase 17]: parseApiError reads .error field from proxy SanitizedError shape — used consistently in all mutation hooks via const body = await response.json(); throw new Error(parseApiError(body, fallback))
+- [Phase 17]: Zod v4 .check() uses ctx.value/ctx.issues pattern (not simple predicate) — corrected from plan spec during execution
+- [Phase 17]: Toast auto-dismiss at 5000ms globally in providers.tsx toastOptions
+- [Phase 17]: Retry buttons use refetch() from React Query hook directly — not window.location.reload()
 
 ### Pending Todos
 
@@ -85,8 +90,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 17-01-PLAN.md
-Resume file: .planning/phases/17-error-envelope-api-alignment/17-02-PLAN.md
+Stopped at: Completed 17-02-PLAN.md
+Resume file: .planning/ (next phase — Phase 18)
 
 ---
-*Last updated: 2026-02-23 (Phase 17 Plan 01 complete)*
+*Last updated: 2026-02-23 (Phase 17 complete — all 2 plans done)*

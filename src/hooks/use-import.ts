@@ -92,7 +92,7 @@ export function useConfirmImport(guildId: string) {
         setError(null)
 
         try {
-            const response = await fetch(
+            const response = await fetchWithRetry(
                 `/api/guilds/${guildId}/accounts/import/confirm`,
                 {
                     method: 'POST',

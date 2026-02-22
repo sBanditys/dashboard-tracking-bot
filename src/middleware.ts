@@ -143,7 +143,9 @@ export async function middleware(request: NextRequest) {
   const authToken = request.cookies.get('auth_token');
   const refreshToken = request.cookies.get('refresh_token');
 
-  const isDashboardRoute = pathname.startsWith('/dashboard') || pathname === '/' || pathname.startsWith('/guilds') || pathname.startsWith('/settings');
+  // Dashboard routes that require authentication — excludes '/' (landing page) because
+  // page.tsx handles auth routing for the root URL to avoid middleware redirect loops.
+  const isDashboardRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/guilds') || pathname.startsWith('/settings');
 
   // Proactive token refresh: when auth_token is expired/missing but refresh_token
   // is available, refresh tokens transparently before the page loads.

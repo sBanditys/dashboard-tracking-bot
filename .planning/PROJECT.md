@@ -62,7 +62,12 @@ Server admins can access their tracking data and bot status through a reliable w
 
 ### Active
 
-(No active requirements — define with `/gsd:new-milestone`)
+<!-- Current scope: v1.2 Security Audit & Optimization -->
+
+- [ ] Align dashboard with backend v2.6 API changes (cursor pagination, error envelope, SSR cookie forwarding)
+- [ ] Security hardening (CSRF HMAC alignment, rate limit handling, 503 resilience)
+- [ ] Performance optimization (SSE lifecycle, React Query efficiency, bundle size, cold starts)
+- [ ] Comprehensive security & performance audit of both codebases
 
 ### Out of Scope
 
@@ -75,6 +80,20 @@ Server admins can access their tracking data and bot status through a reliable w
 - AI-powered summarization — High cost, unreliable; users want raw data
 - Breaking up monolithic backend files — Backend refactoring scope, not dashboard concern
 - Replacing 899 `any` types in backend — Backend tech debt, separate effort
+
+## Current Milestone: v1.2 Security Audit & Optimization
+
+**Goal:** Align dashboard with backend v2.6 changes, harden security posture, optimize performance, and produce a comprehensive security audit report.
+
+**Target features:**
+- Cursor pagination migration (backend Phase 39 alignment)
+- SSR cookie forwarding pattern (QUAL-05/F-14)
+- CSRF HMAC alignment with backend Phase 37
+- Rate limit 503/429 resilience
+- Error envelope migration (backend Phase 35 `{ error: { code, message } }`)
+- SSE connection lifecycle hardening
+- React Query cache optimization
+- Comprehensive security & performance audit report
 
 ## Context
 
@@ -143,4 +162,4 @@ Total: 16 phases, 69 plans across 2 milestones.
 | Playwright for E2E security tests | Verifies middleware behavior (CSRF, CSP, auth redirects) at HTTP level | ✓ Good — caught middleware regression |
 
 ---
-*Last updated: 2026-02-22 after v1.1 milestone*
+*Last updated: 2026-02-22 after v1.2 milestone started*

@@ -5,15 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-22)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface — independent of bot uptime.
-**Current focus:** Planning next milestone
+**Current focus:** v1.2 Security Audit & Optimization
 
 ## Current Position
 
-Phase: All phases complete (v1.0 + v1.1 shipped)
-Status: Between milestones
-Last activity: 2026-02-22 — Completed v1.1 milestone (Security Hardening & Backend Alignment)
-
-Progress: [████████████████████] 69/69 plans complete (v1.0: 47, v1.1: 22)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-22 — Milestone v1.2 started
 
 ## Milestones
 
@@ -88,4 +87,4 @@ Stopped at: v1.1 milestone completed and archived
 Resume file: N/A — start next milestone with `/gsd:new-milestone`
 
 ---
-*Last updated: 2026-02-22 (v1.1 milestone complete)*
+*Last updated: 2026-02-22 (v1.2 milestone started)*

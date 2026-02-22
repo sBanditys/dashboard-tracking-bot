@@ -23,3 +23,26 @@
 
 ---
 
+
+## v1.1 Security Hardening & Backend Alignment (Shipped: 2026-02-22)
+
+**Phases completed:** 8 phases, 22 plans
+**Timeline:** 7 days (2026-02-16 → 2026-02-22)
+**Codebase:** 25,476 LOC TypeScript, 334 files modified (+32,143 / -6,726)
+
+**Delivered:** Security hardening across auth, CSRF, CSP, and error sanitization layers, plus complete UI for bonus system, alert management, session management, and account import/export.
+
+**Key accomplishments:**
+1. JWT refresh token persistence with verified email enforcement and SQL injection audit
+2. CSRF double-submit cookie protection, backend error sanitization, and Content-Security-Policy headers
+3. Session management UI with device listing, individual revocation, and logout-all
+4. Complete bonus system with rounds, payments, results, creation wizard, and leaderboard
+5. Alert threshold management and CSV account import/export with SSE progress
+6. Next.js middleware activation with security headers, CSRF cookies, and auth redirects
+
+**Audit:** 24/24 requirements satisfied, tech debt only (no critical blockers)
+**Git range:** `feat(09-01)` → `feat(16-01)`
+**Archive:** `milestones/v1.1-ROADMAP.md`, `milestones/v1.1-REQUIREMENTS.md`, `milestones/v1.1-MILESTONE-AUDIT.md`
+
+---
+

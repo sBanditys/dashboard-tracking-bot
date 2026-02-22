@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A web dashboard for Discord server admins to view, manage, and export their tracking bot data. Separate from the main bot repository, it connects to the existing API and stays available even when the Discord bot is down. Features real-time bot status, analytics with charts, data exports, bulk operations, and a polished dark mode UI.
+A web dashboard for Discord server admins to view, manage, and export their tracking bot data. Separate from the main bot repository, it connects to the existing API and stays available even when the Discord bot is down. Features real-time bot status, analytics with charts, data exports, bulk operations, bonus system management, alert thresholds, account import/export, session management, and a security-hardened dark mode UI with CSRF protection and CSP headers.
 
 ## Core Value
 
@@ -36,40 +36,53 @@ Server admins can access their tracking data and bot status through a reliable w
 - ✓ Error boundaries gracefully handle API failures — v1.0
 - ✓ Keyboard shortcuts (Ctrl+K search) — v1.0
 
+- ✓ User session persists when access token expires (refresh token auto-rotates) — v1.1
+- ✓ User with unverified Discord email cannot log in — v1.1
+- ✓ All frontend mutation requests include CSRF token via double-submit cookie — v1.1
+- ✓ Dashboard serves Content-Security-Policy headers preventing XSS — v1.1
+- ✓ Proxy layer sanitizes backend error messages (no stack traces leak) — v1.1
+- ✓ All raw SQL queries use parameterized Prisma.sql template tags — v1.1
+- ✓ User can view active sessions (device, masked IP, last activity) — v1.1
+- ✓ User can revoke individual sessions — v1.1
+- ✓ User can logout from all devices at once — v1.1
+- ✓ User can view paginated bonus rounds with status indicators — v1.1
+- ✓ User can view bonus round details (targets, payment status) — v1.1
+- ✓ Admin can create bonus round with targets and amount — v1.1
+- ✓ Admin can mark individual payments as paid/unpaid — v1.1
+- ✓ Admin can bulk-update all payments in a round — v1.1
+- ✓ User can view bonus results with near-miss reporting — v1.1
+- ✓ User can view bonus achievement leaderboard — v1.1
+- ✓ User can view alert thresholds for account groups — v1.1
+- ✓ Admin can create and delete alert thresholds — v1.1
+- ✓ Admin can update alert settings (streak, threshold, status toggles) — v1.1
+- ✓ Admin can export accounts to CSV with filters — v1.1
+- ✓ User can download CSV import template — v1.1
+- ✓ Admin can upload CSV for import with validation preview — v1.1
+- ✓ Admin can confirm and execute import with progress indicator — v1.1
+
 ### Active
 
-## Current Milestone: v1.1 Security Hardening & Backend Alignment
-
-**Goal:** Harden authentication/security, fix refresh token persistence, block unverified Discord accounts, align all backend endpoints with the dashboard, and address critical concerns from codebase audit.
-
-**Target features:**
-- Fix JWT refresh token flow so sessions survive access token expiry
-- Block login from unverified Discord accounts (no verified email)
-- Add CSRF token support for all frontend mutations
-- Add Content-Security-Policy headers
-- Audit and fix SQL injection risks in raw queries
-- Sanitize backend error messages in proxy layer
-- Implement bonus system UI (rounds, payments, results, leaderboard)
-- Implement alert threshold management UI
-- Implement account import/export UI (CSV upload, template download)
-- Implement session management UI (list sessions, revoke, logout-all)
-- Address critical concerns from backend CONCERNS.md audit
+(No active requirements — define with `/gsd:new-milestone`)
 
 ### Out of Scope
 
-- Billing/subscriptions — Phase 3+, after core dashboard is validated
+- Billing/subscriptions — Not needed, users come from Discord bot
 - Marketing/landing pages — Not needed, users come from Discord bot
 - Mobile app — Web-first, responsive design covers mobile use cases
 - Direct database access — All data flows through existing API
 - Post management/editing — Dashboard is read-only for external content
 - Bot infrastructure controls — Security risk; bot infra managed separately
 - AI-powered summarization — High cost, unreliable; users want raw data
+- Breaking up monolithic backend files — Backend refactoring scope, not dashboard concern
+- Replacing 899 `any` types in backend — Backend tech debt, separate effort
 
 ## Context
 
-Shipped v1.0 with 15,260 LOC TypeScript across 296 files.
-Tech stack: Next.js 14 (App Router), Tailwind CSS, React Query, Recharts, Headless UI.
-22-day build cycle (2026-01-24 → 2026-02-14), 47 plans across 8 phases.
+Shipped v1.1 with 25,476 LOC TypeScript. v1.0 shipped 2026-02-14, v1.1 shipped 2026-02-22 (7-day cycle).
+Tech stack: Next.js 14 (App Router), Tailwind CSS, React Query, Recharts, Headless UI, Playwright.
+Total: 16 phases, 69 plans across 2 milestones.
+
+**Security posture:** CSRF double-submit cookies, CSP with nonce-based script-src, error sanitization across 36+ proxy routes, verified email enforcement, parameterized SQL queries.
 
 **Parent Project:** Tracking_Data_Bot monorepo (API, Bot, Worker, Notifier + shared library)
 
@@ -95,6 +108,11 @@ Tech stack: Next.js 14 (App Router), Tailwind CSS, React Query, Recharts, Headle
               └──────────────┘
 ```
 
+**Known tech debt (v1.1):**
+- Empty-state "Create Round" button no-op in bonus rounds tab (admin can create via header)
+- Import history empty state (no import history API endpoint yet)
+- Early phase SUMMARY files predate `requirements-completed` frontmatter convention
+
 ## Constraints
 
 - **Tech Stack**: Next.js 14 (App Router), Tailwind CSS (custom components), React Query, TypeScript
@@ -110,13 +128,19 @@ Tech stack: Next.js 14 (App Router), Tailwind CSS, React Query, Recharts, Headle
 | Separate repository from bot | Failure isolation — dashboard stays up when bot crashes | ✓ Good — independent deployment works well |
 | Tailwind without component library | Full design control for SaaS branding | ✓ Good — consistent purple accent theme |
 | API as single gateway | No direct DB access from dashboard, security boundary | ✓ Good — clean separation |
-| SSE for real-time updates | Simpler than WebSockets, sufficient for status updates | ✓ Good — reused for export progress too |
+| SSE for real-time updates | Simpler than WebSockets, sufficient for status updates | ✓ Good — reused for export/import progress too |
 | React Query for server state | Caching, stale-while-revalidate, infinite scroll | ✓ Good — reduced API calls significantly |
 | Headless UI for accessible components | ARIA compliance without design constraints | ✓ Good — guild switcher, selects, modals |
 | Infinite scroll over pagination | Better UX for card-based layouts | ✓ Good — smooth experience for large datasets |
 | Native EventSource over libraries | Smaller bundle, simpler implementation | ✓ Good — works for both status and exports |
 | Three-level error boundaries | Targeted recovery without full page loss | ✓ Good — guild errors don't crash dashboard |
 | sessionStorage for state persistence | Session-scoped, prevents stale data across tabs | ✓ Good — filters persist within session |
+| Custom CSRF over @edge-csrf/nextjs | More control over token lifecycle and exempt routes | ✓ Good — replaced library in Phase 15 |
+| Nonce-based CSP with strict-dynamic | Strongest XSS prevention without inline script whitelisting | ✓ Good — all scripts require nonce |
+| Per-route error sanitization | Contextual error messages instead of generic "something went wrong" | ✓ Good — better UX with no info leakage |
+| Session mutations CSRF-exempt | Protected by auth_token cookie + SameSite=Lax instead | ✓ Good — accepted design tradeoff |
+| fetchWithRetry for all mutations | Single point for CSRF injection, auth retry, and error handling | ✓ Good — caught import confirm bypass |
+| Playwright for E2E security tests | Verifies middleware behavior (CSRF, CSP, auth redirects) at HTTP level | ✓ Good — caught middleware regression |
 
 ---
-*Last updated: 2026-02-16 after v1.1 milestone definition*
+*Last updated: 2026-02-22 after v1.1 milestone*

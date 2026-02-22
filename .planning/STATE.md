@@ -2,19 +2,23 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-16)
+See: .planning/PROJECT.md (updated 2026-02-22)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface — independent of bot uptime.
-**Current focus:** Phase 15 - Reactivate Next.js Middleware
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 16 of 16 (Restore Next.js Middleware)
-Plan: 1 of 1 completed in current phase
-Status: Complete
-Last activity: 2026-02-22 — Completed 16-01-PLAN.md (Rename proxy.ts to middleware.ts)
+Phase: All phases complete (v1.0 + v1.1 shipped)
+Status: Between milestones
+Last activity: 2026-02-22 — Completed v1.1 milestone (Security Hardening & Backend Alignment)
 
-Progress: [█████████░░░░░░░░░░░] 63/TBD (Phase 1-8 complete from v1.0, Phase 9: 3/3 plans complete, Phase 10: 3/3 plans complete, Phase 11: 2/2 plans complete, Phase 12: 1/4 plans complete, Phase 13: 5/5 plans complete, Phase 14: 1/1 plans complete, Phase 15: 2/2 plans complete, Phase 16: 1/1 plans complete)
+Progress: [████████████████████] 69/69 plans complete (v1.0: 47, v1.1: 22)
+
+## Milestones
+
+- ✅ v1.0 MVP — 8 phases, 47 plans (shipped 2026-02-16)
+- ✅ v1.1 Security Hardening — 8 phases, 22 plans (shipped 2026-02-22)
 
 ## Performance Metrics
 
@@ -36,98 +40,52 @@ Progress: [█████████░░░░░░░░░░░] 63/TBD 
 | 07 | 9 | 15m 30s | 1m 43s |
 | 08 | 7 | 16m 25s | 2m 21s |
 
-**v1.1 Status:**
-- Phase 9 complete (3 of 3 plans completed)
-- Plan velocity tracking started
+**v1.1 Velocity:**
 
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
-| 13-01 | 3m 49s | 3 | 16 |
-| 11-02 | 1m 38s | 2 | 3 |
-| 11-01 | 2m 14s | 2 | 7 |
-| 10-03 | 3m 15s | 2 | 3 |
-| 10-02 | 5m 37s | 2 | 25 |
-| 10-01 | 2m 30s | 2 | 4 |
-| 09-03 | 3m 11s | 2 | 5 |
-| 09-02 | 2m 33s | 2 | 2 |
 | 09-01 | 6m 6s | 2 | 7 |
+| 09-02 | 2m 33s | 2 | 2 |
+| 09-03 | 3m 11s | 2 | 5 |
+| 10-01 | 2m 30s | 2 | 4 |
+| 10-02 | 5m 37s | 2 | 25 |
+| 10-03 | 3m 15s | 2 | 3 |
+| 11-01 | 2m 14s | 2 | 7 |
+| 11-02 | 1m 38s | 2 | 3 |
+| 12-01 | 4m 7s | 2 | 8 |
+| 12-02 | 4m 22s | 2 | 11 |
+| 12-03 | 3m 37s | 2 | 2 |
+| 12-04 | 3m 20s | 2 | 2 |
+| 13-01 | 3m 49s | 3 | 16 |
 | 13-02 | 3m | 2 | 7 |
-| 13-05 | 2m 59s | 2 | 5 |
 | 13-03 | 3m | 3 | 6 |
-| 13-04 | 2min | 2 | 4 |
+| 13-04 | 2m | 2 | 4 |
+| 13-05 | 2m 59s | 2 | 5 |
 | 13-06 | 2m 42s | 2 | 4 |
-| Phase 12-bonus-system P01 | 4m 7s | 2 tasks | 8 files |
-| Phase 12-bonus-system P02 | 4m 22s | 2 tasks | 11 files |
-| Phase 12-bonus-system P03 | 3m 37s | 2 tasks | 2 files |
-| Phase 12-bonus-system P04 | 3m 20s | 2 tasks | 2 files |
-| Phase 14-fix-import-confirm-csrf-bypass P01 | 41s | 1 tasks | 1 files |
-| Phase 15-reactivate-nextjs-middleware P01 | 157 | 2 tasks | 5 files |
-| Phase 15 P02 | 58m | 2 tasks | 6 files |
-| Phase 16-restore-nextjs-middleware P01 | 1m | 2 tasks | 2 files |
+| 14-01 | 41s | 1 | 1 |
+| 15-01 | 2m 37s | 2 | 5 |
+| 15-02 | 58m | 2 | 6 |
+| 16-01 | 1m | 2 | 2 |
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- **v1.0 Architecture**: Dashboard acts as middleware proxy to backend API at ~/Desktop/Tracking Data Bot/
-- **v1.0 Security**: Multi-tenant isolation enforced at API layer, dashboard validates JWT guild access
-- **v1.1 Focus**: Security hardening FIRST (AUTH requirements in Phases 9-10) before feature work
-- **10-03 (CSP Headers)**: Content-Security-Policy with nonce-based script-src and strict-dynamic, style-src unsafe-inline for NProgress/inline styles, img-src includes cdn.discordapp.com, full security headers suite (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
-- **10-02 (Error Sanitization)**: Contextual error messages (e.g., "Failed to load accounts") instead of generic "something went wrong", preserve error codes for client logic, block stack traces/file paths/Prisma errors via regex detection
-- **10-01 (CSRF Protection)**: Per-session CSRF tokens via @edge-csrf/nextjs, silent retry on validation failure, auth routes exempt
-- **09-03 (Auth UX)**: sessionStorage for callbackUrl through OAuth flow, 2.5s toast delay, dedicated unverified-email page
-- **09-02 (SQL Injection)**: All raw SQL queries confirmed safe - use Prisma.sql template tags for parameterization
-- **09-01 (Verified Email)**: Email verification enforced via JWT email_verified claim, backward compatible migration (60min expiry)
-- **11-01 (Session Management Data Layer)**: Server-side UA parsing for device detection, IP prefix matching for current session, React Query hooks with 30s staleTime and 60s refetch
-- [Phase 11]: Always show revoke button even for current session - dialog warns user they'll be logged out
-- [Phase 11]: Trigger fade/scale animation immediately on revoke for responsive feel
-- **13-01 (Alert & Import Data Layer)**: Platform enum cast via Object.values(Platform) validation before Prisma where clause; SSE streaming proxy uses new NextResponse(response.body); multipart upload uses arrayBuffer() + original Content-Type header; CSV template preserves Content-Disposition from backend
-- [Phase 13]: 13-02: useConfirmImport uses fetch + ReadableStream (not EventSource) for POST-SSE streaming; ManageLayout is client component for useUser() permission check; no optimistic update for useToggleThreshold
-- **13-05 (Import UI)**: ImportTab uses 8-state flow machine; 409 conflict detected via error message string matching; ImportHistory shows stub when no entries; data page uses local useState for tab switching
-- **13-03 (Alert Thresholds UI)**: Non-optimistic toggle with spinner; page-level TypeToConfirmModal with removingId fade-out animation; groups list derived from loaded threshold data; duplicate detection warns but does not block submission
-- [Phase 13]: 13-04: activeAction prop on ThresholdBulkBar shows spinner only on triggered button; EmailConfigSection uses confirm() for remove; AlertSettingsPanel tracks pendingField for per-toggle spinners; selection clears on filter change
-- **13-06 (Export Tab UI)**: Client-side SSE cancel via EventSource.close() in ref; context-aware filters per export type; quota estimated from today's history count; ProgressSection sub-component consumes useExportProgress internally to avoid parent re-renders on SSE ticks
-- [Phase 12-bonus-system]: Week start confirmed as Sunday (weekBoundary.ts dayOfWeek=0); date-fns default weekStartsOn:0 matches — no override needed
-- [Phase 12-bonus-system]: Leaderboard All time uses weeks=52 (backend leaderboardQuerySchema max is 52)
-- [Phase 12-bonus-system]: All time preset uses weeks=52 (not 9999) per backend leaderboardQuerySchema max constraint
-- [Phase 12-bonus-system]: LeaderboardTab createModalOpen state pre-declared in page.tsx so Plan 03 activation only requires uncommenting import+JSX
-- **12-02 (Bonus UI Core)**: Inner tabs lazy-render (only active tab mounted); BulkConfirmModal inline (shows amount); Notes textarea below group name for space efficiency; LeaderboardTab/WeekPicker/CreateRoundModal pre-created by IDE linter ahead of Plans 03/04
-- **12-03 (Bonus Creation Form)**: Groups fetched from useBrands() brands[].groups[] flatten — no dedicated groups endpoint; window.confirm() for retroactive extra confirmation; overriddenGroups Set tracks per-group target overrides
-- [Phase 14-fix-import-confirm-csrf-bypass]: Single-line fix: replace raw fetch() with fetchWithRetry() in useConfirmImport; credentials: include passes through and fetchWithRetry returns standard Response so SSE streaming works identically
-- [Phase 15-01]: Auth redirect changed from /login?callbackUrl to /?returnTo to route through landing page which bridges to /login?callbackUrl
-- [Phase 15-01]: CSP report route is CSRF-exempt because browsers send violation reports without custom headers
-- [Phase 15-01]: HSTS guarded by production-only check (max-age=31536000; includeSubDomains)
-- [Phase 15]: Legal routes (/legal/*) excluded from middleware matcher by design — no X-Request-ID or CSP on these static pages
-- [Phase 15]: pathname === '/' removed from isDashboardRoute to prevent redirect loop — page.tsx handles landing page auth routing
-- [Phase 15]: Playwright API used directly for E2E verification because test runner hangs in sandbox environment due to worker subprocess IPC
-- **16-01 (Restore Middleware)**: middleware.ts is the correct convention — proxy.ts was a regression from commit 2feb03e; git mv src/proxy.ts src/middleware.ts preserves history. No logic changes needed — only file name and exported function name changed.
-- [Phase 16]: Playwright API used directly (verify-middleware.mjs) for sandbox-safe E2E verification of CSRF cookie, CSP headers, and auth redirect
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-**Phase 9 (Backend Security):** ✅ COMPLETE
-- ✅ AUTH-01 (refresh token) - Already implemented with rotate-every-use + transaction-based claim
-- ✅ AUTH-02 (verified email) - Completed in 09-01 (OAuth scope check + JWT middleware enforcement)
-- ✅ AUTH-03 (dashboard UX) - Completed in 09-03 (graceful session expiry + return URL + unverified email page)
-- ✅ AUTH-06 (SQL injection audit) - Completed in 09-02 (all queries use Prisma.sql parameterization)
-
-**Phase 10 (Frontend Security):** ✅ COMPLETE
-- ✅ AUTH-03 (CSRF) - Completed in 10-01 (double-submit cookie pattern with silent retry)
-- ✅ AUTH-04 (CSP headers) - Completed in 10-03 (nonce-based script-src with strict-dynamic, enforced immediately)
-- ✅ AUTH-05 (information disclosure) - Completed in 10-02 (error sanitization blocks stack traces/file paths/internal details)
+None — all milestones shipped.
 
 ## Session Continuity
 
-Last session: 2026-02-22 (execute-phase)
-Stopped at: Completed 16-01-PLAN.md (Restore Next.js Middleware)
-Resume file: Phase 16 complete (1/1 plans done)
+Last session: 2026-02-22 (complete-milestone)
+Stopped at: v1.1 milestone completed and archived
+Resume file: N/A — start next milestone with `/gsd:new-milestone`
 
 ---
-*Last updated: 2026-02-22 (16-01 complete)*
+*Last updated: 2026-02-22 (v1.1 milestone complete)*

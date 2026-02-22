@@ -76,31 +76,31 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ERR-01 | — | Pending |
-| ERR-02 | — | Pending |
-| ERR-03 | — | Pending |
-| ERR-04 | — | Pending |
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| AUTH-03 | — | Pending |
-| AUTH-04 | — | Pending |
-| SSE-01 | — | Pending |
-| SSE-02 | — | Pending |
-| SSE-03 | — | Pending |
-| SSE-04 | — | Pending |
-| PAGE-01 | — | Pending |
-| PAGE-02 | — | Pending |
-| PAGE-03 | — | Pending |
-| PERF-01 | — | Pending |
-| PERF-02 | — | Pending |
-| PERF-03 | — | Pending |
-| AUDIT-01 | — | Pending |
+| ERR-01 | Phase 17 | Pending |
+| ERR-02 | Phase 17 | Pending |
+| ERR-03 | Phase 17 | Pending |
+| ERR-04 | Phase 17 | Pending |
+| AUTH-01 | Phase 21 | Pending |
+| AUTH-02 | Phase 19 | Pending |
+| AUTH-03 | Phase 19 | Pending |
+| AUTH-04 | Phase 19 | Pending |
+| SSE-01 | Phase 18 | Pending |
+| SSE-02 | Phase 18 | Pending |
+| SSE-03 | Phase 18 | Pending |
+| SSE-04 | Phase 18 | Pending |
+| PAGE-01 | Phase 20 | Pending |
+| PAGE-02 | Phase 20 | Pending |
+| PAGE-03 | Phase 20 | Pending |
+| PERF-01 | Phase 22 | Pending |
+| PERF-02 | Phase 22 | Pending |
+| PERF-03 | Phase 22 | Pending |
+| AUDIT-01 | Phase 23 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 19 total
-- Mapped to phases: 0
-- Unmapped: 19 ⚠️
+- Mapped to phases: 19
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-22*
-*Last updated: 2026-02-22 after initial definition*
+*Last updated: 2026-02-22 after v1.2 roadmap created — all 19 requirements mapped*

@@ -5,39 +5,29 @@
 See: .planning/PROJECT.md (updated 2026-02-22)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface — independent of bot uptime.
-**Current focus:** v1.2 Security Audit & Optimization
+**Current focus:** v1.2 Security Audit & Optimization — Phase 17: Error Envelope & API Alignment
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-22 — Milestone v1.2 started
+Phase: 17 of 23 (Error Envelope & API Alignment)
+Plan: 0 of 2 in current phase
+Status: Ready to plan
+Last activity: 2026-02-22 — v1.2 roadmap created (7 phases, 19 requirements mapped)
+
+Progress: [░░░░░░░░░░] 0% (v1.2) — 69/82 total plans complete across all milestones
 
 ## Milestones
 
 - ✅ v1.0 MVP — 8 phases, 47 plans (shipped 2026-02-16)
 - ✅ v1.1 Security Hardening — 8 phases, 22 plans (shipped 2026-02-22)
+- 🚧 v1.2 Security Audit & Optimization — 7 phases, ~13 plans (in progress)
 
 ## Performance Metrics
 
-**Velocity (v1.0 only):**
+**Velocity (v1.0):**
 - Total plans completed: 47
 - Average duration: 2m 02s
 - Total execution time: ~89m 43s
-
-**By Phase (v1.0):**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 01 | 5 | 17m 25s | 4m 26s |
-| 02 | 2 | 1m 35s | 48s |
-| 03 | 5 | 10m 44s | 2m 09s |
-| 04 | 3 | 4m 24s | 1m 28s |
-| 05 | 6 | 13m 04s | 2m 11s |
-| 06 | 5 | 7m 38s | 1m 32s |
-| 07 | 9 | 15m 30s | 1m 43s |
-| 08 | 7 | 16m 25s | 2m 21s |
 
 **v1.1 Velocity:**
 
@@ -72,19 +62,27 @@ Last activity: 2026-02-22 — Milestone v1.2 started
 
 Decisions are logged in PROJECT.md Key Decisions table.
 
+Recent decisions affecting v1.2 work:
+- Phase 21 (CSRF HMAC): Must coordinate with backend Phase 37 dual-check deploy window — ship after backend has dual-check mode enabled
+- Phase 20 (Cursor pagination): Gated on backend Phase 39 shipping first — do not migrate hooks before backend is live
+- Phase 17 first: Error envelope must ship before any other change — all error paths depend on readable errors
+
 ### Pending Todos
 
 None.
 
 ### Blockers/Concerns
 
-None — all milestones shipped.
+- Phase 20 (Cursor pagination): Blocked until backend Phase 39 is deployed
+- Phase 21 (CSRF HMAC): Highest risk — requires coordinated deploy with backend Phase 37 dual-check window
+- Open question: Does backend Phase 37 HMAC use `INTERNAL_API_SECRET` or a separate CSRF secret? (confirm before Phase 21)
+- Open question: Which of backend Phases 35-39 are already live? (confirm before starting Phase 20)
 
 ## Session Continuity
 
-Last session: 2026-02-22 (complete-milestone)
-Stopped at: v1.1 milestone completed and archived
-Resume file: N/A — start next milestone with `/gsd:new-milestone`
+Last session: 2026-02-22
+Stopped at: v1.2 roadmap created — all 19 requirements mapped to 7 phases
+Resume file: N/A — start Phase 17 with `/gsd:plan-phase 17`
 
 ---
-*Last updated: 2026-02-22 (v1.2 milestone started)*
+*Last updated: 2026-02-22 (v1.2 roadmap created)*

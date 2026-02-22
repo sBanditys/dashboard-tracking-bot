@@ -173,7 +173,7 @@ Plans:
 | 14. Fix Import Confirm CSRF Bypass | v1.1 | 1/1 | Complete | 2026-02-22 |
 | 15. Reactivate Next.js Middleware | v1.1 | 2/2 | Complete | 2026-02-22 |
 | 16. Restore Next.js Middleware | v1.1 | 1/1 | Complete | 2026-02-22 |
-| 17. Error Envelope & API Alignment | v1.2 | 0/2 | Not started | - |
+| 17. Error Envelope & API Alignment | 1/2 | In Progress|  | - |
 | 18. SSE Lifecycle Hardening | v1.2 | 0/2 | Not started | - |
 | 19. Auth Hardening & Resilience | v1.2 | 0/2 | Not started | - |
 | 20. Cursor Pagination Migration | v1.2 | 0/2 | Not started | - |

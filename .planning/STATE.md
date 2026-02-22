@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 ## Current Position
 
 Phase: 17 of 23 (Error Envelope & API Alignment)
-Plan: 0 of 2 in current phase
-Status: Ready to plan
-Last activity: 2026-02-22 — v1.2 roadmap created (7 phases, 19 requirements mapped)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-23 — Phase 17 Plan 01 complete (dual-envelope error parsing, CSRF cookie rename)
 
-Progress: [░░░░░░░░░░] 0% (v1.2) — 69/82 total plans complete across all milestones
+Progress: [░░░░░░░░░░] 8% (v1.2) — 70/82 total plans complete across all milestones
 
 ## Milestones
 
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0% (v1.2) — 69/82 total plans compl
 | 15-01 | 2m 37s | 2 | 5 |
 | 15-02 | 58m | 2 | 6 |
 | 16-01 | 1m | 2 | 2 |
+| Phase 17 P01 | 2m 21s | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,9 @@ Recent decisions affecting v1.2 work:
 - Phase 21 (CSRF HMAC): Must coordinate with backend Phase 37 dual-check deploy window — ship after backend has dual-check mode enabled
 - Phase 20 (Cursor pagination): Gated on backend Phase 39 shipping first — do not migrate hooks before backend is live
 - Phase 17 first: Error envelope must ship before any other change — all error paths depend on readable errors
+- [Phase 17]: Hard switch on CSRF cookie rename from _csrf_token to csrf_token — no fallback to old name
+- [Phase 17]: parseApiError reads .error field (not .message) — proxy SanitizedError always outputs { error: string, code? }
+- [Phase 17]: Proxy continues to output old envelope shape { error: string, code? } to clients — only consumes new shape from backend
 
 ### Pending Todos
 
@@ -80,9 +84,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-22
-Stopped at: v1.2 roadmap created — all 19 requirements mapped to 7 phases
-Resume file: N/A — start Phase 17 with `/gsd:plan-phase 17`
+Last session: 2026-02-23
+Stopped at: Completed 17-01-PLAN.md
+Resume file: .planning/phases/17-error-envelope-api-alignment/17-02-PLAN.md
 
 ---
-*Last updated: 2026-02-22 (v1.2 roadmap created)*
+*Last updated: 2026-02-23 (Phase 17 Plan 01 complete)*

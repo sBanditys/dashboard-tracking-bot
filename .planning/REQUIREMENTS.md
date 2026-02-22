@@ -9,9 +9,9 @@ Requirements for v1.2 Security Audit & Optimization. Each maps to roadmap phases
 
 ### Error Handling & API Alignment
 
-- [ ] **ERR-01**: Dashboard error sanitizer detects both old `{ error: string }` and new `{ error: { code, message } }` envelope shapes from backend, extracting error code and message correctly from either
-- [ ] **ERR-02**: `fetchWithRetry` `unverified_email` code lookup works with both old (`body?.code`) and new (`body?.error?.code`) envelope shapes without breaking email-verification redirect
-- [ ] **ERR-03**: CSRF cookie name aligned from `_csrf_token` to `csrf_token` in proxy.ts and fetch-with-retry.ts to match backend convention
+- [x] **ERR-01**: Dashboard error sanitizer detects both old `{ error: string }` and new `{ error: { code, message } }` envelope shapes from backend, extracting error code and message correctly from either
+- [x] **ERR-02**: `fetchWithRetry` `unverified_email` code lookup works with both old (`body?.code`) and new (`body?.error?.code`) envelope shapes without breaking email-verification redirect
+- [x] **ERR-03**: CSRF cookie name aligned from `_csrf_token` to `csrf_token` in proxy.ts and fetch-with-retry.ts to match backend convention
 - [ ] **ERR-04**: Zod v4 patterns audited — deprecated v3 methods (`z.string().email()`, `z.string().uuid()`, `error.errors`) replaced with v4 equivalents
 
 ### Authentication & Security
@@ -76,9 +76,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ERR-01 | Phase 17 | Pending |
-| ERR-02 | Phase 17 | Pending |
-| ERR-03 | Phase 17 | Pending |
+| ERR-01 | Phase 17 | Complete |
+| ERR-02 | Phase 17 | Complete |
+| ERR-03 | Phase 17 | Complete |
 | ERR-04 | Phase 17 | Pending |
 | AUTH-01 | Phase 21 | Pending |
 | AUTH-02 | Phase 19 | Pending |

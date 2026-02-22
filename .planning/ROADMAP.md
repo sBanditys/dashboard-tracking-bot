@@ -141,7 +141,10 @@ Plans:
   2. `_csrf_token` cookie is set on page responses (CSRF double-submit pattern active)
   3. `Content-Security-Policy` header is present on all page responses
   4. Auth redirect happens at SSR level for unauthenticated requests to protected routes
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 15-01-PLAN.md — Rename proxy.ts to middleware.ts, enhance security headers, CSP report route, auth redirect returnTo
+- [ ] 15-02-PLAN.md — Playwright E2E tests for security headers, CSRF cookies, and auth redirects
 
 ## Progress
 

@@ -78,11 +78,11 @@ Plans:
   2. Rapidly hiding and showing the browser tab does not produce two simultaneous EventSource connections
   3. Resuming a tab where retries were exhausted while hidden reconnects the SSE stream rather than staying permanently disconnected
   4. Navigating between pages does not trigger redundant API polling while the SSE connection is healthy
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 18-01: Implement heartbeat timeout, generation counter, and retry reset in useSSE
-- [ ] 18-02: Gate refetchInterval on connection error state only
+- [ ] 18-01-PLAN.md — Heartbeat timeout, generation counter, grace period, retry reset, reconnecting state in useSSE + always-visible BotStatus
+- [ ] 18-02-PLAN.md — Gate refetchInterval on connectionState === 'error' only
 
 ### Phase 19: Auth Hardening & Resilience
 **Goal**: Server-rendered pages authenticate correctly against the backend, and transient backend failures no longer block users from saving changes

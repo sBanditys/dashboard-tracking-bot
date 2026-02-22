@@ -12,6 +12,10 @@ export default function DashboardError({
 }) {
   useEffect(() => {
     console.error('Dashboard error:', error);
+
+    if (error.name === 'ChunkLoadError') {
+      window.location.reload();
+    }
   }, [error]);
 
   return (

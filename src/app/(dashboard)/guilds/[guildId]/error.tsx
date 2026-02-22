@@ -12,6 +12,12 @@ export default function GuildError({
 }) {
   useEffect(() => {
     console.error('Guild error:', error);
+
+    // ChunkLoadError means a new deployment invalidated old chunks.
+    // Reload to get the fresh HTML with correct chunk references.
+    if (error.name === 'ChunkLoadError') {
+      window.location.reload();
+    }
   }, [error]);
 
   return (

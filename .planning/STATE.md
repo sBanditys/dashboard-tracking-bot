@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 15 of 15 (Reactivate Next.js Middleware)
-Plan: 1 of 1 completed in current phase
+Plan: 2 of 2 completed in current phase
 Status: Complete
-Last activity: 2026-02-22 — Completed 15-01-PLAN.md (Reactivate Next.js Middleware)
+Last activity: 2026-02-22 — Completed 15-02-PLAN.md (E2E Middleware Testing)
 
-Progress: [█████████░░░░░░░░░░░] 61/TBD (Phase 1-8 complete from v1.0, Phase 9: 3/3 plans complete, Phase 10: 3/3 plans complete, Phase 11: 2/2 plans complete, Phase 12: 1/4 plans complete, Phase 13: 5/5 plans complete, Phase 14: 1/1 plans complete, Phase 15: 1/1 plans complete)
+Progress: [█████████░░░░░░░░░░░] 62/TBD (Phase 1-8 complete from v1.0, Phase 9: 3/3 plans complete, Phase 10: 3/3 plans complete, Phase 11: 2/2 plans complete, Phase 12: 1/4 plans complete, Phase 13: 5/5 plans complete, Phase 14: 1/1 plans complete, Phase 15: 2/2 plans complete)
 
 ## Performance Metrics
 
@@ -62,6 +62,7 @@ Progress: [█████████░░░░░░░░░░░] 61/TBD 
 | Phase 12-bonus-system P04 | 3m 20s | 2 tasks | 2 files |
 | Phase 14-fix-import-confirm-csrf-bypass P01 | 41s | 1 tasks | 1 files |
 | Phase 15-reactivate-nextjs-middleware P01 | 157 | 2 tasks | 5 files |
+| Phase 15 P02 | 58m | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,9 @@ Recent decisions affecting current work:
 - [Phase 15-01]: Auth redirect changed from /login?callbackUrl to /?returnTo to route through landing page which bridges to /login?callbackUrl
 - [Phase 15-01]: CSP report route is CSRF-exempt because browsers send violation reports without custom headers
 - [Phase 15-01]: HSTS guarded by production-only check (max-age=31536000; includeSubDomains)
+- [Phase 15]: Legal routes (/legal/*) excluded from middleware matcher by design — no X-Request-ID or CSP on these static pages
+- [Phase 15]: pathname === '/' removed from isDashboardRoute to prevent redirect loop — page.tsx handles landing page auth routing
+- [Phase 15]: Playwright API used directly for E2E verification because test runner hangs in sandbox environment due to worker subprocess IPC
 
 ### Pending Todos
 
@@ -119,8 +123,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-22 (execute-phase)
-Stopped at: Completed 15-01-PLAN.md (Reactivate Next.js Middleware)
-Resume file: Phase 15 complete (1/1 plans done)
+Stopped at: Completed 15-02-PLAN.md (E2E Middleware Testing)
+Resume file: Phase 15 complete (2/2 plans done)
 
 ---
-*Last updated: 2026-02-22 (15-01 complete)*
+*Last updated: 2026-02-22 (15-02 complete)*

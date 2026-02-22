@@ -33,6 +33,7 @@ Full details: `milestones/v1.0-ROADMAP.md`
 - [x] **Phase 12: Bonus System** - Complete bonus rounds UI with payments and leaderboard (completed 2026-02-21)
 - [x] **Phase 13: Alert & Import Management** - Alert thresholds and CSV import/export (completed 2026-02-17)
 - [x] **Phase 14: Fix Import Confirm CSRF Bypass** - Gap closure: replace raw fetch() with fetchWithRetry() in useConfirmImport (completed 2026-02-22)
+- [ ] **Phase 15: Reactivate Next.js Middleware** - Gap closure: rename proxy.ts → middleware.ts to restore CSRF + CSP
 
 ## Phase Details
 
@@ -130,6 +131,18 @@ Plans:
 **Plans**: 1 plan
 - [ ] 14-01-PLAN.md — Replace raw fetch() with fetchWithRetry() in useConfirmImport
 
+### Phase 15: Reactivate Next.js Middleware
+**Goal**: Next.js middleware is active, restoring CSRF cookie issuance and CSP header injection for all routes
+**Depends on**: Phase 14
+**Requirements**: AUTH-03, AUTH-04
+**Gap Closure:** Closes gaps from v1.1 audit (middleware inactive root cause)
+**Success Criteria** (what must be TRUE):
+  1. `src/middleware.ts` exists with `export async function middleware` (not proxy.ts/proxy)
+  2. `_csrf_token` cookie is set on page responses (CSRF double-submit pattern active)
+  3. `Content-Security-Policy` header is present on all page responses
+  4. Auth redirect happens at SSR level for unauthenticated requests to protected routes
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
@@ -151,6 +164,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13
 | 12. Bonus System | 4/4 | Complete    | 2026-02-21 | - |
 | 13. Alert & Import Management | v1.1 | Complete    | 2026-02-17 | - |
 | 14. Fix Import Confirm CSRF Bypass | 1/1 | Complete    | 2026-02-22 | - |
+| 15. Reactivate Next.js Middleware | v1.1 | 0/0 | Not started | - |
 
 ---
 *Created: 2026-01-24*

@@ -1,1476 +1,481 @@
-# Architecture Patterns: Next.js 14 Multi-Tenant SaaS Dashboard
+# Architecture Research
 
-**Domain:** Discord Bot Management Dashboard
-**Researched:** 2026-01-24
-**Confidence:** HIGH (based on Next.js official documentation)
-
-## Executive Summary
-
-Next.js 14 App Router provides a component-based architecture optimized for multi-tenant SaaS applications. The recommended architecture uses:
-
-1. **Route groups** for logical organization (auth, dashboard, marketing)
-2. **Server Components by default** with strategic Client Components for interactivity
-3. **Server Actions** for mutations (settings updates, exports)
-4. **Route Handlers** for API integration and SSE streams
-5. **Middleware** for auth validation and tenant resolution
-6. **Data Access Layer (DAL)** for centralized authorization
-
-This architecture naturally supports the multi-tenant model (Discord guilds as tenants) with clear security boundaries and extensibility for future billing/marketing features.
+**Domain:** Next.js 14 App Router + Express.js proxy dashboard — v1.2 Security Audit & Optimization
+**Researched:** 2026-02-22
+**Confidence:** HIGH (derived from reading actual source code of both codebases, no speculation)
 
 ---
 
-## Recommended Architecture
+## Standard Architecture
 
-### High-Level Structure
+### System Overview
+
+This documents the **existing** architecture and how the v1.2 features integrate with it. The diagram shows state after v1.2 changes.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Next.js Dashboard                     │
-│                      (Vercel)                            │
-├──────────────────┬──────────────────┬───────────────────┤
-│  Route Groups    │  Auth Layer      │  Data Layer       │
-│  ────────────    │  ──────────      │  ──────────       │
-│  (auth)          │  Middleware →    │  DAL →            │
-│  (dashboard)     │  verifySession() │  API Client →     │
-│  (legal)         │  JWT validation  │  React Query      │
-│  (future:        │                  │                   │
-│   marketing)     │                  │                   │
-└──────────────────┴──────────────────┴───────────────────┘
-                          │
-                          ▼ HTTPS + JWT
-┌─────────────────────────────────────────────────────────┐
-│                 External API Server                      │
-│              (Tracking Bot Backend)                      │
-└─────────────────────────────────────────────────────────┘
+Browser
+  │
+  ├─ fetchWithRetry (MODIFIED v1.2)
+  │     ├─ CSRF: reads csrf_token cookie (name aligned from _csrf_token)
+  │     ├─ 401: refreshSession() → /api/auth/refresh
+  │     ├─ 403 CSRF: GET /api/auth/session probe → retry
+  │     ├─ 429: Retry-After backoff + global cooldown
+  │     ├─ 503: user-facing retry toast (mutations non-retried)
+  │     └─ Error code: body?.code ?? body?.error?.code (dual envelope)
+  │
+  ├─ useSSE (MODIFIED v1.2)
+  │     ├─ Exponential backoff: 2s → 60s, 3 retries
+  │     ├─ visibilitychange: retryCount reset on tab restore
+  │     └─ SSE exhausted → connectionState: 'error'
+  │
+  ├─ useInfiniteQuery hooks (MODIFIED v1.2 when backend Phase 39 ships)
+  │     ├─ getNextPageParam: lastPage.next_cursor (was page+1)
+  │     └─ initialPageParam: null (was 1)
+  │
+  └─ QueryClient (MODIFIED v1.2)
+        └─ gcTime: 30m (was 10m)
+  │
+  ▼
+Next.js App (Vercel)
+  ├─ proxy.ts (middleware) — CSP nonce, CSRF cookie (csrf_token), auth redirect
+  ├─ /app/api/** (Route Handlers, 36+)
+  │     └─ cookies() → auth_token → backendFetch() → sanitizeError() → NextResponse.json()
+  ├─ authenticatedFetch() (NEW v1.2)
+  │     └─ SSR: cookies() + backendFetch() for Server Component direct calls
+  └─ error-sanitizer.ts (MODIFIED v1.2)
+        └─ Handles both flat { code } and nested { error: { code, message } }
+  │
+  ▼
+Express.js API (VPS/PM2)
+  ├─ dashboardAuth — JWT + guild access + requireGuildAdmin
+  ├─ csrf.ts — double-submit cookie + HMAC signed-request bypass (X-Internal-Secret covers dashboard)
+  ├─ rateLimit.ts — per-route limits, Retry-After header
+  ├─ sseGuard.ts — 429/503 on connection slot exhaustion
+  └─ sendError() — { error: { code, message, requestId } } (v2.6 envelope, already deployed)
+  │
+  ▼
+PostgreSQL (Prisma)
+  └─ Cursor pagination on bonus/rounds (deployed); accounts/posts pending backend Phase 39
 ```
 
-### Component Boundaries
+### Component Responsibilities
 
-| Component | Responsibility | Communicates With | Type |
-|-----------|---------------|-------------------|------|
-| **Route Groups** | Organize routes by concern | Layouts, Pages | Structural |
-| **Middleware** | Auth check, tenant resolution | verifySession(), Cookies | Server |
-| **Data Access Layer (DAL)** | Centralized auth + tenant validation | API Client, Cookies | Server |
-| **API Client** | HTTP client with JWT injection | External API | Server/Client |
-| **React Query** | Client-side cache + sync | API Client | Client |
-| **Server Actions** | Mutations (settings, exports) | API Client, DAL | Server |
-| **Route Handlers** | SSE streams, webhooks | API Client | Server |
-| **Server Components** | Data fetching, static UI | DAL, API Client | Server |
-| **Client Components** | Interactivity, forms, real-time | React Query, Server Actions | Client |
+| Component | Responsibility | v1.2 Change |
+|-----------|---------------|-------------|
+| `proxy.ts` | CSP nonce, CSRF cookie issue, auth redirect, proactive token refresh | Rename `_csrf_token` → `csrf_token` |
+| `fetchWithRetry` | CSRF injection, 401/403/429/503 handling, auth retry | Dual error envelope parsing, 503 UX |
+| `backendFetch` | Add X-Internal-Secret + Idempotency-Key to server-side backend calls | None unless HMAC required |
+| `authenticatedFetch` | NEW: cookies() + backendFetch() for RSC → backend direct calls | Create new file |
+| `error-sanitizer` | Sanitize backend errors, extract codes for FRIENDLY_MESSAGES lookup | Handle nested `error.error.code` |
+| `useSSE` | SSE lifecycle, backoff reconnect, visibility tab management | Retry count reset, polling condition fix |
+| `useInfiniteQuery` hooks | Paginated list fetching | Cursor adapter when backend Phase 39 ships |
+| `providers.tsx` | QueryClient global config | gcTime increase, refetchInterval condition |
 
 ---
 
-## Folder Structure
+## Recommended Project Structure
 
-### Recommended Layout
+Additions and modifications only. No new directories are needed.
 
 ```
-app/
-├── layout.tsx                          # Root layout (ThemeProvider, QueryClient)
-├── page.tsx                            # Landing/redirect (if not logged in → /login)
-│
-├── (auth)/                             # Auth route group (minimal layout)
-│   ├── layout.tsx                      # Auth-specific layout (centered card)
-│   ├── login/
-│   │   └── page.tsx                    # Discord OAuth initiation
-│   └── callback/
-│       └── page.tsx                    # OAuth callback → set session → redirect
-│
-├── (dashboard)/                        # Protected dashboard routes
-│   ├── layout.tsx                      # Dashboard shell (sidebar, header)
-│   ├── page.tsx                        # Guild list (tenant selection)
-│   ├── guilds/
-│   │   └── [guildId]/
-│   │       ├── layout.tsx              # Guild-specific layout (breadcrumb, guild switcher)
-│   │       ├── page.tsx                # Guild overview (settings, usage, bot status)
-│   │       ├── tracking/
-│   │       │   ├── page.tsx            # Redirect to /tracking/accounts
-│   │       │   ├── accounts/
-│   │       │   │   └── page.tsx        # Tracked accounts (paginated table)
-│   │       │   ├── posts/
-│   │       │   │   └── page.tsx        # Tracked posts (paginated table)
-│   │       │   └── brands/
-│   │       │       └── page.tsx        # Brands list
-│   │       ├── settings/
-│   │       │   └── page.tsx            # Guild settings form
-│   │       └── audit/
-│   │           └── page.tsx            # Audit log
-│   └── account/
-│       ├── page.tsx                    # User account settings
-│       └── sessions/
-│           └── page.tsx                # Active sessions management
-│
-├── (legal)/                            # Public legal pages (minimal layout)
-│   ├── layout.tsx
-│   ├── terms/
-│   │   └── page.tsx
-│   └── privacy/
-│       └── page.tsx
-│
-├── api/                                # Route Handlers (not external API)
-│   ├── auth/
-│   │   ├── callback/
-│   │   │   └── route.ts                # Discord OAuth callback handler
-│   │   └── logout/
-│   │       └── route.ts                # Session revocation
-│   └── guilds/
-│       └── [guildId]/
-│           └── status/
-│               └── route.ts            # SSE stream for bot status
-│
-lib/
-├── auth/
-│   ├── session.ts                      # createSession(), deleteSession()
-│   ├── dal.ts                          # verifySession() with React cache()
-│   └── middleware.ts                   # Auth check + tenant resolution
-├── api/
-│   ├── client.ts                       # API client with JWT injection
-│   └── types.ts                        # Generated from OpenAPI spec
+src/
+├── lib/
+│   ├── fetch-with-retry.ts         MODIFIED — dual error envelope, 503 UX
+│   └── server/
+│       ├── authenticated-fetch.ts  NEW — SSR-safe authenticated backend fetch
+│       └── error-sanitizer.ts      MODIFIED — handle nested error envelope
+├── types/
+│   └── api.ts                      NEW — ApiErrorEnvelope, BackendErrorResponse types
 ├── hooks/
-│   ├── use-guilds.ts                   # React Query hook for guilds
-│   ├── use-guild-details.ts            # React Query hook for guild data
-│   └── use-bot-status.ts               # SSE hook for real-time status
-└── components/
-    ├── providers/
-    │   ├── query-client-provider.tsx   # React Query setup
-    │   └── theme-provider.tsx          # Theme context
-    ├── ui/                             # Reusable UI components
-    └── features/                       # Feature-specific components
-        ├── guild-list.tsx
-        ├── guild-switcher.tsx
-        └── bot-status-badge.tsx
-
-middleware.ts                           # Edge middleware for auth checks
+│   ├── use-sse.ts                  MODIFIED — lifecycle hardening
+│   ├── use-guilds.ts               MODIFIED — refetchInterval condition fix
+│   └── use-tracking.ts             MODIFIED — cursor pagination adapter
+├── app/
+│   └── providers.tsx               MODIFIED — gcTime increase
+└── proxy.ts                        MODIFIED — CSRF cookie name alignment
 ```
 
-### Key Structural Decisions
+### Structure Rationale
 
-**Route Groups:**
-- `(auth)`: Minimal layout, public routes (no sidebar/header)
-- `(dashboard)`: Protected routes, full dashboard UI
-- `(legal)`: Public but with minimal chrome
-- Future: `(marketing)` for landing pages, pricing (different root layout)
+- **`lib/server/`:** Server-only utilities. Adding `import 'server-only'` to `authenticated-fetch.ts` prevents accidental Client Component import.
+- **`types/api.ts`:** Centralizes the error envelope type so TypeScript catches breakage when backend envelope changes again.
+- No new route handlers or page files. All v1.2 changes are infrastructure, not product features.
 
-**Why this works:**
-- Route groups organize by **concern**, not URL structure
-- Each group can have a different root layout without page reloads
-- Extensible: adding `(marketing)` later doesn't affect existing routes
+---
 
-**File conventions:**
-- `layout.tsx`: Nested layouts for progressive UI enhancement
-- `page.tsx`: Route endpoints
-- `route.ts`: API endpoints (Route Handlers for SSE, webhooks)
-- `loading.tsx`: Streaming UI with Suspense boundaries
-- `error.tsx`: Error boundaries per route segment
+## Architectural Patterns
+
+### Pattern 1: Dual Error Envelope Parsing
+
+**What:** During the backend migration to `sendError()` (the `{ error: { code, message, requestId } }` envelope), some routes return the new nested shape and others still return the old flat shape `{ error: string, code?: string }`. The parsing layer must handle both.
+
+**When to use:** In `error-sanitizer.ts` and `fetchWithRetry`, anywhere that reads `body.code` or `body.error`.
+
+**Trade-offs:** Small branching overhead. Cleaner than two separate parsers. Remove the flat-envelope branch once all backend routes are confirmed migrated.
+
+**Example:**
+```typescript
+function extractErrorCode(body: unknown): string | undefined {
+  if (!body || typeof body !== 'object') return undefined
+  const b = body as Record<string, unknown>
+  // New envelope: { error: { code, message, requestId } }
+  if (b.error && typeof b.error === 'object') {
+    return (b.error as Record<string, unknown>).code as string | undefined
+  }
+  // Old flat: { code: string }
+  return b.code as string | undefined
+}
+```
+
+### Pattern 2: Cursor Pagination with `useInfiniteQuery`
+
+**What:** Backend returns `{ items, next_cursor: string | null, has_more: boolean }`. React Query's `useInfiniteQuery` uses `initialPageParam: null` and `getNextPageParam` returning the cursor string.
+
+**When to use:** For accounts and posts when backend Phase 39 ships. The bonus rounds hook already uses this correctly via manual accumulation — standardize to `useInfiniteQuery` for consistency.
+
+**Trade-offs:** Cannot jump to arbitrary pages (no "page 5 of 12"). Correct for infinite scroll / load-more UX. The cursor token is passed as `pageParam` (React Query internal), not in the query key.
+
+**Example:**
+```typescript
+const query = useInfiniteQuery({
+  queryKey: ['guild', guildId, 'accounts', 'infinite', filters],
+  queryFn: async ({ pageParam }) => {
+    const params = new URLSearchParams({ limit: '50' })
+    if (pageParam) params.set('cursor', pageParam as string)
+    // ... filters
+    const res = await fetchWithRetry(`/api/guilds/${guildId}/accounts?${params}`)
+    if (!res.ok) throw new Error('Failed to fetch accounts')
+    return res.json() as Promise<CursorPageResponse<Account>>
+  },
+  initialPageParam: null as string | null,
+  getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+})
+```
+
+### Pattern 3: SSR Data Prefetching with `initialData`
+
+**What:** A Server Component fetches data with `authenticatedFetch()` and passes it as `initialData` to `useQuery` in a Client Component. React Query uses the server data for the initial render and refetches in the background based on `staleTime`.
+
+**When to use:** High-traffic pages where first-render latency matters (guild detail, accounts list).
+
+**Trade-offs:** Adds a server-side fetch in the RSC. If the RSC fetch fails, the page falls back to client-side loading state. Avoids double fetch only when `staleTime` is long enough that React Query does not immediately invalidate the server data.
+
+**Example:**
+```typescript
+// Server Component (page.tsx)
+export default async function AccountsPage({ params }) {
+  const { guildId } = await params
+  const res = await authenticatedFetch(`/api/v1/guilds/${guildId}/accounts?limit=50`)
+  const initialData = res.ok ? await res.json() : undefined
+  return <AccountsClient initialData={initialData} guildId={guildId} />
+}
+
+// Client Component
+function AccountsClient({ initialData, guildId }) {
+  const query = useInfiniteQuery({
+    initialData: initialData
+      ? { pages: [initialData], pageParams: [null] }
+      : undefined,
+    // ...
+  })
+}
+```
 
 ---
 
 ## Data Flow
 
-### 1. Authentication Flow
+### Request Flow: Cursor Paginated Infinite Scroll
 
 ```
-┌─────────────┐
-│   User      │
-└──────┬──────┘
-       │ 1. Click "Login with Discord"
-       ▼
-┌─────────────────────────────────┐
-│  /login (Server Component)      │
-│  - Render login button          │
-└──────┬──────────────────────────┘
-       │ 2. Redirect to Discord OAuth
-       ▼
-┌─────────────────────────────────┐
-│  Discord OAuth (External)       │
-└──────┬──────────────────────────┘
-       │ 3. Authorization code
-       ▼
-┌─────────────────────────────────┐
-│  /api/auth/callback (Route      │
-│   Handler)                       │
-│  - Exchange code for tokens     │
-│  - Fetch user guilds            │
-│  - Request JWT from API         │
-│  - Set session cookie           │
-└──────┬──────────────────────────┘
-       │ 4. Redirect to /dashboard
-       ▼
-┌─────────────────────────────────┐
-│  Middleware                      │
-│  - Read session cookie          │
-│  - Decrypt JWT                  │
-│  - Attach userId to request     │
-└──────┬──────────────────────────┘
-       │ 5. Allow request
-       ▼
-┌─────────────────────────────────┐
-│  /dashboard (Server Component)  │
-│  - verifySession() from DAL     │
-│  - Fetch guilds from API        │
-│  - Render guild list            │
-└─────────────────────────────────┘
+User scrolls to bottom
+    ↓
+useInfiniteQuery.fetchNextPage()
+    ↓
+fetchWithRetry GET /api/guilds/{id}/accounts?cursor={token}&limit=50
+    [CSRF token injected from csrf_token cookie]
+    ↓
+Route Handler: cookies() → auth_token → backendFetch() to Express
+    ↓
+Express: dashboardAuth → guildAccess → Prisma cursor findMany (take: limit+1)
+    ↓
+{ accounts: [...], next_cursor: "opaque_id", has_more: true }
+    ↓
+Route Handler: NextResponse.json(data)
+    ↓
+React Query: appends page, getNextPageParam returns next_cursor
 ```
 
-**Key points:**
-- Session stored as **HttpOnly, Secure cookie** (prevents XSS)
-- JWT contains `{ userId, guilds: [{ guildId, clientId }] }`
-- Middleware performs **optimistic check** (fast, edge-based)
-- DAL performs **authoritative check** (server-side, per-route)
-
-### 2. Data Fetching Flow (Server Components)
+### Request Flow: SSR Page with Cookie Forwarding
 
 ```
-┌─────────────────────────────────┐
-│  Page (Server Component)        │
-│  - await verifySession()        │ ← DAL validates auth + tenant
-│  - await getGuildDetails()      │ ← API Client (server-side)
-│  - Render UI with data          │
-└─────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────┐
-│  API Client (lib/api/client.ts) │
-│  - Inject JWT from cookies      │
-│  - GET /api/v1/guilds/:id       │
-└──────┬──────────────────────────┘
-       │ HTTPS + JWT
-       ▼
-┌─────────────────────────────────┐
-│  External API Server            │
-│  - Validate JWT                 │
-│  - Verify clientId access       │
-│  - Return guild data            │
-└─────────────────────────────────┘
+Browser requests /guilds/123/accounts
+    ↓
+proxy.ts: CSP nonce, csrf_token cookie, auth redirect check
+    ↓
+RSC page.tsx renders (server-side)
+    ↓
+authenticatedFetch('/api/v1/guilds/123/accounts')
+    [cookies() reads auth_token from Next.js server-side store]
+    ↓
+backendFetch() to Express with Authorization: Bearer {token}
+    ↓
+Express: validates JWT → returns accounts
+    ↓
+RSC renders HTML with data — no loading spinner
+    ↓
+Browser: React hydrates, useInfiniteQuery.initialData set, no network request needed
 ```
 
-**Advantages:**
-- Data fetched **close to the source** (server-side)
-- No API keys exposed to client
-- Automatic request deduplication via `fetch()` memoization
-- Can use React `cache()` for additional caching
-
-### 3. Mutation Flow (Server Actions)
+### Request Flow: Error Envelope (New Backend Shape)
 
 ```
-┌─────────────────────────────────┐
-│  Settings Form (Client          │
-│   Component)                     │
-│  - User edits settings          │
-│  - Submits form                 │
-└──────┬──────────────────────────┘
-       │ Form submission
-       ▼
-┌─────────────────────────────────┐
-│  Server Action (updateGuild)    │
-│  'use server'                    │
-│  - await verifySession()        │ ← Auth check
-│  - Validate form data (Zod)     │
-│  - await api.updateGuild()      │ ← API call
-│  - revalidatePath()             │ ← Refresh UI
-│  - return { success: true }     │
-└──────┬──────────────────────────┘
-       │ HTTPS + JWT
-       ▼
-┌─────────────────────────────────┐
-│  External API Server            │
-│  - Validate JWT                 │
-│  - Update database              │
-│  - Log audit entry              │
-└─────────────────────────────────┘
+Mutation fails, backend sends:
+  { error: { code: "FORBIDDEN", message: "Administrator permission required", requestId: "uuid" } }
+    ↓
+Route Handler: sanitizeError(403, data, 'update settings')
+    ↓
+error-sanitizer.extractErrorFields():
+  b.error is object → { code: "FORBIDDEN", message: "Administrator permission required" }
+    ↓
+FRIENDLY_MESSAGES["FORBIDDEN"] = "Access denied" → { error: "Access denied", code: "FORBIDDEN" }
+    ↓
+fetchWithRetry receives { error: "Access denied", code: "FORBIDDEN" }
+    ↓
+extractErrorCode(body): b.error is string → b.code = "FORBIDDEN"
+    → "FORBIDDEN" !== "unverified_email", "EBADCSRFTOKEN"
+    → Normal 403 handling: caller's onError fires
 ```
 
-**Key points:**
-- Server Actions replace traditional API routes for mutations
-- Progressive enhancement: works without JavaScript loaded
-- Automatic transition states (`useActionState()`)
-- Security: all validation happens server-side
-
-### 4. Real-Time Updates Flow (SSE)
+### State Management
 
 ```
-┌─────────────────────────────────┐
-│  Bot Status Component (Client)  │
-│  - useEffect(() => {            │
-│      const eventSource = new    │
-│      EventSource('/api/guilds/  │
-│        [id]/status')             │
-│    }, [guildId])                │
-└──────┬──────────────────────────┘
-       │ SSE connection
-       ▼
-┌─────────────────────────────────┐
-│  Route Handler (GET /api/       │
-│   guilds/[id]/status/route.ts)  │
-│  - verifySession()              │
-│  - Create ReadableStream        │
-│  - Poll API every 5s            │
-│  - Send events to client        │
-└──────┬──────────────────────────┘
-       │ HTTPS polling
-       ▼
-┌─────────────────────────────────┐
-│  External API Server            │
-│  - GET /api/v1/guilds/:id/      │
-│    status                        │
-│  - Return bot health            │
-└─────────────────────────────────┘
-```
-
-**Alternative: React Query with polling (simpler for MVP):**
-
-```tsx
-// lib/hooks/use-bot-status.ts
-import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api/client'
-
-export function useBotStatus(guildId: string) {
-  return useQuery({
-    queryKey: ['bot-status', guildId],
-    queryFn: () => api.getGuildStatus(guildId),
-    refetchInterval: 5000, // Poll every 5s
-    staleTime: 4000,        // Consider fresh for 4s
-  })
-}
-```
-
-**Recommendation:** Start with React Query polling for MVP (simpler), migrate to SSE in Phase 2 if needed.
-
----
-
-## Component Architecture
-
-### Server vs Client Component Decision Tree
-
-```
-Does the component need:
-├─ State (useState, useReducer)?
-│  └─ YES → Client Component ('use client')
-├─ Event handlers (onClick, onChange)?
-│  └─ YES → Client Component
-├─ Browser APIs (localStorage, window)?
-│  └─ YES → Client Component
-├─ Custom hooks (useQuery, useForm)?
-│  └─ YES → Client Component
-├─ Context (useContext)?
-│  └─ YES → Client Component
-└─ None of the above?
-   └─ Server Component (default)
-```
-
-### Component Layering Pattern
-
-**Maximize Server Components, minimize Client Component scope:**
-
-```tsx
-// app/(dashboard)/guilds/[guildId]/page.tsx (Server Component)
-import { verifySession } from '@/lib/auth/dal'
-import { api } from '@/lib/api/client'
-import { GuildSettings } from './guild-settings'      // Client
-import { BotStatusBadge } from './bot-status-badge'  // Client
-import { UsageChart } from './usage-chart'            // Server
-
-export default async function GuildPage({ params }: { params: Promise<{ guildId: string }> }) {
-  const { guildId } = await params
-  const session = await verifySession()
-
-  // Parallel data fetching
-  const [guild, usage] = await Promise.all([
-    api.getGuild(guildId),
-    api.getGuildUsage(guildId),
-  ])
-
-  return (
-    <div>
-      <header>
-        <h1>{guild.name}</h1>
-        <BotStatusBadge guildId={guildId} />  {/* Client: real-time updates */}
-      </header>
-
-      <UsageChart data={usage} />              {/* Server: static rendering */}
-      <GuildSettings initialData={guild} />    {/* Client: form interactivity */}
-    </div>
-  )
-}
-```
-
-**Pattern: Pass initial data from Server to Client:**
-
-```tsx
-// bot-status-badge.tsx (Client Component)
-'use client'
-
-import { useBotStatus } from '@/lib/hooks/use-bot-status'
-
-export function BotStatusBadge({ guildId }: { guildId: string }) {
-  const { data: status, isLoading } = useBotStatus(guildId)
-
-  if (isLoading) return <div className="badge">Checking...</div>
-
-  return (
-    <div className={`badge ${status?.online ? 'online' : 'offline'}`}>
-      {status?.online ? 'Online' : 'Offline'}
-    </div>
-  )
-}
-```
-
-### Layout Composition
-
-**Nested layouts enable progressive UI enhancement:**
-
-```
-Root Layout (app/layout.tsx)
-├─ <html>, <body>
-├─ Theme Provider
-├─ React Query Provider
-│
-├─ (dashboard)/layout.tsx
-│  ├─ Sidebar
-│  ├─ Header
-│  │
-│  ├─ guilds/[guildId]/layout.tsx
-│  │  ├─ Guild Switcher
-│  │  ├─ Breadcrumb
-│  │  │
-│  │  └─ {children} (guild pages)
-```
-
-**Example:**
-
-```tsx
-// app/(dashboard)/guilds/[guildId]/layout.tsx
-import { verifySession } from '@/lib/auth/dal'
-import { api } from '@/lib/api/client'
-import { GuildSwitcher } from '@/components/features/guild-switcher'
-
-export default async function GuildLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode
-  params: Promise<{ guildId: string }>
-}) {
-  const { guildId } = await params
-  await verifySession() // Auth check
-
-  const guild = await api.getGuild(guildId)
-
-  return (
-    <div>
-      <div className="guild-header">
-        <GuildSwitcher currentGuild={guild} />
-        <nav>
-          <Link href={`/guilds/${guildId}`}>Overview</Link>
-          <Link href={`/guilds/${guildId}/tracking`}>Tracking</Link>
-          <Link href={`/guilds/${guildId}/settings`}>Settings</Link>
-        </nav>
-      </div>
-      {children}
-    </div>
-  )
-}
+React Query (client cache)
+    ↓ (subscribe)
+Client Components ←→ useMutation/useQuery → fetchWithRetry → Route Handler → Express
+                                                ↑
+                                        CSRF cookie injected
+                                        401 → refreshSession()
+                                        403 → CSRF refresh probe
 ```
 
 ---
 
-## Security Architecture
+## Integration Points
 
-### Defense-in-Depth Layers
+### New vs Modified Components
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  Layer 1: Edge Middleware (Optimistic Check)            │
-│  - Verify session cookie exists                         │
-│  - Decrypt JWT (basic validation)                       │
-│  - Redirect to /login if invalid                        │
-└──────────────────┬──────────────────────────────────────┘
-                   │ Allowed
-                   ▼
-┌─────────────────────────────────────────────────────────┐
-│  Layer 2: Data Access Layer (Authoritative Check)       │
-│  - verifySession() with React cache()                   │
-│  - Validate userId, expiration                          │
-│  - Throw redirect if invalid                            │
-└──────────────────┬──────────────────────────────────────┘
-                   │ Authorized
-                   ▼
-┌─────────────────────────────────────────────────────────┐
-│  Layer 3: API Client (Tenant Scoping)                   │
-│  - Inject guildId in API requests                       │
-│  - External API validates clientId from JWT             │
-└──────────────────┬──────────────────────────────────────┘
-                   │ Tenant-scoped data
-                   ▼
-┌─────────────────────────────────────────────────────────┐
-│  Layer 4: Server Actions (Input Validation)             │
-│  - verifySession() again (CRITICAL)                     │
-│  - Zod schema validation                                │
-│  - Permission checks (admin-only actions)               │
-└─────────────────────────────────────────────────────────┘
-```
+| Component | Status | Integration Point |
+|-----------|--------|-------------------|
+| `src/lib/server/authenticated-fetch.ts` | NEW | RSC pages call it to fetch backend data server-side with auth |
+| `src/types/api.ts` | NEW | Shared `ApiErrorEnvelope` type used by sanitizer and fetch-with-retry |
+| `src/proxy.ts` | MODIFIED | `_csrf_token` → `csrf_token` cookie name; client must update cookie read |
+| `src/lib/fetch-with-retry.ts` | MODIFIED | Dual envelope code extraction; cookie name update; 503 toast message |
+| `src/lib/server/error-sanitizer.ts` | MODIFIED | Handle nested `{ error: { code, message } }` envelope |
+| `src/hooks/use-sse.ts` | MODIFIED | Retry count reset on visibilitychange; polling condition |
+| `src/hooks/use-guilds.ts` | MODIFIED | `refetchInterval` only when `connectionState === 'error'` |
+| `src/hooks/use-tracking.ts` | MODIFIED | Cursor pagination adapter (conditional on backend Phase 39) |
+| `src/types/tracking.ts` | MODIFIED | Replace `Pagination` with cursor types in affected responses |
+| `src/app/providers.tsx` | MODIFIED | `gcTime` increase |
 
-### Middleware Implementation
+### External Service Boundaries
 
-```ts
-// middleware.ts (runs on Edge runtime)
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { decrypt } from '@/lib/auth/session'
-import { cookies } from 'next/headers'
+| Service | Integration Pattern | Notes |
+|---------|---------------------|-------|
+| Express API (VPS) | Server-to-server HTTPS + JWT (via Route Handlers) | `backendFetch` adds X-Internal-Secret; backend's CSRF check bypassed for proxy calls |
+| Express API (VPS) | Server-to-server HTTPS + JWT (via authenticatedFetch, NEW) | RSC pages call backend directly without a Route Handler hop |
+| Vercel Edge | Next.js middleware (proxy.ts) | CSRF cookie set here; runs at edge before any Route Handler |
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+### Internal Boundaries
 
-  // Public routes
-  if (pathname.startsWith('/login') || pathname.startsWith('/legal')) {
-    return NextResponse.next()
-  }
-
-  // Protected routes
-  const cookie = (await cookies()).get('session')?.value
-  const session = await decrypt(cookie)
-
-  if (!session?.userId) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  return NextResponse.next()
-}
-
-export const config = {
-  matcher: [
-    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)',
-  ],
-}
-```
-
-### Data Access Layer Pattern
-
-```ts
-// lib/auth/dal.ts
-import { cache } from 'react'
-import { cookies } from 'next/headers'
-import { decrypt } from './session'
-import { redirect } from 'next/navigation'
-
-export const verifySession = cache(async () => {
-  const cookie = (await cookies()).get('session')?.value
-  const session = await decrypt(cookie)
-
-  if (!session?.userId) {
-    redirect('/login')
-  }
-
-  return {
-    isAuth: true,
-    userId: session.userId,
-    guilds: session.guilds, // [{ guildId, clientId, permissions }]
-  }
-})
-
-// Usage in Server Components, Server Actions, Route Handlers
-export async function getUser() {
-  const session = await verifySession()
-  // session.userId is guaranteed to exist
-}
-```
-
-**Why `cache()`?**
-- Ensures `verifySession()` is called only once per request
-- Multiple components can call it without performance penalty
-- React automatically deduplicates calls
-
-### Server Action Security Pattern
-
-```ts
-// app/(dashboard)/guilds/[guildId]/actions.ts
-'use server'
-
-import { verifySession } from '@/lib/auth/dal'
-import { api } from '@/lib/api/client'
-import { revalidatePath } from 'next/cache'
-import { z } from 'zod'
-
-const updateGuildSchema = z.object({
-  guildId: z.string(),
-  settings: z.object({
-    trackingEnabled: z.boolean(),
-    notificationsEnabled: z.boolean(),
-  }),
-})
-
-export async function updateGuildSettings(formData: FormData) {
-  // 1. Auth check (CRITICAL - never skip)
-  const session = await verifySession()
-
-  // 2. Parse and validate input
-  const rawData = {
-    guildId: formData.get('guildId'),
-    settings: JSON.parse(formData.get('settings') as string),
-  }
-
-  const result = updateGuildSchema.safeParse(rawData)
-  if (!result.success) {
-    return { success: false, error: 'Invalid input' }
-  }
-
-  const { guildId, settings } = result.data
-
-  // 3. Verify user has access to this guild
-  const hasAccess = session.guilds.some(g => g.guildId === guildId)
-  if (!hasAccess) {
-    return { success: false, error: 'Unauthorized' }
-  }
-
-  // 4. Perform mutation
-  try {
-    await api.updateGuild(guildId, settings)
-
-    // 5. Revalidate affected paths
-    revalidatePath(`/guilds/${guildId}`)
-
-    return { success: true }
-  } catch (error) {
-    return { success: false, error: 'Update failed' }
-  }
-}
-```
+| Boundary | Communication | Constraint |
+|----------|---------------|------------|
+| proxy.ts ↔ Route Handlers | Next.js request headers (cookie injection) | Refreshed auth_token injected into cookie header on proactive refresh |
+| Route Handlers ↔ Express | HTTPS + Bearer JWT | server-side only; client never sees API_URL |
+| authenticatedFetch ↔ Express | HTTPS + Bearer JWT | Must be `server-only`; do not import in Client Components |
+| React Query hooks ↔ Route Handlers | Browser fetch via fetchWithRetry | CSRF header auto-injected; all mutations go through fetchWithRetry |
+| useSSE ↔ SSE Route Handler | Browser EventSource | Route Handler proxies Express SSE body stream |
 
 ---
 
-## API Integration Layer
+## Scaling Considerations
 
-### API Client Structure
+| Scale | Architecture Adjustments |
+|-------|--------------------------|
+| Current (dashboard v1.1) | 36+ Route Handler proxies, React Query client cache, single SSE path |
+| v1.2 | SSR prefetch reduces client-side fetches; cursor pagination supports larger datasets; SSE lifecycle hardening reduces reconnect storms |
+| Future scaling pressure | SSE connection limits on Vercel functions; consider per-guild SSE pooling at backend |
 
-```ts
-// lib/api/client.ts
-import { cookies } from 'next/headers'
+### Scaling Priorities
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.example.com'
+1. **First bottleneck:** Vercel function invocations from polling — partially addressed by SSR prefetch (fewer client fetches) and SSE reliability (fewer reconnects).
+2. **Second bottleneck:** Cursor pagination prevents offset-based full-table scans as dataset grows beyond 10k rows.
 
-class ApiClient {
-  private async getAuthHeaders() {
-    const cookie = (await cookies()).get('session')?.value
-    if (!cookie) throw new Error('No session')
+---
 
-    return {
-      'Authorization': `Bearer ${cookie}`,
-      'Content-Type': 'application/json',
-    }
-  }
+## Anti-Patterns
 
-  async getGuilds() {
-    const headers = await this.getAuthHeaders()
-    const res = await fetch(`${API_BASE_URL}/api/v1/guilds`, { headers })
-    if (!res.ok) throw new Error('Failed to fetch guilds')
-    return res.json()
-  }
+### Anti-Pattern 1: Reading Error Codes Without Envelope Awareness
 
-  async getGuild(guildId: string) {
-    const headers = await this.getAuthHeaders()
-    const res = await fetch(`${API_BASE_URL}/api/v1/guilds/${guildId}`, { headers })
-    if (!res.ok) throw new Error('Failed to fetch guild')
-    return res.json()
-  }
+**What people do:** `const error = await response.json(); throw new Error(error.message)` or `body?.code === 'unverified_email'` without checking nested shape.
 
-  async updateGuild(guildId: string, data: any) {
-    const headers = await this.getAuthHeaders()
-    const res = await fetch(`${API_BASE_URL}/api/v1/guilds/${guildId}/settings`, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify(data),
-    })
-    if (!res.ok) throw new Error('Failed to update guild')
-    return res.json()
-  }
+**Why it's wrong:** When the backend sends `{ error: { code, message } }`, `body.message` is `undefined` and `body.code` is `undefined`. The error code check silently fails, breaking the unverified_email redirect and CSRF retry logic.
 
-  // ... more methods
-}
+**Do this instead:** Use the shared `extractErrorCode()` helper that handles both envelope shapes. In `fetchWithRetry` and `error-sanitizer`, always go through the extraction layer.
 
-export const api = new ApiClient()
+### Anti-Pattern 2: SSE Reconnect Without Retry Count Reset
+
+**What people do:** Call `connect()` directly in `visibilitychange` handler without resetting `retryCountRef`.
+
+**Why it's wrong:** If retries were exhausted while the tab was hidden, `retryCountRef.current === maxRetries`. When the tab becomes visible, `connect()` enters the backoff path and immediately sets `connectionState: 'error'` without making a real attempt. The SSE connection is permanently dead until a full page reload.
+
+**Do this instead:**
+```typescript
+// In handleVisibilityChange — tab becomes visible
+retryCountRef.current = 0  // Always reset before external reconnect trigger
+connect()
 ```
 
-**For Client Components (React Query):**
+### Anti-Pattern 3: Polling When SSE Is Merely Connecting
 
-```ts
-// lib/api/client-api.ts (browser-safe version)
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!
+**What people do:** `refetchInterval: isSSEConnected ? false : 60 * 1000` — where `isSSEConnected = connectionState === 'connected'`.
 
-export const clientApi = {
-  async getGuildStatus(guildId: string) {
-    const res = await fetch(`${API_BASE_URL}/api/v1/guilds/${guildId}/status`, {
-      credentials: 'include', // Send cookies
-    })
-    if (!res.ok) throw new Error('Failed to fetch status')
-    return res.json()
-  },
-  // ... client-safe methods only
-}
+**Why it's wrong:** During the `connecting` and `disconnected` states (transient — SSE is actively trying to reconnect), polling fires and races with the incoming SSE push. The poll result can overwrite a fresher SSE update.
+
+**Do this instead:**
+```typescript
+// Only poll when SSE has fully given up
+refetchInterval: connectionState === 'error' ? 60 * 1000 : false
 ```
 
-### React Query Integration
+### Anti-Pattern 4: `authenticatedFetch` in Client Components
 
-```tsx
-// lib/providers/query-client-provider.tsx
-'use client'
+**What people do:** Import `authenticated-fetch.ts` in a Client Component or a shared utility imported by one.
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
+**Why it's wrong:** `authenticatedFetch` calls `cookies()` from `next/headers`, which is server-only. Importing it client-side throws a runtime error in the browser.
 
-export function QueryProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 60 * 1000,        // 1 minute
-        refetchOnWindowFocus: false,
-      },
-    },
-  }))
+**Do this instead:** Add `import 'server-only'` at the top of `authenticated-fetch.ts`. Keep client-side data fetching in React Query hooks that call Route Handler URLs via `fetchWithRetry`. The boundary is the Route Handler — server data flows down as props or `initialData`, never as shared functions.
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  )
-}
-```
+### Anti-Pattern 5: Mixing Offset and Cursor Pagination Cache Keys
 
-```tsx
-// lib/hooks/use-guilds.ts
-'use client'
+**What people do:** Leave `queryKey: ['guild', guildId, 'accounts', 'infinite', page, filters]` when `page` is no longer meaningful after cursor migration.
 
-import { useQuery } from '@tanstack/react-query'
-import { clientApi } from '@/lib/api/client-api'
+**Why it's wrong:** Stale offset-keyed entries accumulate in the cache. While `invalidateQueries` on `['guild', guildId, 'accounts']` correctly invalidates all of them, the stale entries with numeric page numbers persist in `gcTime` window and can cause confusing debug states.
 
-export function useGuilds() {
-  return useQuery({
-    queryKey: ['guilds'],
-    queryFn: () => clientApi.getGuilds(),
-  })
-}
-```
+**Do this instead:** After cursor migration, remove the numeric page param from the query key: `['guild', guildId, 'accounts', 'infinite', filters]`. The cursor is passed as `pageParam` (React Query internal state), not in the key.
 
 ---
 
-## Build Order & Dependencies
+## Build Order
 
-### Phase 1: Foundation (Week 1)
+Dependencies determine sequence. Items can start only after their dependency completes.
 
-**Dependencies:** None
-**Goal:** Basic routing and auth flow
+### Step 1: Error Envelope Foundation (no dependencies — do first)
 
-1. **Set up Next.js project**
-   - Initialize with App Router
-   - Configure TypeScript, Tailwind CSS
-   - Set up route groups: `(auth)`, `(dashboard)`, `(legal)`
+**Files:**
+- `src/lib/server/error-sanitizer.ts` — dual envelope extraction
+- `src/lib/fetch-with-retry.ts` — dual envelope for code-based logic (`unverified_email`, `EBADCSRFTOKEN`)
+- `src/types/api.ts` (NEW) — `ApiErrorEnvelope`, `BackendErrorResponse` types
 
-2. **Implement auth layer**
-   - Create session utilities (`lib/auth/session.ts`)
-   - Create DAL with `verifySession()` (`lib/auth/dal.ts`)
-   - Create middleware for route protection
-   - Create OAuth callback Route Handler (`app/api/auth/callback/route.ts`)
+**Rationale:** Every other change surfaces errors through these layers. Fix the parser first so subsequent changes produce readable diagnostics rather than `undefined` error codes.
 
-3. **Create login flow**
-   - Build login page (`app/(auth)/login/page.tsx`)
-   - Build callback handler
-   - Build logout Route Handler
-
-4. **Create placeholder pages**
-   - Dashboard home (guild list placeholder)
-   - Legal pages (terms, privacy with placeholder text)
-
-**Validation:** User can log in via Discord, session persists, logout works
+**Risk:** Low. Changes are additive (new extraction function, existing behavior unchanged for flat envelopes).
 
 ---
 
-### Phase 2: Core Dashboard (Week 2)
+### Step 2: CSRF Cookie Name Alignment (depends on Step 1 — can combine)
 
-**Dependencies:** Phase 1 complete
-**Goal:** View-only guild data
+**Files:**
+- `src/proxy.ts` — `setCsrfCookie(response, ...)` sets `csrf_token` (remove underscore prefix)
+- `src/lib/fetch-with-retry.ts` — `getCsrfToken()` reads `csrf_token` (remove underscore prefix)
 
-1. **API client layer**
-   - Create server-side API client (`lib/api/client.ts`)
-   - Create client-side API client (`lib/api/client-api.ts`)
-   - Define TypeScript types for API responses
+**Rationale:** The backend uses `csrf_token`; the dashboard uses `_csrf_token`. This mismatch is harmless for the current proxy architecture (backend CSRF check is bypassed by X-Internal-Secret), but aligning now prevents confusion when tracing CSRF failures and removes the mismatch before any future direct-browser-to-backend path is introduced.
 
-2. **Build guild list page**
-   - Server Component fetches guilds
-   - Display as cards/table
-   - Link to guild details
+**Risk:** Low. After deploy, existing browser sessions have `_csrf_token`. The next page load generates `csrf_token`. The first mutation after deploy may fail CSRF (both cookie names exist, but middleware validates `csrf_token` header against `csrf_token` cookie — if old `_csrf_token` is in header, it fails). This is a one-request gap, self-healing on next middleware response.
 
-3. **Build guild detail page**
-   - Create nested layout (`app/(dashboard)/guilds/[guildId]/layout.tsx`)
-   - Build overview page (settings display, usage stats)
-   - Create guild switcher component
-
-4. **React Query setup**
-   - Configure QueryClientProvider
-   - Create custom hooks for common queries
-
-**Validation:** User can see their guilds, navigate to guild details, view settings and usage
+**Mitigation:** Deploy during low-traffic window. Accept the one-request CSRF failure gap, which triggers the existing CSRF retry path in `fetchWithRetry`.
 
 ---
 
-### Phase 3: Tracking Data Views (Week 2-3)
+### Step 3: SSE Lifecycle Hardening (depends on Steps 1-2)
 
-**Dependencies:** Phase 2 complete
-**Goal:** Display tracking data (read-only)
+**Files:**
+- `src/hooks/use-sse.ts` — visibility reconnect retry reset, `beforeunload` guard
+- `src/hooks/use-guilds.ts` — `refetchInterval: connectionState === 'error' ? 60000 : false`
 
-1. **Build tracking pages**
-   - Tracked accounts page with pagination (`app/(dashboard)/guilds/[guildId]/tracking/accounts/page.tsx`)
-   - Tracked posts page with pagination
-   - Brands page
+**Rationale:** Error envelope alignment (Step 1) ensures 503/429 error messages from SSE endpoint read correctly. SSE changes are self-contained but benefit from clean error surfaces.
 
-2. **Create reusable table components**
-   - Paginated table component
-   - Search/filter components (Client Components)
-   - Loading skeletons
-
-3. **Optimize data fetching**
-   - Implement parallel fetching where possible
-   - Add loading.tsx for Suspense boundaries
-   - Configure React Query caching strategies
-
-**Validation:** User can browse tracked accounts, posts, and brands with pagination
+**Risk:** Low. Behavioral improvement, not functional change. Regression: reduced reconnect storms against backend.
 
 ---
 
-### Phase 4: Real-Time Features (Week 3)
+### Step 4: React Query Cache Optimization (depends on Step 3)
 
-**Dependencies:** Phase 3 complete
-**Goal:** Bot status updates
+**Files:**
+- `src/app/providers.tsx` — `gcTime: 30 * 60 * 1000` (was 10 minutes)
 
-**Option A: React Query with Polling (MVP)**
+**Rationale:** Stable SSE lifecycle (Step 3) reduces background refetch pressure. Higher `gcTime` only helps if connections are reliable enough that users stay on pages for 10+ minutes.
 
-1. **Create status hook**
-   - `useBotStatus()` with `refetchInterval`
-   - Status badge component
-
-2. **Add to guild overview**
-   - Display online/offline status
-   - Show last heartbeat time
-
-**Option B: SSE (Phase 2 Enhancement)**
-
-1. **Create SSE Route Handler**
-   - `app/api/guilds/[guildId]/status/route.ts`
-   - Implement ReadableStream
-   - Poll external API and push events
-
-2. **Create SSE hook**
-   - `useBotStatusSSE()` with EventSource
-   - Handle reconnection logic
-
-**Validation:** Bot status updates in real-time (or every 5s with polling)
+**Risk:** Low. Higher `gcTime` increases memory per tab. Acceptable for single-tab dashboard usage pattern.
 
 ---
 
-### Phase 5: Mutations (Week 4)
+### Step 5: SSR Cookie Forwarding (depends on Steps 1-2, independent of 3-4)
 
-**Dependencies:** Phase 4 complete
-**Goal:** Settings updates, exports
+**Files:**
+- `src/lib/server/authenticated-fetch.ts` (NEW)
+- Select RSC pages — guild detail, accounts list (use `initialData` pattern)
 
-1. **Create Server Actions**
-   - `updateGuildSettings()` action
-   - Input validation with Zod
-   - Error handling and revalidation
+**Rationale:** Most complex change (RSC + React Query hydration + `server-only` boundary). Do after simpler changes are stabilized. SSR prefetch depends on correct error handling (Step 1) and clean cookies (Step 2).
 
-2. **Build settings form**
-   - Client Component with form state
-   - Use `useActionState()` for submission
-   - Display success/error messages
-
-3. **Add audit log page**
-   - Server Component fetches audit log
-   - Display timeline of changes
-
-4. **Add export functionality**
-   - Server Action to request export
-   - Display export status
-
-**Validation:** User can update guild settings, changes persist, audit log shows changes
+**Risk:** Medium. Must verify that `useInfiniteQuery.initialData` format matches what `useInfiniteQuery` expects for cursor queries. Test: RSC fetch fails → page falls back to client-side loading state (no flash of broken content).
 
 ---
 
-### Phase 6: Polish & Deploy (Week 4)
+### Step 6: Cursor Pagination Migration (depends on backend Phase 39)
 
-**Dependencies:** Phase 5 complete
-**Goal:** Production-ready
+**Files:**
+- `src/hooks/use-tracking.ts` — `getNextPageParam`, `initialPageParam`
+- `src/types/tracking.ts` — replace `Pagination` with `{ next_cursor: string | null, has_more: boolean }`
 
-1. **UI polish**
-   - Error states for all pages
-   - Loading states with skeletons
-   - Empty states with helpful CTAs
+**Rationale:** Cannot implement until backend migrates accounts/posts endpoints to cursor pagination. When backend Phase 39 deploys, this is a same-day dashboard change. Bonus rounds (`use-bonus.ts`) already handles cursor correctly.
 
-2. **Performance optimization**
-   - Review Server/Client Component boundaries
-   - Optimize images with next/image
-   - Add metadata for SEO
+**Risk:** Low on its own. High coordination risk if timing is misaligned with backend deploy — mismatched pagination format causes broken infinite scroll.
 
-3. **Deploy to Vercel**
-   - Configure environment variables
-   - Set up preview deployments
-   - Test production build
-
-4. **Monitor and iterate**
-   - Set up error tracking
-   - Monitor performance metrics
-
-**Validation:** Dashboard deployed, accessible, performant
+**Mitigation:** Deploy dashboard cursor change in the same release window as backend Phase 39. Feature-flag if needed.
 
 ---
 
-## Patterns to Follow
+### Step 7: CSRF HMAC Signing (conditional — wait for backend audit)
 
-### Pattern 1: Server-First Data Fetching
+**Files:**
+- `src/lib/server/backend-fetch.ts` — add HMAC headers if X-Internal-Secret bypass is removed
 
-**What:** Fetch data in Server Components by default, only use Client Components for interactivity
-**When:** Any page that displays data
-**Example:**
+**Rationale:** The backend's HMAC signed-request bypass exists for bot/worker services. The dashboard proxy uses `X-Internal-Secret` to bypass backend CSRF. If the backend security audit recommends removing `X-Internal-Secret` in favor of HMAC signing for all internal callers, the dashboard Route Handlers must sign their backend requests.
 
-```tsx
-// Server Component (default)
-export default async function GuildPage({ params }: { params: Promise<{ guildId: string }> }) {
-  const { guildId } = await params
-  const guild = await api.getGuild(guildId) // Server-side fetch
-
-  return (
-    <div>
-      <h1>{guild.name}</h1>
-      <StaticDataTable data={guild.tracking} />      {/* Server Component */}
-      <InteractiveSettings initial={guild.settings} /> {/* Client Component */}
-    </div>
-  )
-}
-```
-
-**Why:** Reduces JavaScript sent to browser, improves FCP, keeps API keys secure
-
----
-
-### Pattern 2: Progressive Enhancement with Server Actions
-
-**What:** Use Server Actions for forms that work without JavaScript
-**When:** Any mutation (settings update, data export)
-**Example:**
-
-```tsx
-// Server Action
-'use server'
-export async function updateSettings(formData: FormData) {
-  const session = await verifySession()
-  // ... validation and API call
-  revalidatePath('/guilds/[guildId]')
-  return { success: true }
-}
-
-// Client Component
-'use client'
-export function SettingsForm({ initial }: { initial: Settings }) {
-  const [state, action, isPending] = useActionState(updateSettings, null)
-
-  return (
-    <form action={action}>
-      <input name="setting1" defaultValue={initial.setting1} />
-      <button type="submit" disabled={isPending}>
-        {isPending ? 'Saving...' : 'Save'}
-      </button>
-      {state?.success && <p>Saved!</p>}
-    </form>
-  )
-}
-```
-
-**Why:** Works before JavaScript loads, automatic transition states, cleaner than traditional API routes
-
----
-
-### Pattern 3: Tenant Isolation via DAL
-
-**What:** Centralize auth and tenant validation in a Data Access Layer
-**When:** Every Server Component, Server Action, Route Handler
-**Example:**
-
-```ts
-// lib/auth/dal.ts
-export const verifySession = cache(async () => {
-  const cookie = (await cookies()).get('session')?.value
-  const session = await decrypt(cookie)
-  if (!session?.userId) redirect('/login')
-  return session
-})
-
-// Usage everywhere
-export default async function ProtectedPage() {
-  const session = await verifySession() // Guaranteed auth
-  const guilds = session.guilds          // User's allowed guilds
-  // ...
-}
-```
-
-**Why:** Single source of truth for auth, prevents accidental bypass, uses React cache() for performance
-
----
-
-### Pattern 4: Optimistic UI with React Query
-
-**What:** Update UI immediately while mutation is in progress
-**When:** Client-side mutations where instant feedback improves UX
-**Example:**
-
-```tsx
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-
-function ToggleTracking({ guildId, enabled }: { guildId: string, enabled: boolean }) {
-  const queryClient = useQueryClient()
-
-  const mutation = useMutation({
-    mutationFn: (newEnabled: boolean) => clientApi.updateGuild(guildId, { enabled: newEnabled }),
-    onMutate: async (newEnabled) => {
-      // Optimistically update
-      await queryClient.cancelQueries({ queryKey: ['guild', guildId] })
-      const previous = queryClient.getQueryData(['guild', guildId])
-      queryClient.setQueryData(['guild', guildId], (old: any) => ({
-        ...old,
-        settings: { ...old.settings, enabled: newEnabled }
-      }))
-      return { previous }
-    },
-    onError: (err, variables, context) => {
-      // Rollback on error
-      queryClient.setQueryData(['guild', guildId], context?.previous)
-    },
-    onSettled: () => {
-      // Refetch to ensure sync
-      queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
-    },
-  })
-
-  return (
-    <button onClick={() => mutation.mutate(!enabled)}>
-      {enabled ? 'Disable' : 'Enable'} Tracking
-    </button>
-  )
-}
-```
-
-**Why:** Instant feedback, automatic rollback on error, eventual consistency
-
----
-
-### Pattern 5: Parallel Data Fetching
-
-**What:** Fetch multiple independent resources simultaneously
-**When:** Pages that need data from multiple API endpoints
-**Example:**
-
-```tsx
-export default async function GuildOverview({ params }: { params: Promise<{ guildId: string }> }) {
-  const { guildId } = await params
-
-  // Parallel fetching (faster than sequential)
-  const [guild, usage, status] = await Promise.all([
-    api.getGuild(guildId),
-    api.getGuildUsage(guildId),
-    api.getGuildStatus(guildId),
-  ])
-
-  return (
-    <div>
-      <GuildHeader guild={guild} status={status} />
-      <UsageChart data={usage} />
-    </div>
-  )
-}
-```
-
-**Why:** Reduces total load time, improves perceived performance
-
----
-
-### Pattern 6: Streaming with Suspense Boundaries
-
-**What:** Stream parts of the page as data becomes available
-**When:** Pages with slow data sources or multiple independent sections
-**Example:**
-
-```tsx
-import { Suspense } from 'react'
-
-export default function GuildPage({ params }: { params: Promise<{ guildId: string }> }) {
-  return (
-    <div>
-      <Suspense fallback={<HeaderSkeleton />}>
-        <GuildHeader guildId={params.guildId} />
-      </Suspense>
-
-      <Suspense fallback={<ChartSkeleton />}>
-        <UsageChart guildId={params.guildId} />
-      </Suspense>
-
-      <Suspense fallback={<TableSkeleton />}>
-        <TrackingTable guildId={params.guildId} />
-      </Suspense>
-    </div>
-  )
-}
-
-async function UsageChart({ guildId }: { guildId: string }) {
-  const usage = await api.getGuildUsage(guildId) // Slow query
-  return <Chart data={usage} />
-}
-```
-
-**Why:** Faster Time to First Byte, progressive rendering, better perceived performance
-
----
-
-## Anti-Patterns to Avoid
-
-### Anti-Pattern 1: Client Component Sprawl
-
-**What goes wrong:** Adding `'use client'` at the top of every file
-**Why bad:** Sends unnecessary JavaScript to browser, loses Server Component benefits
-**Instead:** Only mark interactive leaves as Client Components
-
-```tsx
-// BAD: Entire page is Client Component
-'use client'
-export default function Page() {
-  const [filter, setFilter] = useState('')
-  const data = useSWR('/api/data')
-  return <Table data={data} filter={filter} onFilterChange={setFilter} />
-}
-
-// GOOD: Server Component with Client Component leaves
-export default async function Page() {
-  const data = await api.getData() // Server-side fetch
-  return <FilterableTable data={data} /> {/* Client Component */}
-}
-
-'use client'
-function FilterableTable({ data }: { data: any[] }) {
-  const [filter, setFilter] = useState('')
-  // Client-side filtering only
-}
-```
-
----
-
-### Anti-Pattern 2: Fetching in Client Components Without Caching
-
-**What goes wrong:** Using `useEffect` + `fetch` in Client Components
-**Why bad:** No caching, no deduplication, refetches on every mount
-**Instead:** Use React Query for client-side fetching
-
-```tsx
-// BAD
-'use client'
-function GuildList() {
-  const [guilds, setGuilds] = useState([])
-  useEffect(() => {
-    fetch('/api/guilds').then(r => r.json()).then(setGuilds)
-  }, [])
-  return <div>{guilds.map(...)}</div>
-}
-
-// GOOD
-'use client'
-function GuildList() {
-  const { data: guilds, isLoading } = useQuery({
-    queryKey: ['guilds'],
-    queryFn: () => clientApi.getGuilds(),
-  })
-  if (isLoading) return <Skeleton />
-  return <div>{guilds.map(...)}</div>
-}
-```
-
----
-
-### Anti-Pattern 3: Skipping verifySession() in Server Actions
-
-**What goes wrong:** Assuming middleware auth is sufficient
-**Why bad:** Server Actions are public endpoints, middleware doesn't protect them
-**Instead:** Always call verifySession() at the start of every Server Action
-
-```tsx
-// BAD (SECURITY VULNERABILITY)
-'use server'
-export async function deleteGuild(guildId: string) {
-  await api.deleteGuild(guildId) // No auth check!
-}
-
-// GOOD
-'use server'
-export async function deleteGuild(guildId: string) {
-  const session = await verifySession() // CRITICAL
-
-  // Verify user has admin access to this guild
-  const guild = session.guilds.find(g => g.guildId === guildId)
-  if (!guild || !guild.permissions.includes('ADMINISTRATOR')) {
-    throw new Error('Unauthorized')
-  }
-
-  await api.deleteGuild(guildId)
-}
-```
-
----
-
-### Anti-Pattern 4: Route Handlers for Every API Call
-
-**What goes wrong:** Creating Route Handlers (`app/api/*/route.ts`) that just proxy to external API
-**Why bad:** Unnecessary layer, doubles latency, no benefit over direct Server Component fetching
-**Instead:** Call external API directly from Server Components
-
-```tsx
-// BAD: Unnecessary proxy
-// app/api/guilds/route.ts
-export async function GET() {
-  const res = await fetch('https://external-api.com/guilds')
-  return res
-}
-
-// app/(dashboard)/page.tsx (Server Component)
-'use client'
-export default function Page() {
-  const { data } = useSWR('/api/guilds') // Extra hop
-}
-
-// GOOD: Direct API call
-// app/(dashboard)/page.tsx (Server Component)
-export default async function Page() {
-  const guilds = await api.getGuilds() // Direct to external API
-  return <GuildList guilds={guilds} />
-}
-```
-
-**Exception:** Route Handlers ARE needed for:
-- OAuth callbacks (handling redirects)
-- Webhooks (receiving external requests)
-- SSE streams (long-lived connections)
-
----
-
-### Anti-Pattern 5: Hardcoding Tenant IDs
-
-**What goes wrong:** Allowing guildId to be passed from client without validation
-**Why bad:** Cross-tenant data leak vulnerability
-**Instead:** Always validate guildId against session.guilds
-
-```tsx
-// BAD (SECURITY VULNERABILITY)
-'use server'
-export async function getGuildData(guildId: string) {
-  // User could pass ANY guildId!
-  return api.getGuild(guildId)
-}
-
-// GOOD
-'use server'
-export async function getGuildData(guildId: string) {
-  const session = await verifySession()
-
-  // Verify user has access to this guild
-  const hasAccess = session.guilds.some(g => g.guildId === guildId)
-  if (!hasAccess) {
-    throw new Error('Unauthorized')
-  }
-
-  return api.getGuild(guildId)
-}
-```
-
----
-
-### Anti-Pattern 6: Mixing Route Groups with URL Structure
-
-**What goes wrong:** Trying to match route group names to URL paths
-**Why bad:** Route groups are organizational only, don't affect URLs
-**Instead:** Use route groups for layout/concern, not URL structure
-
-```tsx
-// BAD: Expecting /(dashboard) to create /dashboard URL
-app/
-└── (dashboard)/          # This is NOT the URL!
-    └── page.tsx          # URL is "/" not "/dashboard"
-
-// GOOD: Route groups for layout, folders for URLs
-app/
-├── (dashboard)/          # Layout group (sidebar + header)
-│   ├── layout.tsx
-│   ├── page.tsx          # URL: /
-│   └── guilds/
-│       └── page.tsx      # URL: /guilds
-└── (auth)/               # Layout group (minimal chrome)
-    └── login/
-        └── page.tsx      # URL: /login
-```
-
----
-
-## Scalability Considerations
-
-### At 100 Guilds (MVP)
-
-| Concern | Approach |
-|---------|----------|
-| **Data fetching** | Direct API calls from Server Components |
-| **Caching** | Next.js automatic fetch caching (default 'force-cache') |
-| **Real-time** | React Query polling every 5s |
-| **Database** | External API handles all queries |
-
-### At 1,000 Guilds (Phase 2)
-
-| Concern | Approach |
-|---------|----------|
-| **Data fetching** | Same (Server Components scale well) |
-| **Caching** | Add Redis cache layer in external API |
-| **Real-time** | Migrate to SSE for bot status |
-| **Guild list** | Add pagination to guild list |
-| **Database** | Add database read replicas in external API |
-
-### At 10,000+ Guilds (Phase 3)
-
-| Concern | Approach |
-|---------|----------|
-| **Data fetching** | Implement ISR (Incremental Static Regeneration) for rarely-changing data |
-| **Caching** | Edge caching with `unstable_cache()` or Vercel Data Cache |
-| **Real-time** | SSE with connection pooling, consider WebSockets |
-| **Guild list** | Virtual scrolling, search/filter on server-side |
-| **Database** | Partition by clientId, implement read-through caching |
-| **Rate limiting** | Per-tenant rate limits at edge middleware layer |
-
----
-
-## Extensibility Points
-
-### Future: Marketing Site
-
-**Add without affecting dashboard:**
-
-```
-app/
-├── (marketing)/              # New route group
-│   ├── layout.tsx            # Marketing layout (header, footer, no sidebar)
-│   ├── page.tsx              # Landing page (URL: /)
-│   ├── pricing/
-│   │   └── page.tsx          # URL: /pricing
-│   └── docs/
-│       └── page.tsx          # URL: /docs
-│
-├── (dashboard)/              # Existing (unchanged)
-│   ├── layout.tsx
-│   └── page.tsx              # Move to /dashboard URL
-```
-
-**Routing strategy:**
-- Marketing: `/`, `/pricing`, `/docs` (public)
-- Dashboard: `/dashboard`, `/dashboard/guilds/...` (protected)
-
----
-
-### Future: Billing/Subscriptions
-
-**Add to existing structure:**
-
-```
-app/
-├── (dashboard)/
-│   ├── billing/              # New billing section
-│   │   ├── page.tsx          # URL: /billing (subscription overview)
-│   │   ├── plans/
-│   │   │   └── page.tsx      # URL: /billing/plans
-│   │   └── invoices/
-│   │       └── page.tsx      # URL: /billing/invoices
-│   └── guilds/
-│       └── [guildId]/
-│           └── subscription/ # New guild-level subscription page
-│               └── page.tsx  # URL: /guilds/[id]/subscription
-```
-
-**API additions:**
-- `GET /api/v1/subscriptions` - User's subscriptions
-- `POST /api/v1/subscriptions` - Create subscription (Stripe integration)
-- `GET /api/v1/guilds/:id/subscription` - Guild subscription status
-
-**Component additions:**
-- Subscription badge in guild switcher (shows tier)
-- Usage progress bars (shows quota consumption)
-- Upgrade CTAs (triggered by quota limits)
-
----
-
-### Future: Webhooks/Integrations
-
-**Route Handler for incoming webhooks:**
-
-```ts
-// app/api/webhooks/stripe/route.ts
-import { verifyStripeSignature } from '@/lib/stripe'
-
-export async function POST(request: Request) {
-  const signature = request.headers.get('stripe-signature')!
-  const body = await request.text()
-
-  const event = verifyStripeSignature(body, signature)
-
-  switch (event.type) {
-    case 'invoice.paid':
-      // Update subscription status
-      break
-    case 'subscription.deleted':
-      // Downgrade to free tier
-      break
-  }
-
-  return new Response('OK', { status: 200 })
-}
-```
+**Risk:** Low probability this is needed. Lowest priority. Wait for audit conclusions before implementing.
 
 ---
 
 ## Sources
 
-**HIGH Confidence (Official Documentation):**
-- [Next.js App Router Routing](https://nextjs.org/docs/app/building-your-application/routing) - File-system routing, layouts, dynamic segments
-- [Next.js Data Fetching](https://nextjs.org/docs/app/building-your-application/data-fetching) - Server Components, fetch patterns
-- [Next.js Authentication](https://nextjs.org/docs/app/building-your-application/authentication) - Session management, JWT, DAL pattern
-- [Next.js Route Groups](https://nextjs.org/docs/app/building-your-application/routing/route-groups) - Organizational patterns
-- [Next.js Route Segment Config](https://nextjs.org/docs/app/api-reference/file-conventions/route-segment-config) - Dynamic rendering, revalidation
-- [Next.js Server Components](https://nextjs.org/docs/app/building-your-application/rendering/server-components) - Server vs Client Component patterns
-- [React Server Actions](https://react.dev/reference/react/use-server) - Server Action patterns and constraints
+All findings are HIGH confidence — derived from reading actual source code of both codebases:
 
-**Project-Specific Context:**
-- PROJECT.md - Multi-tenancy model, auth requirements, tech stack decisions
-- Dashboard.md - API contract, schema changes, phased roadmap
+- `src/proxy.ts` — CSRF cookie name `_csrf_token`, middleware behavior
+- `src/lib/fetch-with-retry.ts` — 429/503 handling, CSRF injection, code-based logic
+- `src/lib/server/backend-fetch.ts` — X-Internal-Secret, Idempotency-Key
+- `src/lib/server/error-sanitizer.ts` — current flat-envelope parsing
+- `src/hooks/use-sse.ts` — SSE lifecycle, reconnect logic, visibility handling
+- `src/hooks/use-tracking.ts` — offset pagination in `useInfiniteQuery`
+- `src/hooks/use-bonus.ts` — cursor pagination via manual accumulation (confirmed working pattern)
+- `src/hooks/use-guilds.ts` — `refetchInterval: isSSEConnected ? false : 60000` pattern
+- `src/app/providers.tsx` — `gcTime: 10 * 60 * 1000` current config
+- `/Tracking Data Bot/api/src/middleware/csrf.ts` — backend CSRF + HMAC signed-request bypass logic
+- `/Tracking Data Bot/shared/src/lib/apiResponse.ts` — confirmed `sendError()` shape: `{ error: { code, message, requestId } }` (ApiErrorBody)
+- `/Tracking Data Bot/api/src/routes/dashboard/bonus/bonusRoutes.ts` — confirmed cursor pagination response: `{ rounds, next_cursor, has_more }`
+- `/Tracking Data Bot/api/src/middleware/dashboardAuth.ts` — confirmed `sendError()` usage + 503 SERVICE_UNAVAILABLE path
 
 ---
 
-## Summary
-
-**Recommended architecture:**
-- **Route groups** for organizational clarity (auth, dashboard, legal, future marketing)
-- **Server Components by default** with minimal Client Component scope
-- **Server Actions** for all mutations (settings, exports)
-- **Data Access Layer** with `verifySession()` for defense-in-depth security
-- **React Query** for client-side caching and real-time features
-- **Direct API calls** from Server Components (no unnecessary Route Handler proxies)
-
-**Security model:**
-- Edge middleware for optimistic checks
-- DAL for authoritative auth validation
-- Tenant isolation via JWT guild list validation
-- Input validation via Zod schemas in Server Actions
-
-**Build order:**
-1. Auth foundation (login, session, middleware)
-2. Core dashboard (guild list, details)
-3. Tracking data views (accounts, posts, brands)
-4. Real-time features (bot status with React Query polling)
-5. Mutations (settings updates, Server Actions)
-6. Polish and deploy
-
-This architecture scales from MVP (100 guilds) to enterprise (10,000+ guilds) with clear extension points for billing, marketing, and integrations.
+*Architecture research for: Next.js 14 App Router + Express.js proxy dashboard — v1.2 Security Audit & Optimization*
+*Researched: 2026-02-22*

@@ -1,501 +1,426 @@
-# Technology Stack - Dashboard Tracking Bot
+# Stack Research
 
-**Project:** Discord Bot Management Dashboard
-**Domain:** Next.js SaaS Dashboard with Discord OAuth
-**Researched:** 2026-01-24
-**Overall Confidence:** HIGH
-
----
-
-## Executive Summary
-
-This stack recommendation is optimized for a multi-tenant SaaS dashboard connecting to an existing API. The architecture prioritizes:
-- **Vercel-native deployment** (Edge Runtime compatibility)
-- **Type safety** across API boundaries
-- **Real-time data** with server-sent events
-- **Zero vendor lock-in** for auth/data (custom JWT via existing API)
-- **Custom UI** (Tailwind only, no component libraries per constraint)
-
-**Key Decision:** Use custom JWT auth (not NextAuth.js) because the existing API owns authentication. The dashboard is a thin client that consumes the API's auth endpoints.
-
----
-
-## Core Framework
-
-| Technology | Version | Purpose | Rationale |
-|------------|---------|---------|-----------|
-| **Next.js** | `16.1.4` (latest stable) | React framework, App Router | Official stable version verified from docs. App Router provides RSC, server actions, optimized caching. Vercel-native deployment. |
-| **React** | `19.x` (via Next.js) | UI library | Next.js 16 uses React 19 with built-in canary features. Server Components are production-ready. |
-| **TypeScript** | `5.7.x` (latest) | Type safety | Current stable release. Essential for API contract enforcement and multi-tenant data isolation safety. |
-
-**Confidence:** HIGH (verified via official Next.js documentation)
-
----
-
-## Authentication & Authorization
-
-### Approach: Custom JWT (Not NextAuth.js)
-
-**Decision:** Do NOT use NextAuth.js/Auth.js
-
-**Rationale:**
-- Your existing API owns authentication (Discord OAuth → JWT issuance)
-- Dashboard is a thin client that receives JWTs from `/api/v1/auth/*`
-- NextAuth.js adds unnecessary complexity for this architecture
-- Next.js docs recommend auth libraries for apps that OWN auth logic, but you don't
-
-**Implementation:**
-
-| Library | Version | Purpose | Why |
-|---------|---------|---------|-----|
-| **jose** | `5.9.x` | JWT verification (Edge-compatible) | Recommended by Next.js docs for Edge Runtime. Lighter than jsonwebtoken. Used for client-side token validation only. |
-| **zod** | `3.24.x` | Schema validation | Official Next.js pattern for validating API responses and form inputs. Type-safe runtime validation. |
-
-**Auth Flow:**
-1. User clicks "Login with Discord" → redirect to API's `/api/v1/auth/discord`
-2. API handles OAuth, returns JWT + refresh token
-3. Dashboard stores tokens in httpOnly cookies (via API's Set-Cookie headers)
-4. Dashboard middleware validates JWT using `jose` before rendering protected routes
-5. Refresh flow handled by API's `/api/v1/auth/refresh` endpoint
-
-**Confidence:** HIGH (verified pattern from Next.js auth documentation)
-
----
-
-## Data Fetching & State Management
-
-| Library | Version | Purpose | Rationale |
-|---------|---------|---------|-----------|
-| **TanStack Query** (React Query) | `@tanstack/react-query@5.x` | Server state management, caching | Required per project constraints. v5 is current stable. Handles SSE caching, optimistic updates, background refetch. Essential for multi-tenant data isolation (per-guild cache keys). |
-| **@tanstack/react-query-devtools** | `5.x` | Dev tools | Debug cache state during development. |
-
-**Configuration:**
-```typescript
-// app/providers.tsx
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000, // 1min - balance freshness vs API load
-      gcTime: 5 * 60 * 1000, // 5min (was cacheTime in v4)
-      refetchOnWindowFocus: true, // Catch up after tab switch
-      retry: 1, // Fail fast for auth errors
-    },
-  },
-})
-```
-
-**Why React Query for this project:**
-- **Multi-tenant isolation:** Cache keys scoped by `guildId` prevent data leaks
-- **Real-time SSE:** Can poll or use SSE with custom query logic
-- **Optimistic updates:** For Phase 2 write operations
-- **Background sync:** Refetch when user returns to tab
-
+**Domain:** Next.js 16 dashboard — v1.2 Security Audit & Optimization additions
+**Researched:** 2026-02-22
 **Confidence:** HIGH
 
 ---
 
-## Styling & UI
+## Context: What Already Exists
 
-| Library | Version | Purpose | Rationale |
-|---------|---------|---------|-----------|
-| **Tailwind CSS** | `4.1.x` (latest) | Utility-first CSS | Per project constraint. v4.1 uses new `@tailwindcss/postcss` plugin for Next.js. |
-| **@tailwindcss/postcss** | `4.1.x` | PostCSS integration | Official Next.js integration method for Tailwind v4+. Replaces old standalone PostCSS config. |
-| **tailwindcss-animate** | `1.0.x` | Animation utilities | Lightweight animation utilities for loading states, transitions. No component library needed. |
-| **clsx** | `2.1.x` | Conditional classnames | Standard for conditional Tailwind classes. Tiny (228 bytes). |
+The dashboard already ships:
 
-**NO Component Libraries** (per constraint)
-- ✅ Custom components built with Tailwind
-- ❌ No shadcn/ui, Radix UI, Headless UI, etc.
-- **Why:** Project explicitly requires custom components. Gives full control over design system.
+| Already Installed | Version | Purpose |
+|-------------------|---------|---------|
+| next | 16.1.6 | App Router framework |
+| @tanstack/react-query | 5.90.20 | Server state (useInfiniteQuery already in use) |
+| zod | 4.3.6 | Runtime validation (already at v4 — breaking from v3) |
+| @next/bundle-analyzer | 16.1.6 | Webpack bundle analysis (already wired in next.config) |
+| react-intersection-observer | 10.0.2 | Infinite scroll sentinel |
+| tailwindcss | 3.4.1 | Styling |
+| playwright | 1.58.2 | E2E tests |
+| sonner | 2.0.7 | Toast notifications |
+| lucide-react | 0.564.0 | Icons |
+| recharts | 3.7.0 | Charts |
 
-**Tailwind Setup:**
-```bash
-npm install tailwindcss @tailwindcss/postcss
-```
+**jose is NOT installed.** The project currently uses raw `atob()` to decode JWT payloads in proxy.ts and has no HMAC signing capability.
 
-```javascript
-// postcss.config.mjs
-export default {
-  plugins: {
-    "@tailwindcss/postcss": {},
-  },
-}
-```
+**eventsource-parser is NOT installed.** SSE uses native EventSource API.
 
-```css
-/* app/globals.css */
-@import "tailwindcss";
-```
-
-**Confidence:** HIGH (verified via official Tailwind + Next.js guide)
+The five v1.2 feature areas requiring new or changed stack decisions:
+1. CSRF HMAC alignment (backend Phase 37)
+2. Cursor pagination migration (backend Phase 39)
+3. SSR cookie forwarding / async APIs (QUAL-05/F-14)
+4. Rate limit + 503 resilience (already implemented in fetchWithRetry — verify 503 coverage)
+5. Bundle/performance optimization (cold starts, React Query cache tuning)
 
 ---
 
-## Real-Time Data (SSE)
+## Recommended Stack Additions
 
-**Approach:** Native Fetch API + ReadableStream
+### 1. CSRF HMAC Token Signing
 
-Next.js 16 App Router supports streaming via Route Handlers. No library needed for SSE.
+**Decision: Use native `crypto.subtle` (Web Crypto API) — no new library.**
+
+The existing double-submit CSRF uses `crypto.randomUUID()` generating an unkeyed random string compared cookie-to-header. Backend Phase 37 aligns to HMAC-signed tokens: the token encodes `timestamp.signature` where the signature is `HMAC-SHA256(secret, timestamp)`.
+
+`crypto.subtle` is available in Next.js 16 Edge Runtime (proxy.ts runs there) without any import. The pattern:
 
 ```typescript
-// app/api/guilds/[guildId]/status/route.ts
+// In proxy.ts — no new imports needed
+async function signCsrfToken(secret: string): Promise<string> {
+  const timestamp = Date.now().toString();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sig = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    new TextEncoder().encode(timestamp)
+  );
+  const sigHex = Array.from(new Uint8Array(sig))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  return `${timestamp}.${sigHex}`;
+}
+
+async function verifyCsrfToken(token: string, secret: string): Promise<boolean> {
+  const [timestamp, sig] = token.split('.');
+  if (!timestamp || !sig) return false;
+  // Replay protection: reject tokens older than 24h
+  if (Date.now() - Number(timestamp) > 86_400_000) return false;
+  const expected = await signCsrfToken(secret); // re-derive for comparison
+  // Use constant-time comparison via crypto.subtle.verify
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['verify']
+  );
+  return crypto.subtle.verify(
+    'HMAC',
+    key,
+    hexToUint8Array(sig),
+    new TextEncoder().encode(timestamp)
+  );
+}
+```
+
+**Why not `jose`:** jose v6 (current: 6.1.3) is a JWT library. CSRF HMAC signing does not need a JWT format. `crypto.subtle` is already in scope, zero bundle cost, and constant-time `verify()` is built in.
+
+**Why not `csrf-csrf` or similar packages:** These Express-oriented libraries do not work in Next.js Edge Runtime without shimming. The pattern is simple enough to implement inline with Web Crypto API.
+
+**Confidence:** HIGH — `crypto.subtle` availability in Next.js Edge Runtime confirmed via official Next.js Edge Runtime API reference and multiple production examples (Vercel Slack signature verification guide).
+
+---
+
+### 2. Cursor Pagination — useInfiniteQuery Migration
+
+**Decision: No new library. Migrate existing `useAccounts` and `usePosts` from `useQuery` (offset-based) to `useInfiniteQuery` with cursor.**
+
+React Query v5 `useInfiniteQuery` (already installed at 5.90.20) supports cursor pagination natively. The v5 API requires `initialPageParam` (required, replaces `getNextPageParam` default), and `getNextPageParam` returns the cursor from the last page.
+
+```typescript
+// Migration: use-tracking.ts — useAccounts with cursor
+export function useAccountsCursor(guildId: string, limit: number = 25) {
+  return useInfiniteQuery({
+    queryKey: ['guild', guildId, 'accounts', 'cursor', limit],
+    queryFn: async ({ pageParam }) => {
+      const params = new URLSearchParams({ limit: limit.toString() });
+      if (pageParam) params.set('cursor', pageParam as string);
+      const response = await fetchWithRetry(
+        `/api/guilds/${guildId}/accounts?${params}`
+      );
+      if (!response.ok) throw new Error('Failed to fetch accounts');
+      return response.json() as Promise<AccountsCursorResponse>;
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? null,
+    staleTime: 2 * 60 * 1000,
+    enabled: !!guildId,
+  });
+}
+```
+
+**Proxy route changes:** The `/api/guilds/[guildId]/accounts/route.ts` proxy must forward `?cursor=...` instead of `?page=...&limit=...` to the backend. No library change — just query parameter forwarding.
+
+**TypeScript type additions needed:**
+
+```typescript
+// types/tracking.ts — new cursor response shapes
+interface AccountsCursorResponse {
+  data: Account[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+interface PostsCursorResponse {
+  data: Post[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+```
+
+**Confidence:** HIGH — `useInfiniteQuery` v5 API verified via TanStack Query v5 official docs. `initialPageParam` is required in v5 (removed the v4 implicit default).
+
+---
+
+### 3. SSR Cookie Forwarding — Async `cookies()` / `headers()`
+
+**Decision: No new library. Update Server Components and Route Handlers to use the async `cookies()` / `headers()` pattern required by Next.js 16.**
+
+In Next.js 16, `cookies()` and `headers()` are async functions. Synchronous access throws at runtime. The existing `backendFetch.ts` and `api-client.ts` already forward cookies via explicit `Authorization` headers from the proxy layer, so most routes are unaffected.
+
+The SSR cookie forwarding pattern for Route Handlers that need to read auth tokens server-side:
+
+```typescript
+// Pattern for SSR-aware route handlers (Next.js 16)
+import { cookies, headers } from 'next/headers';
+
 export async function GET(request: Request) {
-  const encoder = new TextEncoder()
+  const cookieStore = await cookies();          // await required in Next.js 16
+  const authToken = cookieStore.get('auth_token')?.value;
+  const requestHeaders = await headers();       // await required in Next.js 16
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      // Forward SSE from backend API
-      const response = await fetch(`${API_URL}/guilds/${guildId}/status`, {
-        headers: { Authorization: `Bearer ${jwt}` }
-      })
-
-      const reader = response.body.getReader()
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        controller.enqueue(value)
-      }
-      controller.close()
-    }
-  })
-
-  return new Response(stream, {
+  // Forward to backend with auth
+  const response = await backendFetch(BACKEND_URL + '/endpoint', {
     headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    }
-  })
-}
-```
-
-**Client-side consumption:**
-```typescript
-// Use with React Query
-useQuery({
-  queryKey: ['guild-status', guildId],
-  queryFn: async () => {
-    const response = await fetch(`/api/guilds/${guildId}/status`)
-    const reader = response.body.getReader()
-    // ... parse SSE
-  },
-  refetchInterval: false, // SSE handles updates
-})
-```
-
-**Alternative:** Consider `eventsource-parser` if you need structured SSE parsing.
-
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| **eventsource-parser** | `2.0.x` | Parse SSE streams | Optional. Use if backend sends complex SSE with event types. Native parsing works for simple streams. |
-
-**Confidence:** MEDIUM (SSE with App Router is well-documented, but integration with React Query for SSE needs custom implementation)
-
----
-
-## API Client & Type Safety
-
-| Library | Version | Purpose | Rationale |
-|---------|---------|---------|-----------|
-| **zod** | `3.24.x` | Runtime validation | Validate API responses to catch drift between dashboard and API. Generate TypeScript types from schemas. |
-| **ky** | `1.7.x` | HTTP client | Modern fetch wrapper. Retry logic, timeout, hooks for auth injection. Better DX than raw fetch. Works in Edge Runtime. |
-
-**Why ky over axios:**
-- Smaller bundle (4kb vs 32kb)
-- Native fetch-based (works in Edge Runtime)
-- Better TypeScript support
-- Built-in retry and timeout
-
-**API Client Pattern:**
-```typescript
-// lib/api-client.ts
-import ky from 'ky'
-import { z } from 'zod'
-
-const client = ky.create({
-  prefixUrl: process.env.NEXT_PUBLIC_API_URL,
-  hooks: {
-    beforeRequest: [
-      async (request) => {
-        const token = await getAccessToken() // From cookie
-        request.headers.set('Authorization', `Bearer ${token}`)
-      }
-    ],
-    afterResponse: [
-      async (request, options, response) => {
-        if (response.status === 401) {
-          await refreshToken()
-          // Retry with new token
-        }
-      }
-    ]
-  }
-})
-
-// Type-safe API call
-const GuildSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  clientId: z.string(),
-})
-
-export async function getGuild(guildId: string) {
-  const data = await client.get(`guilds/${guildId}`).json()
-  return GuildSchema.parse(data) // Runtime + compile-time safety
-}
-```
-
-**Confidence:** HIGH
-
----
-
-## Form Handling
-
-**Approach:** Native React 19 Server Actions (no react-hook-form)
-
-Next.js 16 with React 19 has first-class Server Actions support. No client-side form library needed.
-
-```typescript
-// app/actions/update-settings.ts
-'use server'
-
-import { z } from 'zod'
-import { revalidatePath } from 'next/cache'
-
-const SettingsSchema = z.object({
-  alertChannel: z.string().regex(/^\d+$/),
-  timezone: z.string(),
-})
-
-export async function updateSettings(formData: FormData) {
-  const parsed = SettingsSchema.safeParse({
-    alertChannel: formData.get('alertChannel'),
-    timezone: formData.get('timezone'),
-  })
-
-  if (!parsed.success) {
-    return { errors: parsed.error.flatten().fieldErrors }
-  }
-
-  // Call API
-  await fetch(`${API_URL}/guilds/${guildId}/settings`, {
-    method: 'PUT',
-    body: JSON.stringify(parsed.data),
-  })
-
-  revalidatePath(`/guilds/${guildId}`)
-  return { success: true }
-}
-```
-
-**Why no react-hook-form:**
-- Server Actions handle validation + mutation natively
-- Zod provides schema validation
-- Less client-side JavaScript
-- Native progressive enhancement
-
-**Confidence:** HIGH (official Next.js pattern from docs)
-
----
-
-## Development Tools
-
-| Tool | Version | Purpose | Rationale |
-|------|---------|---------|-----------|
-| **ESLint** | `9.x` | Linting | Next.js includes eslint-config-next. Catches React/Next.js anti-patterns. |
-| **Prettier** | `3.4.x` | Code formatting | Standard formatter. Auto-format on save. |
-| **@tanstack/react-query-devtools** | `5.x` | Query debugging | Visualize cache state, refetch behavior per guild. |
-| **@vercel/analytics** | `1.x` | Web analytics | Vercel-native analytics. Privacy-friendly, no config needed. |
-
-**Confidence:** HIGH
-
----
-
-## Environment & Deployment
-
-| Technology | Version | Purpose | Rationale |
-|------------|---------|---------|-----------|
-| **Node.js** | `20.x LTS` | Runtime | Vercel default, Next.js 16 requires Node 18.18+. Use 20.x for stability. |
-| **pnpm** | `9.x` (optional) | Package manager | Faster than npm, strict dependency resolution. Optional - npm works fine. |
-| **Vercel** | N/A | Hosting platform | Per project requirement. Edge Runtime, zero-config Next.js deployment. |
-
-**Vercel Configuration:**
-```javascript
-// next.config.js
-module.exports = {
-  reactStrictMode: true,
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '2mb',
+      Authorization: `Bearer ${authToken}`,
+      Cookie: `auth_token=${authToken}`,
     },
-  },
-  // Vercel analytics
-  analytics: {
-    id: process.env.VERCEL_ANALYTICS_ID,
-  },
+  });
+  // ...
 }
 ```
 
-**Environment Variables (Dashboard):**
-```bash
-# .env.local
-NEXT_PUBLIC_API_URL=https://api.example.com
-NEXT_PUBLIC_DISCORD_CLIENT_ID=<separate-oauth-app-id>
-JWT_SECRET=<same-secret-as-api-for-verification>
+**Key constraint:** `cookies()` cannot be called in Server Components to SET cookies — only read. Setting cookies requires Route Handlers or Server Actions. This is already handled correctly in the existing architecture (proxy.ts sets cookies, route handlers only read them).
+
+**What specifically needs updating for QUAL-05/F-14:** The `backendFetch.ts` wrapper does not automatically forward the caller's auth cookie. For SSR route handlers that need to pass through the browser's session cookie to the backend (rather than relying on the Authorization header approach), a new `backendFetchWithCookies(request: Request)` helper that reads `await cookies()` and appends the session cookies is the right pattern.
+
+**Confidence:** HIGH — Next.js 16 async `cookies()` confirmed via official Next.js upgrade guide and Next.js 16 function reference docs.
+
+---
+
+### 4. Error Envelope Migration
+
+**Decision: No new library. Update `error-sanitizer.ts` to parse backend v2.6 `{ error: { code, message } }` envelope.**
+
+Backend Phase 35 changed the error response shape from `{ message, code }` to `{ error: { code, message } }`. The existing `sanitizeError()` function in `src/lib/server/error-sanitizer.ts` reads `parsed.message || parsed.error` — it currently treats `error` as a string, not an object.
+
+The update is purely to the parsing logic in the existing `BackendError` interface:
+
+```typescript
+// error-sanitizer.ts — updated BackendError interface
+interface BackendError {
+  message?: string;
+  code?: string;
+  stack?: string;
+  error?: string | { code?: string; message?: string }; // v2.6 shape
+  details?: unknown;
+  statusCode?: number;
+}
+
+// Updated extraction in sanitizeError():
+const errorObj = typeof parsed.error === 'object' ? parsed.error : null;
+const code = errorObj?.code ?? parsed.code;
+const backendMsg = errorObj?.message ?? parsed.message ??
+                   (typeof parsed.error === 'string' ? parsed.error : '');
 ```
 
-**Confidence:** HIGH
+**No library needed.** This is a TypeScript shape update to an existing utility.
+
+**Confidence:** HIGH — confirmed by codebase inspection of `error-sanitizer.ts` + project context describing backend Phase 35 `{ error: { code, message } }` envelope.
 
 ---
 
-## Testing Stack (Recommended for Phase 1+)
+### 5. Rate Limit + 503 Resilience
 
-| Library | Version | Purpose | When to Add |
-|---------|---------|---------|-------------|
-| **Vitest** | `2.x` | Unit testing | Phase 1. Faster than Jest, better ESM support. |
-| **@testing-library/react** | `16.x` | Component testing | Phase 1. Test user interactions. |
-| **Playwright** | `1.49.x` | E2E testing | Phase 2. Test full OAuth flow, multi-tenant isolation. |
+**Decision: No new library. Verify and extend existing `fetchWithRetry.ts`.**
 
-**Not included in MVP** but plan for Phase 1 expansion.
+The existing `fetchWithRetry.ts` already handles:
+- 429 with `Retry-After` header parsing (seconds and HTTP date formats)
+- Global cooldown via `globalRateLimitUntil`
+- Exponential backoff for 500, 502, 503, 504 via `RETRYABLE_SERVER_STATUSES`
+- CSRF retry on 403 `EBADCSRFTOKEN`
+- Auth refresh on 401
 
-**Confidence:** MEDIUM (not verified against current project needs)
+What v1.2 needs to verify/extend:
+- 503 is already in `RETRYABLE_SERVER_STATUSES` — confirm the backoff applies correctly
+- The `skipGlobalCooldown` option lets callers opt out — confirm mutation methods also benefit from 503 retry (currently only `RETRYABLE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])` retry on server errors)
+- Consider whether POST/PUT/DELETE should retry on 503 (depends on idempotency key — `backendFetch.ts` adds `Idempotency-Key` headers, so retrying mutations is safe)
+
+**Recommendation:** Extend `RETRYABLE_METHODS` guard to also allow retry of idempotent mutations (those with `Idempotency-Key` header) on 503, OR expose a `retryMutations` config flag.
+
+**Confidence:** HIGH — codebase inspection confirms existing coverage. The gap is mutation retry on 503.
 
 ---
 
-## Installation Guide
+### 6. SSE Lifecycle Hardening
 
-### Initial Setup
-```bash
-# Create Next.js project
-npx create-next-app@latest tracking-dashboard \
-  --typescript \
-  --eslint \
-  --app \
-  --tailwind \
-  --no-src-dir \
-  --import-alias "@/*"
+**Decision: No new library. Extend existing `use-sse.ts`.**
 
-cd tracking-dashboard
+The existing `useSSE` hook already handles:
+- Exponential backoff reconnection (2s, 4s, 8s... up to 60s)
+- Visibility change detection (close on hidden, reconnect on visible)
+- 50% jitter
+- Reconnect cooldown (5s default)
+- Cleanup on unmount
+
+Known gaps for v1.2 hardening:
+1. **Heartbeat timeout detection:** If the backend sends no message for N seconds, the connection may be silently stalled (TCP keepalive is not enough for SSE through proxies). Solution: add a heartbeat timer that triggers reconnect if no message received within `heartbeatTimeout` ms.
+2. **Duplicate EventSource instances:** The `connect()` function can be called before the previous EventSource is closed. Add a guard to close before creating new instance.
+3. **AbortController integration:** Next.js route handlers can use `request.signal` for abort, but the client-side EventSource does not support AbortController natively. The correct client pattern is `EventSource.close()` already in use.
+
+```typescript
+// use-sse.ts addition: heartbeat timeout
+const heartbeatTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+function resetHeartbeat() {
+  if (heartbeatTimerRef.current) clearTimeout(heartbeatTimerRef.current);
+  heartbeatTimerRef.current = setTimeout(() => {
+    // No message received within timeout — force reconnect
+    eventSourceRef.current?.close();
+    connect();
+  }, heartbeatTimeout); // configurable, default 45_000
+}
 ```
 
-### Core Dependencies
-```bash
-npm install \
-  @tanstack/react-query@^5.0.0 \
-  zod@^3.24.0 \
-  ky@^1.7.0 \
-  jose@^5.9.0 \
-  clsx@^2.1.0 \
-  tailwindcss-animate@^1.0.0
+**Confidence:** HIGH — confirmed via codebase inspection of `use-sse.ts` + known SSE stall patterns from Next.js GitHub issues.
+
+---
+
+### 7. Bundle + Performance Optimization
+
+**Decision: No new library. Configure `optimizePackageImports` in `next.config` and add `next experimental-analyze` for Turbopack-integrated analysis.**
+
+**A. `optimizePackageImports` config (highest impact)**
+
+`lucide-react` and `recharts` are both heavy barrel exports. Next.js 16 `optimizePackageImports` reduces cold starts by only loading actually-used modules.
+
+```typescript
+// next.config.ts — add to existing config
+const nextConfig = {
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'recharts', 'date-fns'],
+  },
+  // ... existing config
+};
 ```
 
-### Dev Dependencies
+Measured improvement from Next.js/Vercel benchmarks: `lucide-react` drops from 1583 modules to 333 (2.8s build savings). On Vercel serverless, this translates to cold start reduction.
+
+**B. `next experimental-analyze` (Next.js 16.1 built-in)**
+
+Next.js 16.1 ships an integrated Turbopack-aware bundle analyzer that shows import chains and why modules are included. Use this instead of running `ANALYZE=true next build` for server bundle inspection.
+
 ```bash
-npm install -D \
-  @tanstack/react-query-devtools@^5.0.0 \
-  @types/node@^20.0.0 \
-  prettier@^3.4.0
+npx next experimental-analyze
 ```
 
-### Optional (SSE parsing)
+`@next/bundle-analyzer` remains useful for client-side webpack treemap visualization (already configured in `next.config`).
+
+**C. React Query cache tuning**
+
+The current QueryClient uses default `staleTime: 60_000` globally. For v1.2, apply per-query tuning:
+
+| Query | Recommended staleTime | Rationale |
+|-------|----------------------|-----------|
+| SSE-backed guild status | `Infinity` | SSE handles updates; never auto-refetch |
+| Guild list | `5 * 60_000` | Changes rarely |
+| Accounts/Posts (cursor) | `2 * 60_000` | Already set correctly |
+| Analytics | `10 * 60_000` | Expensive query, slow-changing |
+| Audit log | `30_000` | Changes frequently |
+
+The key pattern for SSE-backed queries:
+```typescript
+// Prevent React Query from background-refetching data managed by SSE
+useQuery({
+  queryKey: ['guild', guildId, 'status'],
+  queryFn: () => fetchCurrentStatus(guildId),
+  staleTime: Infinity,          // SSE invalidates manually
+  refetchOnWindowFocus: false,  // SSE handles real-time
+  refetchInterval: false,
+})
+```
+
+**D. Dynamic imports for heavy page components**
+
+```typescript
+// Lazy-load Recharts components — they are only needed on analytics page
+import dynamic from 'next/dynamic';
+const AnalyticsChart = dynamic(() => import('@/components/analytics/chart'), {
+  ssr: false,  // Charts are client-only
+  loading: () => <ChartSkeleton />,
+});
+```
+
+**Confidence:** HIGH — `optimizePackageImports` and benchmarks confirmed via Vercel official blog and Next.js docs. `next experimental-analyze` confirmed via Next.js 16.1 release notes.
+
+---
+
+## Zod v4 Compatibility Note
+
+The project already runs `zod@4.3.6`. The existing code was written for v3 API. Key v4 changes that affect this codebase:
+
+| v3 Pattern | v4 Equivalent | Status |
+|-----------|--------------|--------|
+| `z.string().email()` | `z.email()` | May need audit |
+| `z.string().uuid()` | `z.uuid()` (RFC-strict) or `z.guid()` (v3-compat) | May need audit |
+| `error.errors` | `error.issues` | May need audit |
+| `invalid_type_error` param | use `error` param | May need audit |
+
+**Action:** Run a codebase audit for Zod v3 patterns that silently broke on v4. The `zod-v3-to-v4` codemod can assist.
+
+**Confidence:** HIGH — Zod v4 breaking changes confirmed via official Zod migration guide and changelog.
+
+---
+
+## What NOT to Add
+
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| `jose` for CSRF | CSRF does not need JWT format. Adds 40kb+ to Edge bundle. | `crypto.subtle` (built-in, zero bundle cost) |
+| `csrf-csrf` / `csrf-crypto` | Express-oriented, not Edge Runtime compatible without shimming. | `crypto.subtle` inline implementation |
+| `eventsource-parser` | Native EventSource handles JSON messages already. Only needed if backend sends named SSE event types that require parsing non-default events. | Native `EventSource.onmessage` — already in `use-sse.ts` |
+| `socket.io` or WebSocket library | SSE already in production; no bidirectional need. | Existing EventSource + `use-sse.ts` |
+| `axios` | Not Edge Runtime compatible; larger bundle than fetch. | Existing `fetchWithRetry` + `backendFetch` |
+| `swr` | React Query already in use; two caching layers conflict. | `@tanstack/react-query@5.90.20` (existing) |
+| `next-auth` / `auth.js` | API owns auth. Dashboard is a proxy consumer. | Existing custom JWT pattern |
+| `react-hook-form` | Forms are simple; Server Actions + Zod already used. | Existing pattern |
+
+---
+
+## Installation
+
+No new `npm install` required for the core v1.2 features. All changes are:
+- Code changes to existing files (`proxy.ts`, `error-sanitizer.ts`, `use-sse.ts`, `use-tracking.ts`)
+- Configuration changes to `next.config.ts` (optimizePackageImports)
+- New helper functions using built-in Web Crypto API
+
+If the team decides `jose` is needed for JWT verification in middleware (not currently used — proxy.ts uses `atob()` for expiry check only), it is the correct choice:
+
 ```bash
-npm install eventsource-parser@^2.0.0
+# Only add if middleware needs full JWT verification (not just expiry peek)
+npm install jose@^6.1.3
 ```
 
 ---
 
-## Alternatives Considered
+## Version Compatibility
 
-| Category | Recommended | Alternative | Why Not Alternative |
-|----------|-------------|-------------|---------------------|
-| **Auth** | Custom JWT | NextAuth.js | API owns auth. NextAuth adds complexity for client-only dashboard. |
-| **HTTP Client** | ky | axios | Smaller bundle, Edge-compatible, native fetch wrapper. |
-| **Styling** | Tailwind CSS | CSS Modules | Per project constraint. Tailwind required. |
-| **State Management** | React Query | Redux/Zustand | React Query specializes in server state. No global client state needed. |
-| **Forms** | Server Actions + Zod | react-hook-form | Server Actions are native in React 19. Less client JS. |
-| **Validation** | Zod | Yup/Joi | Better TypeScript inference. Standard in Next.js ecosystem. |
-| **Real-time** | Native SSE | Socket.io | SSE is simpler for server→client updates. No bidirectional needed. |
-| **Runtime** | Node.js 20 | Bun | Vercel uses Node. Bun not production-ready on Vercel yet. |
-
----
-
-## Anti-Patterns to Avoid
-
-### ❌ Don't: Use NextAuth.js for API-owned auth
-**Why:** Creates dual auth systems. Your API already issues JWTs. Dashboard should consume them, not re-implement auth.
-
-**Instead:** Thin auth client that calls API endpoints, stores tokens, validates with `jose`.
-
-### ❌ Don't: Fetch in Server Components without caching strategy
-**Why:** React Query can't cache Server Component fetches. Each navigation refetches.
-
-**Instead:** Use React Query in Client Components or implement server-side caching with `unstable_cache`.
-
-### ❌ Don't: Store JWTs in localStorage
-**Why:** XSS vulnerability. JWTs should be in httpOnly cookies.
-
-**Instead:** API sets httpOnly cookies via Set-Cookie headers. Dashboard reads via server-side cookies() helper.
-
-### ❌ Don't: Use component libraries (per constraint)
-**Why:** Project requires custom components for design control.
-
-**Instead:** Build primitives with Tailwind. Use headless patterns (disclosure, dialog) with custom styling.
-
-### ❌ Don't: Mix Route Handlers and Server Actions for mutations
-**Why:** Inconsistent patterns confuse caching.
-
-**Instead:** Use Server Actions for mutations (revalidatePath built-in), Route Handlers for reads/SSE.
+| Package | Current | Compatible | Notes |
+|---------|---------|-----------|-------|
+| next | 16.1.6 | crypto.subtle (built-in) | Available in Edge Runtime since Next.js 12+ |
+| next | 16.1.6 | `experimental-analyze` | Available since Next.js 16.1 |
+| next | 16.1.6 | `await cookies()` / `await headers()` | Required in v16; sync throws |
+| @tanstack/react-query | 5.90.20 | `initialPageParam` (required) | v5 removed default; must be explicit |
+| zod | 4.3.6 | Breaking from v3 | `z.string().email()` → `z.email()`, `error.errors` → `error.issues` |
+| lucide-react | 0.564.0 | `optimizePackageImports` | Drops from 1583 to 333 modules in Next.js 16 |
+| recharts | 3.7.0 | `optimizePackageImports` | Drops from 1485 to 1317 modules |
 
 ---
 
-## Migration Path (Future)
+## Sources
 
-If requirements change:
-
-| If... | Then Consider... | Migration Complexity |
-|-------|------------------|---------------------|
-| API becomes unreliable | Move auth to NextAuth.js with database sessions | HIGH (2-3 days) |
-| Need component library | Add shadcn/ui components selectively | LOW (1 day) |
-| SSE too complex | Migrate to WebSockets with Socket.io | MEDIUM (2 days) |
-| Vercel limits hit | Migrate to self-hosted with Docker | HIGH (1 week) |
-| Multi-region needed | Add Cloudflare Workers as edge proxy | MEDIUM (3 days) |
-
----
-
-## Open Questions (For Validation)
-
-1. **SSE Implementation:** Does the existing API's SSE endpoint send standard EventSource format, or custom streaming? (Affects parser choice)
-2. **Token Storage:** Will API set httpOnly cookies, or return tokens in response body? (Affects client-side storage strategy)
-3. **CORS:** Is the API configured for dashboard origin? (Required for cookie-based auth)
-4. **Refresh Flow:** Does API support refresh token rotation, or fixed refresh tokens? (Affects security model)
-
-**Recommendation:** Verify these with API implementation before Phase 1.
+- [Next.js 16 `cookies()` / `headers()` function reference](https://nextjs.org/docs/app/api-reference/functions/cookies) — async pattern confirmed
+- [Next.js `optimizePackageImports` docs](https://nextjs.org/docs/app/api-reference/config/next-config-js/optimizePackageImports) — config and default packages
+- [Vercel: How we optimized package imports](https://vercel.com/blog/how-we-optimized-package-imports-in-next-js) — cold start benchmark numbers
+- [Next.js 16.1 release notes](https://nextjs.org/blog/next-16-1) — `next experimental-analyze` confirmed
+- [TanStack Query v5 useInfiniteQuery docs](https://tanstack.com/query/v5/docs/framework/react/reference/useInfiniteQuery) — `initialPageParam` requirement
+- [TanStack Query v5 infinite queries guide](https://tanstack.com/query/v5/docs/react/guides/infinite-queries) — cursor pagination pattern
+- [Web Crypto API SubtleCrypto sign() — MDN](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/sign) — HMAC implementation
+- [Verifying Slack signatures with SubtleCrypto in Vercel Edge Runtime](https://medium.com/@jackoddy/verifying-slack-signatures-using-web-crypto-subtlecrypto-in-vercels-edge-runtime-45c1a1d2b33b) — Edge Runtime HMAC pattern
+- [Next.js Edge Runtime API reference](https://nextjs.org/docs/app/api-reference/edge) — available APIs
+- [Zod v4 migration guide](https://zod.dev/v4/changelog) — breaking changes from v3
+- [OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html) — signed double-submit cookie pattern
+- [jose v6 npm](https://www.npmjs.com/package/jose) — v6.1.3 current; edge-compatible JWT/HMAC
 
 ---
 
-## Confidence Assessment
-
-| Area | Confidence | Source | Notes |
-|------|-----------|--------|-------|
-| Next.js version | HIGH | Official docs (nextjs.org) | Verified 16.1.4 stable via docs fetch |
-| Tailwind v4 | HIGH | Official docs (tailwindcss.com) | Verified 4.1 + Next.js integration guide |
-| Auth pattern | HIGH | Next.js auth guide | Custom JWT pattern documented for API-owned auth |
-| React Query | MEDIUM | Training data + npm ecosystem | v5 is current (Jan 2025), but version not officially verified |
-| SSE + React Query | MEDIUM | Community patterns | No official Next.js + RQ + SSE guide found |
-| TypeScript version | MEDIUM | Training data | 5.7.x is current stable (as of Jan 2025) |
-
-**Overall Confidence:** HIGH for core stack, MEDIUM for SSE integration details.
-
----
-
-## Next Steps
-
-1. **Validate open questions** with existing API codebase
-2. **Initialize Next.js project** with recommended stack
-3. **Set up Vercel project** and environment variables
-4. **Implement auth flow** (Phase 0 prerequisite)
-5. **Build first protected route** to validate JWT flow
-
-**Ready for:** Roadmap creation (Phase 0-3 structure)
+*Stack research for: v1.2 Security Audit & Optimization — Next.js 16 dashboard additions*
+*Researched: 2026-02-22*

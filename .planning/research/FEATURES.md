@@ -1,684 +1,325 @@
-# Feature Landscape: Discord Bot Management Dashboard
+# Feature Research
 
-**Domain:** Discord Bot SaaS Dashboard (Social Media Tracking Bot)
-**Researched:** 2026-01-24
-**Confidence:** MEDIUM (based on training data about MEE6, Dyno, Carl-bot; no current verification available)
-
-**Note:** This research is based on Claude's training data about Discord bot management dashboards. External research tools were unavailable, so findings reflect patterns from major Discord bot SaaS products (MEE6, Dyno, Carl-bot, etc.) as of training cutoff. Should be validated against current dashboard implementations.
+**Domain:** Next.js 14 Dashboard — Security Audit, Backend Alignment & Performance (v1.2 milestone)
+**Researched:** 2026-02-22
+**Confidence:** HIGH (researched against live backend code, official docs, verified patterns)
 
 ---
 
-## Table Stakes
+## Context: What Is Already Built
 
-Features users expect. Missing = product feels incomplete or broken.
+v1.0 and v1.1 shipped full product. v1.2 is a hardening and alignment milestone — not a feature addition milestone. Every item in this file is an infrastructure or protocol change to an existing working system.
 
-### Authentication & Server Selection
+**Already shipped (do not duplicate effort):**
+- CSRF double-submit cookie middleware with `EBADCSRFTOKEN` retry in `fetchWithRetry`
+- SSE connection lifecycle with visibility-based close/reconnect in `useSSE`
+- Error sanitization with `sanitizeError` and `internalError` helpers across 36+ proxy routes
+- Rate limit handling (429 + Retry-After + exponential backoff) in `fetchWithRetry`
+- Offset-based pagination with `useInfiniteQuery` for accounts and posts
+- Cursor pagination already live on bonus rounds endpoint (`next_cursor`, `has_more`)
+- CSP headers, HSTS, X-Request-ID on all routes
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Discord OAuth login | Industry standard, users expect seamless Discord integration | Low | Uses Discord's OAuth2 flow |
-| Server/guild list view | Users need to select which server to manage | Low | Fetched from Discord API |
-| Server switcher UI | Manages multiple servers, needs quick switching | Low | Dropdown or sidebar navigation |
-| Permission verification | Only show servers where user has admin/manage server permissions | Medium | Requires Discord permission checking |
-| Auto-refresh on invite | When bot is invited to new server, dashboard updates without manual refresh | Medium | Webhook or polling mechanism |
-
-**Rationale:** Discord users are accustomed to OAuth flows from every bot dashboard. Not having this feels broken or insecure.
-
-### Bot Status & Health
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Online/offline indicator | Users need immediate visibility into bot availability | Low | Simple status check |
-| Last seen timestamp | When bot went offline, users want to know when it was last active | Low | Timestamp from heartbeat |
-| Uptime percentage | Users want reliability metrics (especially for paid services) | Low | Calculate from uptime logs |
-| Service status page | When bot is down, users check dashboard first | Medium | Independent status endpoint |
-| Latency/ping display | Users want to know if bot is responsive | Low | WebSocket ping or API response time |
-
-**Rationale:** Your project context explicitly states "independent of bot uptime" - users WILL check dashboard when bot is down. This is table stakes for trust.
-
-### Core Data Display
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| List of tracked items | Users need to see what the bot is tracking for their server | Low | Read from database |
-| Active/inactive status per item | Users want to know what's currently being monitored | Low | Boolean flag with visual indicator |
-| Recent activity log | Users want to see what the bot has done recently (posts detected, notifications sent) | Medium | Event log with pagination |
-| Search/filter tracked items | With many tracked accounts, users need to find specific ones | Medium | Client-side or server-side filtering |
-| Item count/limits display | Show how many items are tracked vs plan limits | Low | Counter with progress bar |
-
-**Rationale:** Without seeing their data, dashboard has no purpose. This is the core value proposition.
-
-### Configuration Management
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Add new tracked item | Primary action - users need to add social media accounts to track | Medium | Form with validation |
-| Remove/delete tracked item | Users need to stop tracking accounts | Low | Delete with confirmation |
-| Edit tracked item settings | Change notification channel, filters, etc. | Medium | Edit modal/page |
-| Channel selector | Discord channel picker for where notifications go | Medium | Requires Discord channel API fetch |
-| Save/cancel affordances | Clear feedback when changes are saved or discarded | Low | UI state management |
-| Validation feedback | Immediate feedback if configuration is invalid (e.g., bot lacks channel permissions) | Medium | Permission checking + error display |
-
-**Rationale:** Configuration is the primary user action. Clunky UX here = users abandon product.
-
-### Guild/Server Settings
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Notification preferences | Global settings for server (e.g., enable/disable all notifications) | Low | Server-level config |
-| Timezone setting | Timestamps should show in user's/server's timezone | Low | Timezone selector |
-| Command prefix customization | If bot has commands, users want custom prefixes | Low | Text input with validation |
-| Language/locale setting | Multi-language support expected in SaaS products | Medium | If internationalization is planned |
-
-**Rationale:** Discord servers are diverse. Default settings don't fit all use cases.
-
-### Basic Analytics
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Total posts tracked count | Users want to see bot is working | Low | Counter from database |
-| Posts per day/week graph | Basic activity visualization | Medium | Time-series chart |
-| Most active tracked accounts | Show which accounts post most frequently | Low | Aggregate query with sorting |
-| Activity timeline | When posts were detected over time | Medium | Timeline component |
-
-**Rationale:** Users want proof of value. "What has this bot done for me?" answered with numbers.
+**What is changing in v1.2:**
+- Backend Phase 37: CSRF moved from simple double-submit to HMAC-signed requests for SSR proxy calls (server-to-server). Dashboard proxy layer must produce correctly signed headers.
+- Backend Phase 39: Accounts and posts endpoints migrated to cursor pagination. Dashboard must switch `pageParam` from `page: number` to `cursor: string | null`.
+- Backend Phase 35: Error responses changed from `{ error: string, message: string }` to `{ error: { code: string, message: string } }`. Dashboard proxy and hooks must parse new shape.
+- QUAL-05/F-14: SSR page routes must forward the `auth_token` cookie as `Authorization: Bearer` when calling backend, rather than passing cookies raw. This closes an authentication gap on server-rendered pages.
+- Rate limit resilience: 503 responses from backend are not consistently retried; need uniform treatment matching 502/504.
+- SSE: Missing heartbeat detection — connection can silently stall without `onerror` firing.
+- React Query: `staleTime` inconsistencies; some queries have `staleTime: 0` which causes waterfall refetches on navigation.
+- Security audit report: No structured audit output exists yet.
 
 ---
 
-## Differentiators
+## Feature Landscape
 
-Features that set product apart. Not expected, but highly valued.
+### Table Stakes (Users Expect These)
 
-### Advanced Dashboard Features
+Features that must work correctly after v1.2. Missing or broken = milestone incomplete.
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Real-time updates (WebSocket) | Dashboard updates live without refresh when new posts detected | High | Requires WebSocket infrastructure |
-| Multi-server dashboard view | Power users manage multiple servers, want aggregate view | Medium | Cross-server data aggregation |
-| Bulk operations | Add/remove/edit multiple tracked items at once | Medium | Bulk edit UI + API |
-| Import/export config | Users can backup/restore or share configurations | Low | JSON export/import |
-| Templates/presets | Pre-configured tracking setups (e.g., "Track gaming YouTubers") | Medium | Template system + UI |
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Cursor pagination on accounts + posts | Backend no longer accepts `page=N`; offset queries will 400 | MEDIUM | Change `initialPageParam: 1` to `initialPageParam: null`, update `getNextPageParam` to read `next_cursor` not `total_pages`. Must preserve URL state if any. |
+| Error envelope migration in all proxy routes | Backend now returns `{ error: { code, message } }` not `{ error: string, message: string }` | MEDIUM | 36+ proxy routes call `sanitizeError()`. Update parser to handle new shape. Also update client-side hooks that read `error.message` directly. |
+| SSR cookie forwarding on page routes | Server Components calling backend APIs fail auth when `auth_token` not forwarded as Bearer | MEDIUM | `backendFetch` already has header injection; need to read `auth_token` cookie in route handlers using `cookies()` from `next/headers` and attach as `Authorization: Bearer`. |
+| CSRF HMAC alignment (SSR proxy path) | Backend Phase 37 validates HMAC signature for server-to-server requests; unauthenticated mutations from SSR will be rejected | HIGH | SSR proxy must sign requests with `HMAC-SHA256(${timestamp}:${nonce}:${guildId}:${body})` using shared `API_SECRET`. Browser path (client JS) continues to use double-submit cookie. |
+| 503 resilience parity with 502/504 | `fetchWithRetry` retries 502, 503, 504 but only on `GET/HEAD/OPTIONS`. `RETRYABLE_SERVER_STATUSES` already includes 503 — verify coverage is complete and that proxy routes don't swallow 503 before client sees it | LOW | Check that proxy routes propagate 503 status rather than converting to 500. |
+| Security audit report | Stakeholders and operators need evidence of security posture | MEDIUM | Structured markdown report covering: CSP, CSRF, auth, SQL injection, error leakage, rate limits, SSE, session management |
 
-**Value:** These are power-user features that create stickiness and differentiate from basic dashboards.
+### Differentiators (Competitive Advantage)
 
-### Enhanced Analytics & Insights
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Post content preview | See actual post content in dashboard, not just "post detected" | Medium | Embed or display cached content |
-| Engagement metrics | Show likes/retweets/views from social platforms | High | Requires social platform API access |
-| Trending detection | Highlight when tracked account has unusual activity spike | High | Statistical anomaly detection |
-| Custom reporting | Generate reports for specific date ranges/accounts | Medium | Report builder UI |
-| Export to CSV/PDF | Download analytics data | Low | Export functionality |
-| Comparison views | Compare activity across multiple tracked accounts | Medium | Multi-series charts |
-
-**Value:** Transforms dashboard from "control panel" to "insights platform." Justifies premium pricing.
-
-### Collaboration Features
+Features that improve reliability and developer confidence beyond the baseline.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Team roles/permissions | Multiple admins with different access levels | High | Role-based access control (RBAC) |
-| Audit log (who changed what) | Track configuration changes for accountability | Medium | Event logging with user attribution |
-| Notes/annotations on tracked items | Team can leave context about why they're tracking something | Medium | Note storage + UI |
-| @mentions in dashboard | Notify specific team members about items | Medium | Internal notification system |
-| Shared alerts | Multiple users get notified about configuration issues | Medium | Multi-user notification routing |
+| SSE heartbeat timeout detection | Silent SSE stalls (no `onerror`, no data) leak connections; detection closes and reconnects proactively | MEDIUM | Backend must send `event: heartbeat\ndata: ping\n\n` every 30s. Client tracks `lastHeartbeatAt`; if >45s without heartbeat, close and reconnect. |
+| React Query `staleTime` normalization | Prevents waterfall refetches when switching guilds; reduces redundant backend requests | LOW | Audit all `useQuery` calls. Set: static lists (brands, channels) to 5min; analytics to 2min; real-time data to 0. Consolidate query key factories. |
+| Rate limit UI feedback (global cooldown) | When `globalRateLimitUntil` is set, subsequent requests throw `RateLimitError` before even hitting the network — user sees no feedback | LOW | Show a dismissible banner with countdown when global cooldown is active. Already have `RateLimitError.retryAfterMs`. |
+| Bundle size analysis and dynamic imports | Cold starts on Vercel scale with bundle size; heavy chart libraries (Recharts) loaded on every route | MEDIUM | Run `@next/bundle-analyzer`; dynamically import Recharts components and heavy modals using `next/dynamic`. Target: reduce main chunk by 30%. |
+| Query key factory consolidation | Scattered string literals for query keys cause cache misses after mutations; invalidation is brittle | LOW | Extract query key factories into a single `queryKeys.ts` file. Already using `['guild', guildId, 'accounts']` pattern — formalize it. |
+| Proxy route timeout propagation | When backend takes >10s, Vercel function may timeout and return 504 but proxy returns 500 | LOW | Add `AbortSignal.timeout(9000)` to `backendFetch` calls in all proxy routes. Return 504 with correct error message. |
 
-**Value:** Discord servers are team efforts. Multi-user management is a competitive advantage.
+### Anti-Features (Commonly Requested, Often Problematic)
 
-### User Experience Excellence
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Keyboard shortcuts | Power users love efficiency (e.g., "A" to add item, "/" to search) | Low | Hotkey library |
-| Dark mode | Discord users expect dark mode everywhere | Low | CSS theme switching |
-| Mobile-responsive design | Manage bot from phone | Medium | Responsive CSS framework |
-| Undo/redo actions | Safety net for accidental deletions | Medium | State history management |
-| Drag-and-drop reordering | Organize tracked items visually | Medium | Drag-and-drop library |
-| Saved filters/views | Create custom views (e.g., "Active Twitter accounts") | Medium | View persistence |
-
-**Value:** Delightful UX creates word-of-mouth. Users recommend products that feel good to use.
-
-### Reliability & Trust Features
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Detailed error messages | When tracking fails, explain WHY (rate limit, account deleted, etc.) | Medium | Error classification + messaging |
-| Retry status | Show failed items and retry attempts | Medium | Retry queue visibility |
-| Health check history | Show uptime over time (last 30/90 days) | Low | Historical status data |
-| Incident timeline | When outages happen, show what happened and resolution | Medium | Incident log + postmortem display |
-| API status indicators | If social platform APIs are down, show that (not bot's fault) | Medium | External dependency monitoring |
-
-**Value:** Your project context says "independent of bot uptime" - these features build trust that issues are transparent.
-
-### Integration & Automation
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Webhook notifications | Send tracking events to external services (Slack, email) | Medium | Webhook delivery system |
-| RSS feed of tracked posts | Alternative notification method | Low | RSS generation |
-| API access | Power users can script their own integrations | High | Public API + documentation |
-| Zapier/IFTTT integration | No-code automation for non-technical users | Medium | OAuth app for integration platforms |
-
-**Value:** Extends bot utility beyond Discord. Broader use cases = higher retention.
-
----
-
-## Anti-Features
-
-Features to explicitly NOT build. Common mistakes in this domain.
-
-### Anti-Feature 1: In-Dashboard Post Management
-
-**What:** Allowing users to edit, delete, or moderate social media posts from the dashboard
-**Why Avoid:**
-- Scope creep into social media management tool (not a tracking bot)
-- Requires complex OAuth for each social platform
-- Liability and moderation concerns
-- Distracts from core value proposition
-
-**What to Do Instead:** Display post content read-only. Link to original post on platform.
-
-### Anti-Feature 2: Built-in Communication/Chat
-
-**What:** Adding chat or messaging between dashboard users
-**Why Avoid:**
-- Discord already handles communication perfectly
-- Duplicates Discord's core functionality
-- Users won't use it (they're in Discord already)
-- Adds complexity with minimal value
-
-**What to Do Instead:** Keep communication in Discord. Dashboard shows data and controls only.
-
-### Anti-Feature 3: Bot Hosting Management
-
-**What:** Dashboard to start/stop/restart bot, view bot logs, manage bot infrastructure
-**Why Avoid:**
-- Not a DevOps tool
-- Security risk (exposing infrastructure controls)
-- Users don't need this (bot should "just work")
-- Creates support burden
-
-**What to Do Instead:** Bot infrastructure is managed separately. Dashboard shows status, not controls.
-
-### Anti-Feature 4: User-Uploaded Custom Themes
-
-**What:** Letting users upload custom CSS or create elaborate dashboard themes
-**Why Avoid:**
-- XSS vulnerability risk
-- Support nightmare (can't debug user-broken themes)
-- Most users won't use it
-- Light/dark mode is sufficient
-
-**What to Do Instead:** Provide 2-3 built-in themes (light/dark/high-contrast). No customization.
-
-### Anti-Feature 5: Social Features (Profiles, Following, Discovery)
-
-**What:** User profiles, following other users, discovering popular tracked accounts
-**Why Avoid:**
-- Not a social network
-- Privacy concerns (server data should be private)
-- Massive scope increase
-- Discord servers are private communities
-
-**What to Do Instead:** Each server's data is isolated. No cross-server sharing or discovery.
-
-### Anti-Feature 6: AI-Powered Content Summarization
-
-**What:** Using AI to summarize tracked posts or generate insights
-**Why Avoid:**
-- Expensive (API costs scale with usage)
-- Unreliable (hallucinations, accuracy issues)
-- Not core value (users want tracking, not AI summaries)
-- Trendy but not validated need
-
-**What to Do Instead:** Show raw post data. Users can read original content.
-
-### Anti-Feature 7: Complex Permission Systems
-
-**What:** Granular permissions (per-item, per-channel, per-user access control)
-**Why Avoid:**
-- UI complexity explodes
-- Most servers don't need this (Discord permissions are sufficient)
-- Hard to debug permission issues
-- Premature optimization
-
-**What to Do Instead:** Use Discord's native permission system. If user can manage server in Discord, they can manage dashboard.
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|-----------------|-------------|
+| Rotate CSRF secret per request on client | "More secure" — every request has a unique token | Double-submit cookie already prevents CSRF. Per-request rotation would require server round-trip before every mutation, increasing latency 200-400ms. Existing `fetchWithRetry` CSRF retry already handles stale tokens. | Keep single-token cookie with silent refresh on `EBADCSRFTOKEN`. Already implemented. |
+| WebSocket upgrade for SSE | "WebSocket is bidirectional and more modern" | SSE is unidirectional from server — exactly what bot status and export progress need. WebSocket adds handshake complexity, requires sticky sessions on load balancer, breaks on Vercel Edge without additional infrastructure. | Keep native `EventSource`. Harden with heartbeat detection instead. |
+| Full error response passthrough from backend | "Show users the exact backend error" | Backend errors contain stack traces, Prisma details, and internal table names. `sanitizeError` was built specifically to prevent this. Passthrough would undo v1.1 security hardening. | Update `sanitizeError` to handle new `{ error: { code, message } }` envelope shape. |
+| Client-side HMAC signing of mutations | "Align with backend Phase 37 HMAC pattern everywhere" | Phase 37 HMAC is for server-to-server (SSR proxy → backend) where no user session cookie exists. Browser mutations already have double-submit cookie CSRF which is appropriate for cookie-authenticated requests. HMAC in browser JS would expose `API_SECRET` in client bundle. | HMAC only in SSR proxy layer (`backendFetch`). Browser path stays on double-submit cookie. |
+| Aggressive staleTime: 0 on all queries | "Always show fresh data" | Causes full refetch waterfall on every guild navigation. React Query's stale-while-revalidate exists for this reason — show cached data instantly, refetch in background. Already causes N background requests per guild switch. | Per-domain staleTime policy (see Differentiators row above). |
+| Custom audit log UI in dashboard | "Users should see their own security audit trail" | `DashboardAuditLog` is already surfaced via the audit log tab. A security audit *report* is a generated document for operators, not real-time user UI. | Generate markdown/PDF report during audit phase, store in `.planning/research/`. |
 
 ---
 
 ## Feature Dependencies
 
-Dependencies and recommended implementation order.
-
 ```
-PHASE 1: Foundation
-├── Discord OAuth login
-├── Server selection & switcher
-└── Permission verification
-    │
-    ├── PHASE 2: Core Data
-    │   ├── List tracked items
-    │   ├── Add/remove tracked items
-    │   ├── Bot status indicator
-    │   └── Recent activity log
-    │       │
-    │       ├── PHASE 3: Configuration
-    │       │   ├── Edit tracked item settings
-    │       │   ├── Channel selector
-    │       │   ├── Guild settings
-    │       │   └── Validation feedback
-    │       │       │
-    │       │       ├── PHASE 4: Analytics
-    │       │       │   ├── Basic counters (total posts)
-    │       │       │   ├── Time-series graphs
-    │       │       │   └── Activity timeline
-    │       │       │
-    │       │       └── PHASE 5: Polish & Differentiators
-    │       │           ├── Real-time updates (WebSocket)
-    │       │           ├── Post content preview
-    │       │           ├── Dark mode
-    │       │           ├── Audit log
-    │       │           ├── Search/filter
-    │       │           └── Bulk operations
-    │       │
-    │       └── PHASE 6: Advanced (Post-MVP)
-    │           ├── Multi-server view
-    │           ├── Advanced analytics
-    │           ├── Team roles/permissions
-    │           ├── Webhooks
-    │           └── API access
+CSRF HMAC alignment (SSR proxy)
+    └──requires──> shared API_SECRET env var in dashboard
+    └──requires──> understanding of backend Phase 37 HMAC payload format
+                       └──blocks──> SSR mutations that bypass cookie auth
+
+Cursor pagination migration
+    └──requires──> backend Phase 39 deployed (next_cursor field present in responses)
+    └──requires──> update to useInfiniteQuery initialPageParam + getNextPageParam
+    └──requires──> update proxy routes to pass cursor param not page param
+                       └──enables──> stable infinite scroll without page drift
+
+Error envelope migration
+    └──requires──> backend Phase 35 deployed ({ error: { code, message } } shape)
+    └──requires──> update sanitizeError() parser
+    └──requires──> update all hook error path reads
+    └──enhances──> rate limit UI feedback (error.code === 'RATE_LIMIT_EXCEEDED')
+
+SSR cookie forwarding
+    └──requires──> cookies() from next/headers in route handlers
+    └──requires──> backendFetch() receives auth token from caller, not env
+    └──enables──> authenticated SSR page rendering without client-side waterfall
+
+SSE heartbeat detection
+    └──requires──> backend heartbeat frame support (event: heartbeat every 30s)
+    └──enhances──> useSSE hook (add lastHeartbeat ref + interval check)
+    └──requires──> useSSE change (independent, can ship without backend if backend already sends heartbeats)
+
+React Query staleTime normalization
+    └──independent──> no backend dependency
+    └──enhances──> bundle optimization (fewer refetch waterfalls = less JS execution)
+
+Security audit report
+    └──requires──> all above features completed (audit the hardened codebase)
+    └──requires──> review of both dashboard and backend codebase
+    └──produces──> .planning/research/SECURITY_AUDIT.md
 ```
 
-**Key Dependencies:**
-- **OAuth required first** - Nothing works without authentication
-- **Server selection required second** - Need server context for all operations
-- **Data display before configuration** - Must show what exists before allowing edits
-- **Basic analytics before advanced** - Prove core value before adding complexity
-- **WebSocket is independent** - Can be added anytime but has high value
-- **Audit log depends on CRUD operations** - Need actions to log before building audit trail
+### Dependency Notes
+
+- **CSRF HMAC requires backend Phase 37:** The backend HMAC payload format (`timestamp:nonce:guildId:body`) is defined in `/middleware/csrf.ts`. Dashboard must reproduce this exactly. Mismatched payload = 403 on all SSR mutations.
+- **Cursor pagination requires backend Phase 39:** If backend still returns `total_pages`, the cursor migration is premature. Verify backend deployment before migrating `useInfiniteQuery`.
+- **Error envelope migration requires backend Phase 35:** Two envelope shapes cannot coexist in one `sanitizeError` call. Add backward-compatible parsing: check `typeof error === 'string'` vs `typeof error === 'object'` to handle both during transition.
+- **SSE heartbeat is partially independent:** If backend already sends heartbeat frames, dashboard can detect them immediately. If backend does not, the detection code is inert and safe to ship.
+- **Security audit report depends on all changes landing first:** Auditing a half-migrated codebase produces stale findings.
 
 ---
 
-## MVP Recommendation
+## MVP Definition
 
-For MVP (Minimum Viable Product), prioritize in this order.
+This is a hardening milestone, not an MVP. Reframing: what is the minimum set required for v1.2 to ship?
 
-### Phase 1: Authentication (Week 1)
-1. Discord OAuth login
-2. Server list and selection
-3. Permission verification (admin/manage server only)
+### Must Ship (v1.2 blockers)
 
-**Why first:** Nothing works without this foundation.
+- [ ] Cursor pagination migration — backend will 400 on old `page=N` params after Phase 39
+- [ ] Error envelope migration — `sanitizeError` will produce wrong output after Phase 35
+- [ ] SSR cookie forwarding — authenticated SSR page data will fail to load
+- [ ] CSRF HMAC alignment — SSR proxy mutations will be rejected post-Phase 37
+- [ ] Security audit report — milestone deliverable, not a code change
 
-### Phase 2: Core Display (Week 2)
-1. List tracked items for selected server
-2. Bot online/offline status indicator
-3. Recent activity log (last 50 events)
-4. Basic styling (dark mode from day 1)
+### Should Ship (v1.2 improvements)
 
-**Why second:** Users need to see their data. This proves value.
+- [ ] 503 resilience verification — ensures rate-limit handling is complete
+- [ ] SSE heartbeat detection — prevents silent connection leaks in production
+- [ ] React Query staleTime normalization — reduces unnecessary backend load
+- [ ] Rate limit UI feedback — eliminates silent failure when global cooldown is active
 
-### Phase 3: Core Actions (Week 3)
-1. Add new tracked item (form with validation)
-2. Delete tracked item (with confirmation)
-3. Channel selector for notifications
-4. Save confirmation feedback
+### Defer to v1.3
 
-**Why third:** Now users can actually manage their tracking setup.
-
-### Phase 4: Essential Analytics (Week 4)
-1. Total posts tracked counter
-2. Posts per day graph (last 30 days)
-3. Most active tracked accounts list
-
-**Why fourth:** Proves bot is working. Shows value delivered.
-
-### Phase 5: Critical Polish (Week 5)
-1. Search/filter tracked items
-2. Edit tracked item settings
-3. Error handling and validation messages
-4. Uptime percentage display
-
-**Why fifth:** Makes MVP actually usable for real workloads.
+- [ ] Bundle size analysis + dynamic imports — valuable but no user-facing breakage if deferred
+- [ ] Query key factory consolidation — refactor, not a bug fix
+- [ ] Proxy route timeout propagation — edge case, low frequency
 
 ---
 
-## Defer to Post-MVP
+## Feature Prioritization Matrix
 
-Features that are valuable but not critical for initial launch.
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| Cursor pagination migration | HIGH (prevents 400 errors) | MEDIUM | P1 |
+| Error envelope migration | HIGH (prevents wrong error messages) | MEDIUM | P1 |
+| SSR cookie forwarding | HIGH (SSR pages fail auth without it) | MEDIUM | P1 |
+| CSRF HMAC alignment | HIGH (SSR mutations rejected) | HIGH | P1 |
+| Security audit report | HIGH (milestone deliverable) | MEDIUM | P1 |
+| 503 resilience verification | MEDIUM (existing retry mostly works) | LOW | P2 |
+| SSE heartbeat detection | MEDIUM (reduces silent leaks) | MEDIUM | P2 |
+| React Query staleTime normalization | MEDIUM (reduces backend load) | LOW | P2 |
+| Rate limit UI feedback | LOW (RateLimitError exists, no banner) | LOW | P2 |
+| Bundle dynamic imports | LOW (no breakage, just perf) | MEDIUM | P3 |
+| Query key factory consolidation | LOW (refactor, no user impact) | LOW | P3 |
+| Proxy timeout propagation | LOW (rare edge case) | LOW | P3 |
 
-### Defer: Real-time Updates (WebSocket)
-**Why defer:** High complexity. Polling works fine for MVP. Add when scaling becomes issue.
-**When to add:** Phase 6+
-
-### Defer: Advanced Analytics
-**Why defer:** Basic analytics prove value. Advanced features need user feedback to validate.
-**When to add:** After 3+ months of user data to inform what analytics matter
-
-### Defer: Multi-server Dashboard
-**Why defer:** Single-server view serves 90% of users. Power users can switch servers.
-**When to add:** When user research shows demand
-
-### Defer: Team Roles/Permissions
-**Why defer:** Complex. Most servers have 1-2 admins using dashboard.
-**When to add:** When enterprise/large-server demand is validated
-
-### Defer: Webhooks/API Access
-**Why defer:** Niche use case. Need stable core product first.
-**When to add:** When power users explicitly request it
-
-### Defer: Post Content Preview
-**Why defer:** Requires caching post content. Storage and API costs increase.
-**When to add:** Phase 3-4 (nice-to-have, relatively low complexity)
-
-### Defer: Audit Log
-**Why defer:** More important as team features grow. Solo admins don't need it.
-**When to add:** When adding team permissions, or if users explicitly request it
-
-### Defer: Bulk Operations
-**Why defer:** Manual one-by-one works fine until you have 50+ tracked items.
-**When to add:** When users report tedium managing large numbers of items
+**Priority key:**
+- P1: Must have for v1.2 to ship
+- P2: Should have, ship in v1.2 if time allows
+- P3: Nice to have, defer to v1.3
 
 ---
 
-## Complexity vs Value Matrix
+## Implementation Detail: Each Feature
 
-Prioritization guide for feature decisions.
+### Cursor Pagination Migration
 
+**Current state:** `useAccountsInfinite` and `usePostsInfinite` use `initialPageParam: 1` and `getNextPageParam` reads `lastPage.pagination.page >= lastPage.pagination.total_pages`. Proxy routes pass `page=N` and `limit=N` to backend.
+
+**Target state:** Proxy routes pass `cursor=<string>` and `limit=N`. `useInfiniteQuery` uses `initialPageParam: null` and `getNextPageParam` returns `lastPage.next_cursor ?? undefined` (returning `undefined` signals no more pages to TanStack Query v5).
+
+**Change scope:**
+1. Update `src/hooks/use-tracking.ts`: change `pageParam` type from `number` to `string | null`, update `buildAccountQuery` and `buildPostQueryExtended` to use `cursor` param
+2. Update `src/app/api/guilds/[guildId]/accounts/route.ts` proxy: pass `cursor` not `page`
+3. Update `src/app/api/guilds/[guildId]/posts/route.ts` proxy: pass `cursor` not `page`
+4. Update response type: `AccountsResponse.pagination` shape changes to `{ next_cursor: string | null, has_more: boolean }`
+5. Verify bonus rounds hooks already use cursor pagination (they do — `useInfiniteQuery` in bonus hook)
+
+**Confidence:** HIGH — backend cursor format is confirmed in `/bonus/bonusRoutes.ts`: `{ next_cursor: string | null, has_more: boolean }`. Accounts/posts will follow same shape after Phase 39.
+
+### Error Envelope Migration
+
+**Current state:** Backend returns `{ error: string, message: string }`. `sanitizeError()` reads `parsed.message || parsed.error`. Client hooks read `error.message`.
+
+**Target state:** Backend returns `{ error: { code: string, message: string } }`. Need backward-compatible parser during transition.
+
+**Change scope:**
+1. Update `sanitizeError()` in `src/lib/server/error-sanitizer.ts`: detect if `parsed.error` is a string (old shape) or object (new shape), extract `code` and `message` accordingly
+2. Update `BackendError` interface to include `error?: string | { code: string; message: string }`
+3. Audit all 36+ proxy routes that call `sanitizeError` — no change needed there since `sanitizeError` interface is unchanged
+4. Update client hooks that do `await response.json()` and read `.message` directly (non-sanitized paths)
+5. Update `FRIENDLY_MESSAGES` map — new `code` values from backend Phase 35 may include new codes
+
+**Confidence:** HIGH — backend error format confirmed in `guildRead.ts`. New envelope shape visible in `bonusRoutes.ts` validation errors which already use `details`.
+
+### SSR Cookie Forwarding
+
+**Current state:** `backendFetch` injects `X-Internal-Secret` but does not forward the user's `auth_token` cookie. SSR route handlers call `backendFetch` without auth. Backend `requireDashboardAuth` middleware expects either `Authorization: Bearer <token>` or dashboard session cookies.
+
+**Target state:** Route handlers read `auth_token` cookie using `cookies()` from `next/headers` and pass it to `backendFetch` as `Authorization: Bearer <token>`.
+
+**Change scope:**
+1. Update `backendFetch` signature to accept optional `authToken?: string` parameter
+2. In each proxy route handler (36+ routes), import `cookies` from `next/headers`, read `auth_token`, pass to `backendFetch`
+3. Alternative (less repetitive): Create a `backendFetchAuthenticated()` wrapper that reads the cookie internally via `cookies()` — this is cleaner but requires that `cookies()` is available in the call context (it is, since route handlers run on server)
+4. Middleware already injects refreshed token into request cookies (`cookie` header) — route handlers will see the latest token
+
+**Confidence:** HIGH — `cookies()` from `next/headers` is the documented Next.js App Router pattern for reading cookies in route handlers. Official Next.js auth guide confirms this pattern.
+
+### CSRF HMAC Alignment
+
+**Current state:** Dashboard middleware (`proxy.ts`) does double-submit cookie CSRF for browser requests. SSR proxy (`backendFetch`) has no CSRF mechanism — relying on `X-Internal-Secret` header only.
+
+**Target state:** Backend Phase 37 adds HMAC validation for requests that have `x-signature` + `x-timestamp` headers. SSR proxy should produce these headers so backend can validate via HMAC rather than trusting `X-Internal-Secret` alone.
+
+**HMAC payload format (from backend `/middleware/csrf.ts`):**
 ```
-High Value, Low Complexity (DO FIRST):
-- Discord OAuth login
-- Server selection
-- List tracked items
-- Add/delete tracked items
-- Bot status indicator
-- Dark mode
-- Basic counters
-
-High Value, High Complexity (DO EVENTUALLY):
-- Real-time WebSocket updates
-- Advanced analytics/trending
-- Team roles/permissions
-- API access
-
-Low Value, Low Complexity (NICE-TO-HAVE):
-- Export to CSV
-- Keyboard shortcuts
-- Saved filters
-- Import/export config
-
-Low Value, High Complexity (AVOID):
-- AI summarization
-- Social features
-- Built-in chat
-- Custom themes (user-uploaded)
+`${timestamp}:${nonce}:${guildId}:${body}`
+HMAC-SHA256 signed with API_SECRET
 ```
 
----
+**Change scope:**
+1. Create `src/lib/server/hmac-sign.ts`: `signRequest({ timestamp, nonce, guildId, body }): string`
+2. Update `backendFetch` to generate `x-timestamp`, `x-nonce`, `x-guild-id`, and `x-signature` headers on mutation requests (POST/PUT/PATCH/DELETE)
+3. `API_SECRET` env var must be set in Vercel dashboard — already used by backend, dashboard must consume same value
+4. Nonce must match pattern `/^[A-Za-z0-9_-]{16,128}$/` — use `randomBytes(16).toString('base64url').slice(0,24)`
+5. Timestamp window is 5 minutes — clocks must be in sync (Vercel and backend server should be NTP-synchronized)
+6. Browser path (client JS calling `/api/*` routes) is unchanged — continues to use double-submit cookie
 
-## Domain-Specific Considerations
+**Confidence:** MEDIUM — payload format confirmed in backend code. Risk is clock skew between Vercel edge and backend VPS. Add 30-second buffer to timestamp validation check in dashboard.
 
-Unique aspects of Discord bot dashboards that inform feature decisions.
+### SSE Heartbeat Detection
 
-### Discord Ecosystem Expectations
+**Current state:** `useSSE` hook closes connection on `onerror` and reconnects. No mechanism to detect silent stalls where backend stops sending but connection stays open.
 
-**Users expect:**
-- Seamless Discord integration (OAuth, server list, channel picker)
-- Dark UI by default (Discord is dark-themed)
-- Instant feedback (Discord UI is very responsive)
-- Mobile access (many Discord users are mobile-first)
+**Target state:** Track `lastHeartbeatAt`; if no message received in 45 seconds, close and trigger reconnect.
 
-**Users don't expect:**
-- Accounts separate from Discord (no email/password signup)
-- Desktop app (web dashboard is standard)
-- In-dashboard Discord chat (they have Discord for that)
+**Change scope:**
+1. In `useSSE`, add `lastHeartbeatRef = useRef(Date.now())`
+2. On each `onmessage` event, update `lastHeartbeatRef.current = Date.now()`
+3. Add `setInterval` (poll every 15s) that checks if `Date.now() - lastHeartbeatRef.current > 45000`, and if so calls `reconnect()`
+4. Clear interval on cleanup
+5. Backend must send `event: heartbeat\ndata: {}\n\n` every 30 seconds on SSE endpoints (bot status, export progress) — if backend already does this, dashboard change alone is sufficient
 
-### Bot SaaS Patterns
+**Confidence:** MEDIUM — pattern confirmed by industry sources (auth0 SSE guide, OneUptime blog). Risk: if backend does not send heartbeats, the 45-second threshold causes unnecessary reconnects. Verify backend heartbeat support before enabling.
 
-**Standard patterns from MEE6, Dyno, etc.:**
-- Server-centric navigation (not user-centric)
-- Bot status prominently displayed
-- Premium features clearly marked
-- Module/feature toggles (enable/disable functionality)
-- Save confirmation toasts ("Settings saved successfully")
+### React Query staleTime Normalization
 
-**Differentiating patterns:**
-- Real-time updates (most dashboards are refresh-based)
-- Detailed analytics (most show basic counts only)
-- Excellent mobile UX (many dashboards are desktop-only)
-- Clear error messages (many dashboards have cryptic errors)
+**Current state:** Mixed `staleTime` values: brands=2min, accounts=2min, posts=1min, analytics=unknown. Some hooks use default `staleTime: 0`.
 
-### Tracking Bot Specifics
+**Target state:**
+- Static lists (brands, channels, guild settings): `staleTime: 5 * 60 * 1000` (5 min)
+- Paginated data (accounts, posts): `staleTime: 2 * 60 * 1000` (2 min) — current, keep
+- Real-time / rapidly-changing data (audit log, analytics): `staleTime: 60 * 1000` (1 min)
+- Session data: `staleTime: 0` — intentionally fresh
 
-Your project has unique requirements that inform features:
+**Change scope:** Audit all `useQuery` and `useInfiniteQuery` in `src/hooks/`. Set explicit `staleTime` values. Create a `STALE_TIME` constants object in `src/lib/query-config.ts`.
 
-**Data independence from bot uptime:**
-- Status page MUST be reliable even when bot is down
-- Historical data MUST be accessible during outages
-- Configuration changes MUST queue if bot is offline
+**Confidence:** HIGH — React Query staleTime semantics are stable and well-documented.
 
-**Social media tracking:**
-- Need to display external platform content (previews, links)
-- Rate limiting awareness (show when near limits)
-- Account status (active, suspended, deleted)
-- Platform-specific fields (Twitter handle, YouTube channel ID)
+### Security Audit Report
 
-**Multi-platform support:**
-- Different platforms have different data structures
-- UI must accommodate various content types (tweets, videos, posts)
-- Filtering by platform type
+**Format:** Structured markdown at `.planning/research/SECURITY_AUDIT.md` covering:
+- Authentication flow (OAuth → JWT → cookie → SSR forwarding)
+- CSRF protection (double-submit + HMAC layer)
+- CSP headers (nonce-based strict-dynamic)
+- Error sanitization (36+ proxy routes, pattern coverage)
+- Rate limiting (429 + 503 handling, global cooldown)
+- Session management (httpOnly cookies, revocation, refresh rotation)
+- SQL injection (parameterized queries via Prisma)
+- Multi-tenancy isolation (clientId scoping in all queries)
+- Known gaps and recommendations
 
----
-
-## User Personas & Feature Priorities
-
-Who uses Discord bot dashboards and what they need.
-
-### Persona 1: Solo Server Admin (70% of users)
-
-**Profile:** Runs a small-to-medium Discord server (100-1000 members). Only admin using dashboard.
-
-**Priorities:**
-1. Quick setup (add tracked accounts fast)
-2. "Is bot working?" visibility
-3. Basic stats to share with community
-4. Mobile access for on-the-go checks
-
-**Features they need:**
-- Simple, fast UI
-- Clear status indicators
-- Mobile-responsive
-- Basic analytics
-
-**Features they don't need:**
-- Team permissions
-- Audit logs
-- Complex reporting
-
-### Persona 2: Power User / Multi-Server Admin (20% of users)
-
-**Profile:** Manages 5+ Discord servers. Uses dashboard frequently. Wants efficiency.
-
-**Priorities:**
-1. Multi-server management
-2. Bulk operations
-3. Keyboard shortcuts
-4. Advanced analytics
-
-**Features they need:**
-- Server switcher
-- Bulk actions
-- Saved filters/views
-- Export capabilities
-
-**Features they don't need:**
-- Onboarding tutorials (they know what they're doing)
-- Simplification that removes power
-
-### Persona 3: Team/Enterprise Server Admin (10% of users)
-
-**Profile:** Large server (10k+ members) with multiple moderators/admins. Needs collaboration.
-
-**Priorities:**
-1. Team access control
-2. Audit trail
-3. Reliability guarantees
-4. Support/SLA
-
-**Features they need:**
-- Role-based permissions
-- Audit logs
-- Detailed analytics
-- API access for integrations
-
-**Features they don't need:**
-- Overly simplified UI (need power tools)
+**Audience:** Operators deploying the system, not end users. Technical depth required.
 
 ---
 
-## Competitive Differentiation Strategy
+## Existing Features That Are NOT Changing
 
-How to stand out in Discord bot dashboard space.
+These are confirmed working and must not regress during v1.2:
 
-### Compete on Reliability
-**Hypothesis:** Most bot dashboards fail when bot is down. Your core value is "independent of bot uptime."
-
-**Features to emphasize:**
-- Independent status page
-- Offline configuration queuing
-- Historical data always available
-- Transparent incident communication
-
-### Compete on UX Excellence
-**Hypothesis:** Most bot dashboards have clunky UX. Small polish creates big differentiation.
-
-**Features to emphasize:**
-- Blazing fast page loads
-- Real-time updates
-- Mobile-first design
-- Keyboard shortcuts
-- Undo/redo
-- Excellent error messages
-
-### Compete on Analytics Depth
-**Hypothesis:** Most dashboards show "posts tracked: 47" and nothing more. Insights create stickiness.
-
-**Features to emphasize:**
-- Post content preview
-- Engagement metrics
-- Trending detection
-- Time-series visualization
-- Export/reporting
-
-### DON'T Compete on Bot Features
-**Why:** Dashboard quality doesn't matter if bot functionality is lacking. Features should showcase bot capabilities, not replace them.
-
-**Implication:** Don't build dashboard-exclusive features. Dashboard surfaces what bot does.
-
----
-
-## Validation Checklist
-
-Before building a feature, ask:
-
-- [ ] **Table stakes?** If missing, would users consider product broken? → Build in MVP
-- [ ] **Differentiator?** Does this create competitive advantage? → Prioritize high
-- [ ] **Anti-feature?** Does this distract from core value? → Don't build
-- [ ] **Dependency?** What must exist before this? → Order correctly
-- [ ] **Complexity?** High complexity requires strong value justification
-- [ ] **Persona fit?** Which persona needs this? (Solo/Power/Enterprise)
-- [ ] **Validation?** Is demand validated or assumed? → Assumed = defer to post-MVP
-
----
-
-## Research Confidence & Gaps
-
-### Confidence Assessment
-
-| Category | Confidence | Reason |
-|----------|-----------|--------|
-| Table stakes features | MEDIUM | Based on training data about MEE6, Dyno, Carl-bot patterns |
-| Differentiators | MEDIUM | Based on known gaps in existing dashboards, but no current verification |
-| Anti-features | HIGH | Based on common SaaS mistakes and scope management principles |
-| Feature complexity | MEDIUM | Estimated based on typical web app development patterns |
-| Dependencies | HIGH | Logical sequencing based on technical requirements |
-
-### Known Gaps
-
-**Unable to verify:**
-- Current feature sets of MEE6, Dyno, Carl-bot dashboards (WebSearch/WebFetch unavailable)
-- Recent trends in Discord bot SaaS space (2025-2026)
-- User feedback on existing dashboards (what users complain about)
-- Emerging features from new competitors
-
-**Should validate before implementation:**
-1. **Social platform API capabilities** - What data can actually be fetched? Rate limits? Costs?
-2. **Discord OAuth flow edge cases** - What happens with bots in 100+ servers?
-3. **Real-time update infrastructure** - WebSocket vs SSE vs polling costs and complexity
-4. **Mobile usage patterns** - Do Discord bot admins actually manage from mobile?
-5. **Analytics demand** - Which metrics do users actually care about?
-
-**Recommended validation approach:**
-- Manual review of MEE6/Dyno/Carl-bot dashboards (sign up and explore)
-- User interviews with Discord server admins
-- Competitive feature matrix (direct comparison)
-- Analytics on existing tracking bot (if any usage data exists)
+- Discord OAuth login and refresh token rotation
+- Guild permission enforcement (ADMINISTRATOR bit 0x8 check)
+- All 36+ proxy routes (only error parsing updates, not route logic)
+- Export/import SSE progress (only heartbeat detection addition)
+- Bonus system (cursor pagination already correct)
+- Alert thresholds, session management, analytics, leaderboard
+- CSP nonce generation, HSTS, X-Request-ID propagation
+- Playwright E2E tests (must pass after each change)
+- `fetchWithRetry` CSRF retry flow (`EBADCSRFTOKEN` → GET session → retry)
 
 ---
 
 ## Sources
 
-**PRIMARY (Training Data):**
-- Discord bot SaaS ecosystem knowledge (MEE6, Dyno, Carl-bot, others) as of training cutoff
-- Discord platform patterns and user expectations
-- SaaS dashboard best practices
-- Web application feature complexity estimates
-
-**VERIFICATION STATUS:**
-- External research tools (WebSearch, WebFetch) were unavailable
-- Findings are based on training data, not current verification
-- Confidence level: MEDIUM overall
-
-**RECOMMENDED VALIDATION:**
-- Direct exploration of competitor dashboards (MEE6, Dyno, Carl-bot)
-- Discord bot developer documentation (discord.com/developers)
-- User research with Discord server administrators
-- Social media platform API documentation (Twitter, YouTube, etc.)
+- Backend `/middleware/csrf.ts` — HMAC payload format and bypass conditions (HIGH confidence, live code)
+- Backend `/routes/dashboard/bonus/bonusRoutes.ts` — cursor pagination response shape `{ next_cursor, has_more }` (HIGH confidence, live code)
+- Backend `/routes/dashboard/guilds/guildRead.ts` — current error envelope shape `{ error: string, message: string }` (HIGH confidence, live code)
+- `src/lib/fetch-with-retry.ts` — existing CSRF, rate limit, 401 refresh handling (HIGH confidence, live code)
+- `src/proxy.ts` — CSRF double-submit validation, proactive token refresh (HIGH confidence, live code)
+- `src/hooks/use-sse.ts` — current SSE lifecycle, visibility handling, exponential backoff (HIGH confidence, live code)
+- `src/hooks/use-tracking.ts` — current offset pagination implementation (HIGH confidence, live code)
+- [Next.js Security: Server Components and Actions](https://nextjs.org/blog/security-nextjs-server-components-actions) — SSR audit guidance, route handler security (HIGH confidence, official)
+- [TanStack Query v5 Infinite Queries](https://tanstack.com/query/v5/docs/framework/react/guides/infinite-queries) — `initialPageParam`, `getNextPageParam` cursor pattern (HIGH confidence, official)
+- [OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html) — Signed Double Submit Cookie pattern (HIGH confidence, official)
+- [SSE Practical Guide](https://tigerabrodi.blog/server-sent-events-a-practical-guide-for-the-real-world) — heartbeat and stall detection patterns (MEDIUM confidence, community)
+- [Next.js Bundle Analyzer](https://nextjs.org/docs/14/pages/building-your-application/optimizing/bundle-analyzer) — bundle analysis tooling (HIGH confidence, official)
+- [React Query cache invalidation](https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation) — staleTime and invalidation patterns (HIGH confidence, official)
 
 ---
 
-## Summary for Roadmap Creation
-
-**TABLE STAKES (Must have for MVP):**
-1. Discord OAuth + server selection
-2. List/add/remove tracked items
-3. Bot status indicator
-4. Recent activity log
-5. Basic analytics (counters, simple graphs)
-6. Channel selector for notifications
-7. Mobile-responsive UI
-8. Dark mode
-
-**DIFFERENTIATORS (Competitive advantage):**
-1. Real-time dashboard updates
-2. Post content previews
-3. Advanced analytics (trending, engagement)
-4. Excellent UX (keyboard shortcuts, undo/redo)
-5. Transparent reliability features (detailed errors, uptime history)
-6. Multi-server power user features
-
-**ANTI-FEATURES (Don't build):**
-1. Post management/editing
-2. Built-in chat/communication
-3. Bot infrastructure controls
-4. Custom theme uploads
-5. Social networking features
-6. AI summarization (unless validated demand)
-7. Overly complex permissions
-
-**RECOMMENDED MVP SCOPE:**
-- Weeks 1-5 covering authentication → display → actions → analytics → polish
-- Focus on solo server admin persona (70% of users)
-- Defer advanced features until post-MVP validation
-- Prioritize reliability and UX excellence as differentiators
+*Feature research for: v1.2 Security Audit & Optimization milestone*
+*Researched: 2026-02-22*

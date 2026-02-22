@@ -1,681 +1,322 @@
-# Domain Pitfalls
+# Pitfalls Research
 
-**Domain:** Next.js 14 SaaS Dashboard with Discord OAuth & Multi-tenancy
-**Researched:** 2026-01-24
-**Confidence:** MEDIUM (based on training data, not verified with current sources due to WebSearch unavailability)
+**Domain:** Next.js 14 Dashboard — v1.2 Security Audit & Optimization
+**Researched:** 2026-02-22
+**Confidence:** HIGH (codebase inspected, WebSearch verified patterns, OWASP cross-referenced)
+
+---
 
 ## Critical Pitfalls
 
-Mistakes that cause security breaches, data leaks, or major rewrites.
+Mistakes that cause security regression, data exposure, or require rewrites.
 
-### Pitfall 1: Client-Side Guild Filtering (Cross-Tenant Data Leak)
+---
 
-**What goes wrong:** Dashboard filters guild data client-side using JWT claims, but API returns all guilds for a user. An attacker modifies client code or intercepts responses to access guilds they shouldn't see.
+### Pitfall 1: CSRF Breaks During HMAC Alignment Window
+
+**What goes wrong:**
+The backend (Phase 37) switches from plain double-submit cookie comparison to HMAC-signed token validation. The dashboard still sends the plain `_csrf_token` value in `X-CSRF-Token`. During the window when the backend accepts HMAC only, every dashboard mutation fails with 403 — but the dashboard interprets this as a bad CSRF token and silently retries (see `fetch-with-retry.ts` line 256), burning the one CSRF retry, then surfaces "Session error, please refresh the page." Mutations are dead until deploy is coordinated.
 
 **Why it happens:**
-- Trusting JWT claims in browser without server-side validation on every request
-- API endpoints that return data based on user ID alone, not guild permissions
-- Assuming Next.js middleware validates authorization (it only authenticates)
+The dashboard's `getCsrfToken()` reads `document.cookie` for `_csrf_token` and sends it verbatim. The proxy (`proxy.ts` line 203) sets a new `crypto.randomUUID()` on every request — a plain string. When the backend starts computing `HMAC(secret, sessionId + timestamp)` and comparing against that, the plain UUID never matches. There is no versioned handshake; the first post-backend-deploy request fails.
 
-**Consequences:**
-- User A sees User B's guild data by manipulating requests
-- GDPR violations, potential legal liability
-- Complete loss of multi-tenant isolation
+**How to avoid:**
+Align in this exact order:
+1. Backend Phase 37 deploys with HMAC validation but also accepts the plain token for a 24-48 hour grace period (backward-compatible dual-check).
+2. Dashboard updates `proxy.ts` `setCsrfCookie()` to write an HMAC-signed token using the same INTERNAL_API_SECRET already in `process.env`.
+3. Dashboard deploys.
+4. Backend removes plain-token fallback in a follow-up deploy.
 
-**Prevention:**
-```typescript
-// BAD: Client-side filtering
-const guilds = await fetch('/api/guilds').then(r => r.json())
-const filtered = guilds.filter(g => jwt.guilds.includes(g.id))
+Never flip the backend to HMAC-only before the dashboard ships the matching generator. Use INTERNAL_API_SECRET (already forwarded in `backendFetch`) to compute the HMAC so no new secret is needed.
 
-// GOOD: Server validates guild access on every request
-// app/api/guilds/[guildId]/route.ts
-export async function GET(req, { params }) {
-  const session = await getSession(req)
-  const hasAccess = await validateGuildAccess(session.userId, params.guildId)
-  if (!hasAccess) return new Response('Forbidden', { status: 403 })
+**Warning signs:**
+- All non-auth mutation routes returning 403 after a backend deploy.
+- `fetchWithRetry` logs: "CSRF retry" on every POST/PATCH/DELETE.
+- No 401s (auth is fine) but mutations broken.
 
-  // Query scoped to this guild ONLY
-  return fetchGuildData(params.guildId)
-}
-```
-
-**Detection:**
-- Manual testing: Login as User A, intercept API calls, modify guildId parameter
-- Automated: API integration tests that attempt cross-tenant access
-- Code review: Search for client-side `.filter()` on guild/tenant data
-
-**Phase mapping:** Phase 1 (Authentication) must establish server-side validation patterns. Phase 2 (Guild Management) implements it everywhere.
+**Phase to address:** CSRF HMAC alignment phase — must be first deployed task with backward-compatibility window. Backend deploys before dashboard with grace period.
 
 ---
 
-### Pitfall 2: JWT Stored in LocalStorage (XSS Token Theft)
+### Pitfall 2: Cursor Pagination Breaks Existing React Query Cache Keys
 
-**What goes wrong:** JWT stored in `localStorage` is accessible to any JavaScript on the page. One XSS vulnerability = attacker steals all user tokens.
+**What goes wrong:**
+The current `useAccountsInfinite` and `usePostsInfinite` use `page` numbers as `pageParam` and `pageParam` is `1` on first load. After migrating to cursor pagination, the backend returns `{ nextCursor: "opaque_string" }` instead of `{ pagination: { page, total_pages } }`. The existing `getNextPageParam` reads `lastPage.pagination.page >= lastPage.pagination.total_pages` — which will be `undefined >= undefined = false`, meaning infinite scroll never stops. New pages are fetched indefinitely until the backend returns empty items.
+
+Additionally, React Query's existing cache under keys like `['guild', guildId, 'accounts', 'infinite', ...]` now holds mixed data: old offset-pagination shaped pages merged with new cursor-shaped pages after partial migration. Stale cache entries can surface to users until `gcTime` expires (5 minutes by default).
 
 **Why it happens:**
-- Convenience — `localStorage` persists across tabs/refreshes
-- Misunderstanding: "HttpOnly cookies don't work with client components"
-- Following outdated tutorials (pre-App Router patterns)
+The `Pagination` type in `src/types/tracking.ts` has `page`, `limit`, `total`, `total_pages` — none of which exist in a cursor response. The switch is a shape change, not an additive change, so TypeScript will not warn if the type is updated but `getNextPageParam` is not.
 
-**Consequences:**
-- XSS attack → full account takeover
-- Attacker can impersonate users indefinitely (until token expires)
-- No way to revoke stolen tokens (stateless JWT)
+**How to avoid:**
+1. Create a new type `CursorPagination { nextCursor: string | null; hasNextPage: boolean }` alongside the old `Pagination` type.
+2. Update `getNextPageParam` to: `(lastPage) => lastPage.pagination.nextCursor ?? undefined`.
+3. On deploy, call `queryClient.removeQueries({ queryKey: ['guild', guildId, 'accounts', 'infinite'] })` to evict stale offset-shaped cache entries. Do this in a version-bump effect or by bumping the cache key to include a `v2` sentinel: `['guild', guildId, 'accounts', 'infinite', 'v2', ...]`.
+4. The backend must maintain the old offset response shape for the `/accounts` and `/posts` endpoints for at least one deploy cycle (behind a feature flag or API version header), or deploy dashboard and backend simultaneously in a coordinated window.
 
-**Prevention:**
-```typescript
-// BAD: localStorage JWT
-localStorage.setItem('jwt', token)
+**Warning signs:**
+- Infinite scroll fetches but never stops loading (spinner stays visible).
+- React Query DevTools shows `hasNextPage: true` even on last page.
+- Console errors: `Cannot read properties of undefined (reading 'page')`.
 
-// GOOD: HttpOnly cookie set by API route
-// app/api/auth/callback/route.ts
-export async function GET(req: NextRequest) {
-  const token = await exchangeDiscordCode(code)
-
-  const response = NextResponse.redirect('/dashboard')
-  response.cookies.set('session', token, {
-    httpOnly: true,  // Not accessible to JavaScript
-    secure: true,    // HTTPS only
-    sameSite: 'lax', // CSRF protection
-    maxAge: 60 * 60 * 24 * 7 // 7 days
-  })
-  return response
-}
-
-// Access token server-side only
-import { cookies } from 'next/headers'
-const token = cookies().get('session')?.value
-```
-
-**Detection:**
-- Code review: Search for `localStorage.setItem`, `sessionStorage.setItem`
-- Browser DevTools: Check Application → Local Storage for sensitive data
-- Security audit: Automated scan for XSS + token storage
-
-**Phase mapping:** Phase 1 (Authentication) must use HttpOnly cookies from the start. Fixing this later requires migration code.
+**Phase to address:** Cursor pagination migration phase. Backend must deploy first with both shapes supported, then dashboard updates types and hooks.
 
 ---
 
-### Pitfall 3: Missing Guild Permissions Refresh (Stale Access)
+### Pitfall 3: SSR Cookie Forwarding Sends Wrong Cookie Name to Backend
 
-**What goes wrong:** User is removed from a Discord guild, but dashboard still shows that guild because JWT hasn't been refreshed.
+**What goes wrong:**
+The dashboard uses `auth_token` and `refresh_token` as cookie names client-side (set by proxy.ts), but the backend's `requireDashboardAuth` middleware may read `dashboard_at` or `dashboard_rt` (configurable via env vars, as shown in proxy.ts lines 10-11). When SSR routes are added that call the backend server-side, they forward `cookie: auth_token=...` but the backend only finds `dashboard_at` or `dashboard_rt`, causing 401 on SSR-rendered pages even for authenticated users.
 
 **Why it happens:**
-- JWT is stateless — once issued, it's valid until expiration
-- No webhook from Discord to notify permission changes
-- Dashboard doesn't re-validate guild access on each page load
+The dashboard uses its own cookie namespace (`auth_token`) in the Next.js cookie store, and converts to the backend's namespace (`dashboard_at`) only in the `backendFetch` Authorization header. If SSR starts forwarding raw cookies to the backend instead of extracting and re-sending as Bearer tokens, the name mismatch causes auth failure. The `dashboard-session-cookies.ts` parsing logic handles the backend's `Set-Cookie` response shape, but does not map the dashboard's cookie names back to the backend's expected names.
 
-**Consequences:**
-- Ex-admin retains read access to guild data after removal
-- Security breach if user was removed for malicious behavior
-- Violates user expectations ("I kicked them, why can they still see data?")
+**How to avoid:**
+SSR-to-backend calls must always use `Authorization: Bearer {token}` — never raw cookie forwarding. The `backendFetch` wrapper already does this correctly for API routes. Do not bypass `backendFetch` in Server Components or use `cookie: request.headers.get('cookie')` forwarding patterns. If SSR cookie forwarding is added per QUAL-05/F-14, write a dedicated `ssrBackendFetch(cookies)` helper that extracts `auth_token` from the cookie store and sends it as a Bearer header, not as a forwarded cookie string.
 
-**Prevention:**
-```typescript
-// Strategy 1: Short-lived JWTs + refresh tokens
-// JWT expires in 15 minutes, refresh token in 7 days
-// Force re-check of guild permissions on refresh
+**Warning signs:**
+- SSR-rendered pages show 401 for authenticated users.
+- Backend logs show requests without Authorization header from dashboard IP.
+- Works on client-side navigation but breaks on full page refresh.
 
-// Strategy 2: Validate guild access on sensitive operations
-async function validateCurrentGuildAccess(userId: string, guildId: string) {
-  // Re-fetch from Discord API, not JWT claims
-  const guilds = await fetchDiscordGuilds(userId)
-  return guilds.some(g => g.id === guildId && hasManagePermissions(g))
-}
-
-// Strategy 3: Periodic background refresh
-// Refresh guild list every 5 minutes in background
-useEffect(() => {
-  const interval = setInterval(async () => {
-    await fetch('/api/auth/refresh-guilds')
-  }, 5 * 60 * 1000)
-  return () => clearInterval(interval)
-}, [])
-```
-
-**Detection:**
-- Manual test: Remove user from Discord guild, check if dashboard updates
-- Monitoring: Track "403 Forbidden" responses (API rejects stale permissions)
-- User reports: "I still see a guild I left"
-
-**Phase mapping:** Phase 1 (Authentication) defines refresh strategy. Phase 2 (Guild Management) implements periodic validation.
+**Phase to address:** SSR cookie forwarding phase — must write `ssrBackendFetch` helper with explicit Bearer header injection, not raw cookie forwarding.
 
 ---
 
-### Pitfall 4: Unbounded SSE Connections (Memory Leak)
+### Pitfall 4: Error Envelope Migration Creates Silent Data Corruption in Error Sanitizer
 
-**What goes wrong:** Server-Sent Events connections are created but never cleaned up. Vercel function instances accumulate connections until memory exhausted.
+**What goes wrong:**
+The backend Phase 35 changes error responses from `{ error: "string", code: "string" }` to `{ error: { code: "string", message: "string" } }`. The `error-sanitizer.ts` currently parses `parsed.message || parsed.error || ''` where `parsed.error` is expected to be a string. After the backend change, `parsed.error` is an object `{ code, message }`. The `isMessageSafe()` check receives `[object Object]` as the message — which is 15 characters, passes the length check, has no unsafe patterns, and gets forwarded to the client as the error text. Users see "[object Object]" in toast messages instead of a real error.
+
+Additionally, the `FRIENDLY_MESSAGES` lookup uses `parsed.code`, but after the envelope change, `code` is nested inside `parsed.error.code` — the lookup always misses, so known error codes (`GUILD_NOT_FOUND`, `unverified_email`) fall through to generic contextual messages. The `unverified_email` redirect in `fetchWithRetry` (line 293) stops working because `body?.code` is no longer at the top level.
 
 **Why it happens:**
-- Client navigates away without closing EventSource
-- Server doesn't detect client disconnect
-- No connection timeout or limit
-- Edge Runtime limitations not understood
+The `sanitizeError()` function has implicit assumptions about the backend's error shape. There is no runtime shape validation (no Zod schema) on the incoming backend error body. A shape change is entirely opaque until runtime.
 
-**Consequences:**
-- Vercel function OOMs (Out of Memory)
-- Dashboard becomes unresponsive
-- SSE stops working for all users
-- Unexpected Vercel bills (function duration charges)
+**How to avoid:**
+1. Add a Zod schema for the backend error envelope that accepts both shapes during migration:
+   ```typescript
+   const BackendErrorSchema = z.union([
+     z.object({ error: z.string(), code: z.string().optional() }),          // legacy
+     z.object({ error: z.object({ code: z.string(), message: z.string() }) }) // v2
+   ])
+   ```
+2. Normalize to a common shape in `sanitizeError()` before any message extraction.
+3. The `unverified_email` code lookup in `fetchWithRetry` must handle both `body?.code` and `body?.error?.code`.
+4. Deploy backend with backward-compatible responses (send both shapes for one cycle) before migrating the sanitizer.
 
-**Prevention:**
-```typescript
-// Client: ALWAYS clean up
-useEffect(() => {
-  const eventSource = new EventSource('/api/bot-status')
+**Warning signs:**
+- Users see "[object Object]" in error toasts.
+- `unverified_email` redirect stops firing — users with unverified email see generic 403 instead of redirect.
+- Known error codes stop triggering friendly messages.
 
-  eventSource.onmessage = (event) => {
-    setStatus(JSON.parse(event.data))
-  }
-
-  // CRITICAL: Close connection on unmount
-  return () => {
-    eventSource.close()
-  }
-}, [])
-
-// Server: Detect disconnects and timeout
-export async function GET(req: NextRequest) {
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder()
-
-      // Timeout after 5 minutes
-      const timeout = setTimeout(() => {
-        controller.close()
-      }, 5 * 60 * 1000)
-
-      // Detect client disconnect
-      req.signal.addEventListener('abort', () => {
-        clearTimeout(timeout)
-        controller.close()
-      })
-
-      // Send heartbeat to detect dead connections
-      const heartbeat = setInterval(() => {
-        try {
-          controller.enqueue(encoder.encode(': heartbeat\n\n'))
-        } catch {
-          clearInterval(heartbeat)
-          clearTimeout(timeout)
-        }
-      }, 30000)
-    }
-  })
-
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    }
-  })
-}
-```
-
-**Detection:**
-- Vercel logs: Function duration increasing over time
-- Memory monitoring: Track function memory usage
-- Manual test: Open SSE page, navigate away, check if connection closes
-- Load test: Open 100 SSE connections, verify memory stays bounded
-
-**Phase mapping:** Phase 3 (Real-time Features) must implement proper cleanup. This is not fixable retroactively — requires architectural change.
+**Phase to address:** Error envelope migration phase — sanitizer must be updated before or simultaneously with backend deploy, with dual-shape handling.
 
 ---
 
-### Pitfall 5: Cold Start UX Disaster (Vercel Serverless Functions)
+### Pitfall 5: Rate Limit Global Cooldown Blocks SSR-Initiated Requests Across Tabs
 
-**What goes wrong:** User navigates to dashboard after inactivity. First request takes 3-8 seconds as Vercel spins up function. User thinks site is broken.
+**What goes wrong:**
+`fetchWithRetry` maintains `globalRateLimitUntil` as a module-level variable. When the backend returns 429 on one request, all subsequent requests in the same browser tab session are blocked until the cooldown expires. This is by design for client-side tabs — but it has an unintended consequence: if a 429 is triggered by a background React Query refetch (e.g., bot status polling), the cooldown blocks the user from performing any foreground mutation (adding an account, saving settings) for up to 15 minutes. The user sees generic "Too many requests" on unrelated actions.
+
+When the backend migrates its rate limiter to Valkey, new rate limit windows, bucket sizes, and Retry-After values may change. If Valkey's rate limiter returns a different `Retry-After` format (e.g., milliseconds instead of seconds), `parseRetryAfter()` may misinterpret the value and set a 1000x longer cooldown.
 
 **Why it happens:**
-- Free/Hobby Vercel tier has aggressive cold starts
-- Large dependencies (React Query, UI libraries) increase cold start time
-- No loading states for initial data fetch
-- Expectation mismatch (SaaS should feel instant)
+The global cooldown is intentional to prevent thundering herd, but it does not discriminate between endpoint types. A 429 on a read endpoint (bot status stream) poisons the write path for all mutations. The `skipGlobalCooldown` option exists but is not used on read-only queries.
 
-**Consequences:**
-- Poor perceived performance
-- Increased bounce rate
-- User complaints about "slow" dashboard
-- Bad first impressions
+**How to avoid:**
+1. Audit all `useQuery` hooks that use `fetchWithRetry` for read-only polling (bot status, export progress) — add `config: { skipGlobalCooldown: true }` so their 429s don't block mutations.
+2. Add a test for the `parseRetryAfter()` function with the specific format the Valkey-backed rate limiter will emit. Verify this before the backend rate limiter migration deploys.
+3. Handle 503 (backend rate limiter unavailable) separately from 429 (rate limited) — 503 should trigger the existing server error retry logic, not a rate limit cooldown.
 
-**Prevention:**
-```typescript
-// Strategy 1: Streaming SSR (App Router default)
-// Send shell immediately, stream content
-export default async function GuildPage({ params }) {
-  return (
-    <Suspense fallback={<GuildSkeleton />}>
-      <GuildData guildId={params.guildId} />
-    </Suspense>
-  )
-}
+**Warning signs:**
+- User reports: "I can't save anything after refreshing a lot."
+- All mutations failing with RateLimitError even on fresh session.
+- `globalRateLimitUntil` in module scope persists far longer than expected.
 
-// Strategy 2: Prefetch critical data in middleware
-// middleware.ts warms up session before page renders
-
-// Strategy 3: Client-side optimistic UI
-<QueryClientProvider client={queryClient}>
-  <Hydrate state={pageProps.dehydratedState}>
-    {/* Pre-hydrated data from SSR, no fetch on mount */}
-  </Hydrate>
-</QueryClientProvider>
-
-// Strategy 4: Keep functions warm (paid tier)
-// Vercel Pro has better cold start SLA
-
-// Strategy 5: Show immediate feedback
-'use client'
-export default function Dashboard() {
-  const { data, isLoading } = useGuilds()
-
-  // ALWAYS show skeleton on initial load
-  if (isLoading) return <DashboardSkeleton />
-
-  return <GuildList guilds={data} />
-}
-```
-
-**Detection:**
-- Lighthouse performance score
-- Real User Monitoring (RUM) — track Time to First Byte
-- Manual test: Clear Vercel cache, load page, measure time
-- User feedback: "Why is it so slow?"
-
-**Phase mapping:** Phase 1 (Foundation) must choose loading patterns. Phase 2-4 implement consistently. Fixing later = UI/UX refactor across all pages.
+**Phase to address:** Rate limit 503/429 resilience phase — audit `skipGlobalCooldown` usage across all read hooks, validate Retry-After format against Valkey output before migration.
 
 ---
 
-## Moderate Pitfalls
+### Pitfall 6: SSE Proxy Route Loses Client Disconnect Signal on Vercel
 
-Mistakes that cause delays, tech debt, or degraded UX.
+**What goes wrong:**
+The SSE proxy in `status/stream/route.ts` passes `signal: request.signal` to `backendFetch`. When the client disconnects (tab close, navigation), the AbortError propagates from the backend fetch, the route catches it, and returns 499. However, on Vercel's Node.js runtime, `request.signal` may not fire reliably when the client closes the connection mid-stream if the route is inside a Streaming Response pipeline. The backend SSE connection can remain open orphaned for the full Vercel function timeout (up to 60s on Pro, 10s on Hobby), keeping the backend connection alive and counting against the backend's connection pool.
 
-### Pitfall 6: React Query Cache Invalidation Hell
-
-**What goes wrong:** User edits guild settings, sees old data. Manual page refresh shows new data. Confusion ensues.
+Additionally, the `useSSE` hook does `es.close()` on visibility change (tab hidden), but if the tab-hidden event fires while a reconnect timeout is scheduled, the scheduled timeout will call `connect()` after close. The `retryTimeoutRef` is cleared when the tab hides, but if the tab is shown again within `reconnectCooldown` (5000ms), a second `connect()` call can race with the cooldown-deferred connect, creating two simultaneous EventSource instances pointing to the same URL.
 
 **Why it happens:**
-- Mutation doesn't invalidate related queries
-- Cache keys don't match between queries and mutations
-- Overly aggressive `staleTime` keeps old data
-- Optimistic updates without rollback on error
+`EventSource` does not provide a close confirmation — there is no way to know from the client that the server received the close. The visibility change handler resets state but does not guard against pending timers that were set just before the hide event. Two EventSource instances on the same URL creates two streams, each receiving the same messages and calling `onMessage` twice.
 
-**Prevention:**
-```typescript
-// Define consistent query keys
-const guildKeys = {
-  all: ['guilds'] as const,
-  lists: () => [...guildKeys.all, 'list'] as const,
-  detail: (id: string) => [...guildKeys.all, 'detail', id] as const,
-  settings: (id: string) => [...guildKeys.all, 'settings', id] as const,
-}
+**How to avoid:**
+1. In `useSSE`, add a `isClosedRef` guard: set it to `true` in the visibility-hidden handler, check it at the top of `connect()` before creating a new EventSource.
+2. Add a generation counter (`connectGenerationRef`) — increment on each `connect()` call, and in `es.onerror` / `es.onmessage`, check that the current generation matches before processing.
+3. On the server route, ensure the backend fetch signal is forwarded correctly. If `request.signal` is unreliable in streaming mode, add a server-side keepalive heartbeat timeout (e.g., 45s) that closes the backend stream if no heartbeat is received.
 
-// Invalidate on mutation
-const updateSettings = useMutation({
-  mutationFn: (data) => fetch(`/api/guilds/${guildId}/settings`, {
-    method: 'PATCH',
-    body: JSON.stringify(data)
-  }),
-  onSuccess: () => {
-    // Invalidate both detail and settings
-    queryClient.invalidateQueries({ queryKey: guildKeys.detail(guildId) })
-    queryClient.invalidateQueries({ queryKey: guildKeys.settings(guildId) })
-  }
-})
-```
+**Warning signs:**
+- Backend logs show SSE connections staying open after client disconnects.
+- React console: SSE message handlers called twice per event.
+- Vercel function duration logs showing long-lived connections that should have closed.
 
-**Detection:**
-- Manual test: Edit data, check if UI updates without refresh
-- Check React Query DevTools for stale queries
-- User reports: "My changes didn't save"
-
-**Phase mapping:** Phase 2 (Guild Management) establishes cache patterns. All subsequent phases follow the same key structure.
+**Phase to address:** SSE lifecycle hardening phase. The dual-instance race is the immediate risk; server-side orphan connections are a cost and stability risk.
 
 ---
 
-### Pitfall 7: Missing Rate Limit Handling (Discord API)
+### Pitfall 7: React Query Infinite Query Partial Cache After Cursor Migration
 
-**What goes wrong:** Dashboard makes too many requests to Discord API. Gets rate limited (429). User can't log in or see guilds.
+**What goes wrong:**
+After the cursor pagination migration, `useInfiniteQuery` stores all fetched pages in memory. If a user loads 10 pages of accounts (500 items at 50/page) and then a mutation invalidates `['guild', guildId, 'accounts', 'infinite']`, React Query refetches all 10 pages sequentially via its built-in `refetchPage` mechanism. With 36+ proxy routes each adding latency, this triggers 10 sequential backend fetches, each with its own JWT validation round-trip. The UI shows a loading spinner for potentially 10-20 seconds while refetching.
+
+Additionally, `staleTime: 2 * 60 * 1000` on infinite queries means that adding a new account (which calls `queryClient.invalidateQueries` on `['guild', guildId, 'accounts']`) does not invalidate the infinite variant (`['guild', guildId, 'accounts', 'infinite', ...]`) because the key prefix only partially matches and `invalidateQueries` default is `exact: false` — but the infinite key's first 3 segments match the non-infinite key, so invalidation actually does cascade. Verify this is intentional.
 
 **Why it happens:**
-- Fetching Discord guilds on every page load
-- No caching of Discord API responses
-- Multiple components fetching same data independently
-- Webhook setup hits rate limits during onboarding
+React Query's `useInfiniteQuery` refetch behavior fetches all currently-loaded pages on invalidation, not just the first page. This is by design but surprises developers who assume it will only refresh the visible viewport.
 
-**Prevention:**
-```typescript
-// Cache Discord API responses server-side
-import { unstable_cache } from 'next/cache'
+**How to avoid:**
+1. On mutations that affect paginated lists, use `queryClient.resetQueries` instead of `invalidateQueries` for the infinite query key. `resetQueries` resets to page 1 only, avoiding N-page sequential refetch.
+2. Alternatively, use `refetchPage: (page, index) => index === 0` to only refetch the first page on invalidation.
+3. Set a higher `staleTime` (5 minutes) for infinite account/post lists — these don't change frequently. Use shorter `staleTime` only for queries that change in real time.
 
-const getCachedDiscordGuilds = unstable_cache(
-  async (userId: string) => {
-    const response = await fetch('https://discord.com/api/users/@me/guilds', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+**Warning signs:**
+- After deleting an account, the accounts list shows a long spinner.
+- Network tab shows N sequential requests to `/api/guilds/{id}/accounts` after a mutation.
+- React Query DevTools shows `isFetching: true` on multiple pages of the same query.
 
-    // Handle rate limit
-    if (response.status === 429) {
-      const retryAfter = response.headers.get('retry-after')
-      throw new Error(`Rate limited, retry after ${retryAfter}s`)
-    }
-
-    return response.json()
-  },
-  ['discord-guilds'], // cache key
-  { revalidate: 300 } // 5 minute cache
-)
-```
-
-**Detection:**
-- Vercel logs: 429 responses from Discord API
-- Sentry/error tracking: RateLimitError events
-- Manual test: Rapidly refresh pages, watch for failures
-
-**Phase mapping:** Phase 1 (Authentication) must implement caching for OAuth flow. Phase 2 caches guild fetches.
+**Phase to address:** React Query optimization phase. Default invalidation behavior is surprising and expensive at scale.
 
 ---
 
-### Pitfall 8: Pagination Without Cursor Tracking
+## Technical Debt Patterns
 
-**What goes wrong:** User navigates to page 2 of tracked accounts. New data arrives. Page 2 now shows some data from old page 1. Duplicates or missing items.
+Shortcuts that seem reasonable but create long-term problems.
 
-**Why it happens:**
-- Using offset pagination with real-time data
-- No stable ordering (new items inserted at top)
-- Race condition between pagination fetch and SSE update
-
-**Prevention:**
-```typescript
-// Use cursor-based pagination for real-time data
-const { data, fetchNextPage } = useInfiniteQuery({
-  queryKey: ['tracked-accounts', guildId],
-  queryFn: ({ pageParam = undefined }) =>
-    fetch(`/api/guilds/${guildId}/accounts?cursor=${pageParam}`),
-  getNextPageParam: (lastPage) => lastPage.nextCursor,
-})
-
-// API returns cursor for stable pagination
-{
-  "items": [...],
-  "nextCursor": "eyJpZCI6MTIzLCJ0cyI6MTYxNjE2MTYxNn0="
-}
-```
-
-**Detection:**
-- Manual test: Navigate to page 2, trigger SSE update, check for duplicates
-- User reports: "I saw the same item twice"
-
-**Phase mapping:** Phase 4 (Tracking Data Display) must use cursor pagination for all lists.
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Forwarding full query string from client to backend without validation | Simple proxy — no parsing needed | Any query param injection passes through; backend must validate all params | Only acceptable with server-side param allowlist |
+| `crypto.randomUUID()` as plain CSRF token | Stateless, no server storage needed | Broken by HMAC migration — UUID token passes a string check but not an HMAC check | Never after HMAC migration |
+| `globalRateLimitUntil` module-level variable | Prevents thundering herd across all requests | Blocks unrelated mutations when read queries are rate limited | Never — refactor to per-endpoint cooldowns or add `skipGlobalCooldown` to all reads |
+| `parseRetryAfter()` parsing both seconds and HTTP date | Handles both backend formats | Breaks silently if backend emits milliseconds instead of seconds | Never — add explicit format documentation and test |
+| Error sanitizer fallback to contextual generic message | Good UX for unexpected errors | Masks new error codes the backend adds; code review doesn't catch new codes | Only with a backend-error-code registry/test |
 
 ---
 
-### Pitfall 9: Environment Variable Exposure (NEXT_PUBLIC Misuse)
+## Integration Gotchas
 
-**What goes wrong:** Sensitive API keys exposed in client bundle because they were prefixed with `NEXT_PUBLIC_`.
+Common mistakes when connecting dashboard to backend.
 
-**Why it happens:**
-- Misunderstanding Next.js environment variable rules
-- Copy-pasting .env examples without reading docs
-- Wanting to access API URL from client components
-
-**Consequences:**
-- API keys in public JavaScript bundle
-- Anyone can extract and abuse keys
-- Potential API bill from attacker usage
-
-**Prevention:**
-```bash
-# .env.local
-
-# GOOD: Server-only (not exposed to client)
-API_SECRET_KEY=abc123
-DISCORD_CLIENT_SECRET=xyz789
-
-# GOOD: Public data, safe to expose
-NEXT_PUBLIC_APP_URL=https://dashboard.example.com
-
-# BAD: Never expose secrets
-# NEXT_PUBLIC_API_SECRET=abc123  ❌
-```
-
-```typescript
-// Access server-only vars in Server Components or API routes
-export async function GET() {
-  const secret = process.env.API_SECRET_KEY // ✅ Server-side only
-  return fetch(api, { headers: { Authorization: secret } })
-}
-
-// Client components can't access non-public vars
-'use client'
-export default function Component() {
-  const secret = process.env.API_SECRET_KEY // ❌ undefined
-  const publicUrl = process.env.NEXT_PUBLIC_APP_URL // ✅ works
-}
-```
-
-**Detection:**
-- Code review: Check .env.local for NEXT_PUBLIC_ prefix
-- Build output: Search .next/ bundle for API keys
-- Automated scan: Secret detection tools (GitGuardian, etc.)
-
-**Phase mapping:** Phase 1 (Foundation) establishes .env patterns. All phases must follow.
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| CSRF HMAC alignment | Deploy backend HMAC-only, then dashboard | Deploy backend with dual-check (HMAC + plain), then dashboard HMAC, then remove plain |
+| Cursor pagination | Update `getNextPageParam` only in one hook | Update `Pagination` type, ALL hooks, AND cache key eviction atomically |
+| Error envelope v2 | Update `sanitizeError` for new shape only | Handle both shapes; update `fetchWithRetry`'s `body?.code` lookup too |
+| SSE stream proxy | Trust `request.signal` to abort backend | Add server-side heartbeat timeout as a secondary abort mechanism |
+| Rate limiter Valkey migration | Assume `Retry-After` format is unchanged | Write unit test with actual Valkey response headers before migration |
+| Backend cookie names vs dashboard cookie names | Forward raw cookie string to backend | Always extract `auth_token` and send as `Authorization: Bearer` header |
 
 ---
 
-### Pitfall 10: TypeScript `any` Escapes in API Responses
+## Performance Traps
 
-**What goes wrong:** API changes response shape. TypeScript doesn't catch it because type is `any`. Runtime error in production.
+Patterns that work at small scale but fail as usage grows.
 
-**Why it happens:**
-- Quick prototyping with loose types
-- External API (Discord, your backend) doesn't provide TypeScript types
-- Frustration with type errors → `as any` escape hatch
-
-**Consequences:**
-- Runtime errors that TypeScript should have caught
-- Difficult debugging (what shape did we expect?)
-- Tech debt accumulates
-
-**Prevention:**
-```typescript
-// BAD: Untyped API response
-const guilds = await fetch('/api/guilds').then(r => r.json())
-guilds.forEach(g => console.log(g.name)) // No autocomplete, no validation
-
-// GOOD: Typed with Zod validation
-import { z } from 'zod'
-
-const GuildSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  icon: z.string().nullable(),
-  permissions: z.number(),
-})
-
-type Guild = z.infer<typeof GuildSchema>
-
-const response = await fetch('/api/guilds')
-const data = await response.json()
-const guilds = z.array(GuildSchema).parse(data) // Runtime validation
-```
-
-**Detection:**
-- Code review: Search for `any`, `as any`, `@ts-ignore`
-- ESLint rule: `@typescript-eslint/no-explicit-any`
-- Manual test: Change API response shape, see if TypeScript errors
-
-**Phase mapping:** Phase 1 (Foundation) establishes type validation patterns. All API integrations follow.
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| Infinite query refetching all pages on mutation | 10-20s spinner after any write operation | Use `resetQueries` or `refetchPage: index === 0` on mutation invalidation | After ~5 pages loaded (250+ items) |
+| No `staleTime` differentiation by data volatility | Real-time data is stale, static data refetches unnecessarily | Set `staleTime: 0` for SSE-backed data, `staleTime: 5m` for slowly-changing lists | At 10+ concurrent users with frequent mutations |
+| SSE reconnecting on every visibility change without cooldown | Rapid tab switch creates connection storm to backend | Cooldown exists in `useSSE` but verify `lastConnectTimeRef` is not reset on close | After ~10 rapid tab switches |
+| Full `queryClient.invalidateQueries` with broad key (e.g., `['guild', guildId]`) | Every query for a guild refetches simultaneously after any mutation | Use scoped keys — invalidate only the specific resource that changed | When guild has 10+ active queries loaded |
+| Proxy routes parsing full response body for all error paths | High memory usage on large backend error responses | Parse only on non-2xx; stream 2xx responses directly | When backend returns large error bodies (unlikely but possible) |
 
 ---
 
-## Minor Pitfalls
+## Security Mistakes
 
-Mistakes that cause annoyance but are fixable.
+Domain-specific security issues beyond general web security.
 
-### Pitfall 11: Missing Loading States on Mutations
-
-**What goes wrong:** User clicks "Save Settings", nothing happens for 2 seconds, clicks again, creates duplicate request.
-
-**Why it happens:**
-- No `isPending` check on mutation
-- No disabled state on button during mutation
-- No optimistic update or loading spinner
-
-**Prevention:**
-```typescript
-const { mutate, isPending } = useMutation({
-  mutationFn: updateGuildSettings,
-})
-
-<Button
-  onClick={() => mutate(data)}
-  disabled={isPending}
->
-  {isPending ? 'Saving...' : 'Save Settings'}
-</Button>
-```
-
-**Detection:**
-- Manual test: Click save button rapidly
-- User reports: "I clicked twice and it saved twice"
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| CSRF token matching logic without timing-safe compare | Timing attack to guess token byte-by-byte | Use `crypto.timingSafeEqual()` for HMAC comparison; plain UUID is fine with `===` since UUID length is fixed |
+| Forwarding raw cookies to backend without extracting Bearer token | Cookie name mismatch causes auth bypass edge cases; forwards all dashboard cookies including CSRF | Always convert `auth_token` cookie → `Authorization: Bearer` before backend call |
+| Nonce freshness: same nonce reused across middleware re-renders | Breaks CSP strict-dynamic for subsequent navigation | Each request generates its own nonce in `proxy.ts` — verify this holds under Vercel edge caching |
+| Forwarding `X-Forwarded-For` from client to backend unchanged | Client can spoof IP, bypassing IP-based rate limits | The proxy already extracts only the first XFF entry (client IP), not the full chain — verify this on Valkey migration |
+| Error sanitizer allowing safe-looking messages that leak context | Backend error message passes `isMessageSafe()` but contains business logic details | Review `LONG_RATE_LIMIT_THRESHOLD_MS` and similar internal constant values — they must not appear in messages |
+| SSE endpoint not validating `auth_token` on reconnect | After token expiry, stale EventSource continues receiving events | The SSE proxy validates `auth_token` on connect only; if token expires mid-stream, backend should close the stream and client should treat 401 on reconnect as session expiry |
 
 ---
 
-### Pitfall 12: Hardcoded API URLs
+## UX Pitfalls
 
-**What goes wrong:** API URL changes between dev/staging/prod. Code breaks in different environments.
+Common user experience mistakes during this migration.
 
-**Why it happens:**
-- Quick prototyping with `fetch('http://localhost:3001/...')`
-- Not using environment variables
-
-**Prevention:**
-```typescript
-// .env.local
-API_BASE_URL=http://localhost:3001
-NEXT_PUBLIC_API_URL=http://localhost:3001 # If needed client-side
-
-// lib/api.ts
-const API_URL = process.env.API_BASE_URL || 'https://api.production.com'
-
-export async function fetchGuilds() {
-  return fetch(`${API_URL}/guilds`)
-}
-```
-
-**Detection:**
-- Code review: Search for `fetch('http`
-- Deploy to staging, check if API calls work
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| Showing "Too many requests" toast when background query triggers rate limit | User thinks their action failed when it was a background poll | Use `skipGlobalCooldown: true` on all background polling; only block user-initiated actions |
+| Cursor pagination removes total count display ("Page 2 of 47") | Users lose orientation in large lists | Replace with "Load more" UX or "Showing N items" counter using the backend's `total` field if still provided alongside cursor |
+| Error envelope migration surfaces "[object Object]" during transition | Users see confusing error text on all failures | Ship sanitizer dual-shape support before backend deploys; zero user impact window |
+| Rate limit toast fires on page load (from cached rate limit state) | User sees "Too many requests" on fresh session | `globalRateLimitUntil` is module-level and persists across navigations but not page refreshes — acceptable; do not persist to sessionStorage |
+| SSE reconnecting shows "Disconnected" flash on tab refocus | Perceived reliability degradation | During the reconnect cooldown, show "Reconnecting..." not "Disconnected" — only show "Disconnected" after retry exhaustion |
 
 ---
 
-### Pitfall 13: No Error Boundaries
+## "Looks Done But Isn't" Checklist
 
-**What goes wrong:** Component throws error. Entire page crashes to white screen.
+Things that appear complete but are missing critical pieces.
 
-**Why it happens:**
-- React default behavior (uncaught errors unmount tree)
-- Not using Error Boundaries in App Router
-
-**Prevention:**
-```typescript
-// app/dashboard/error.tsx
-'use client'
-
-export default function Error({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string }
-  reset: () => void
-}) {
-  return (
-    <div>
-      <h2>Something went wrong!</h2>
-      <button onClick={reset}>Try again</button>
-    </div>
-  )
-}
-```
-
-**Detection:**
-- Manual test: Throw error in component, see if error boundary catches it
-- User reports: "Page went blank"
+- [ ] **CSRF HMAC alignment:** Proxy generates HMAC token — but verify the HMAC key is the same secret the backend uses to validate. If keys differ, 100% of mutations fail silently.
+- [ ] **Cursor pagination:** `getNextPageParam` updated — but verify `Pagination` type is updated, old cache entries are evicted, and infinite scroll stop condition is correct (`nextCursor === null` not `page >= total_pages`).
+- [ ] **Error envelope migration:** `sanitizeError()` handles new shape — but verify `fetchWithRetry`'s `unverified_email` redirect uses `body?.error?.code` not just `body?.code`.
+- [ ] **Rate limit resilience:** 429 handling reviewed — but verify 503 (rate limiter backend down) takes a different code path than 429 (rate limited), and that 503 triggers retry logic, not rate-limit cooldown.
+- [ ] **SSE hardening:** Cleanup on unmount exists — but verify no two EventSource instances for the same URL can exist simultaneously after rapid hide/show tab cycles.
+- [ ] **SSR cookie forwarding:** Server Component calls backend — but verify it uses `Authorization: Bearer` not raw cookie forwarding, and that the cookie name mapping is explicit.
+- [ ] **React Query optimization:** Stale times reviewed — but verify `resetQueries` (not `invalidateQueries`) is used for infinite queries after mutations.
 
 ---
 
-## Phase-Specific Warnings
+## Recovery Strategies
 
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
-| Phase 1: Authentication | JWT in localStorage (Pitfall 2) | Use HttpOnly cookies from day 1 |
-| Phase 1: Authentication | Missing guild permission refresh (Pitfall 3) | Implement short-lived JWT + refresh token |
-| Phase 2: Guild Management | Client-side guild filtering (Pitfall 1) | Server-side validation on every API route |
-| Phase 2: Guild Management | React Query cache invalidation (Pitfall 6) | Define cache key structure upfront |
-| Phase 3: Real-time Features | Unbounded SSE connections (Pitfall 4) | Implement cleanup and timeouts from start |
-| Phase 3: Real-time Features | Cold start UX (Pitfall 5) | Use Suspense + streaming SSR |
-| Phase 4: Tracking Data | Pagination with offset (Pitfall 8) | Use cursor-based pagination |
-| All Phases | Environment variable exposure (Pitfall 9) | Audit .env.local before each phase |
-| All Phases | TypeScript `any` escapes (Pitfall 10) | Enforce Zod validation for all API calls |
+When pitfalls occur despite prevention, how to recover.
 
----
-
-## Security Checklist (Per Phase)
-
-Before marking any phase complete, verify:
-
-- [ ] No JWT in localStorage or sessionStorage
-- [ ] All API routes validate guild permissions server-side
-- [ ] No `NEXT_PUBLIC_` prefix on secrets in .env.local
-- [ ] All external API responses validated with Zod
-- [ ] SSE connections have cleanup handlers
-- [ ] Error boundaries exist for all route segments
-- [ ] Rate limiting considered for Discord API calls
-- [ ] TypeScript strict mode enabled, no `any` types
-- [ ] Manual cross-tenant access test performed (try to access another user's guild)
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|----------------|
+| CSRF broken after HMAC deploy | HIGH — all mutations blocked | Revert backend to dual-check mode; hotfix dashboard HMAC generator; redeploy in order |
+| Cursor pagination cache corruption | LOW — client-side only | Add `v2` sentinel to cache key in hotfix; `queryClient.clear()` is nuclear option |
+| Error envelope breaks unverified_email redirect | MEDIUM — security UX regression | Hotfix `fetchWithRetry` to check both `body?.code` and `body?.error?.code`; no backend change needed |
+| Global rate limit cooldown blocks user | LOW — resolves on page refresh | Page refresh resets module state; immediate fix is to narrow `skipGlobalCooldown` to reads |
+| SSE dual-instance messages | LOW — UX glitch only | Add generation counter to `useSSE`; deploy as non-breaking patch |
+| SSR forwards wrong cookies, 401 on page load | HIGH — auth broken for SSR pages | Revert SSR change to client-side fetch; fix `ssrBackendFetch` helper before retry |
 
 ---
 
-## Confidence Assessment
+## Pitfall-to-Phase Mapping
 
-**Overall confidence: MEDIUM**
+How roadmap phases should address these pitfalls.
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Next.js 14 App Router | MEDIUM | Training data from mid-2024, App Router patterns may have evolved |
-| Multi-tenant security | HIGH | Standard patterns, well-established in SaaS |
-| Discord OAuth | MEDIUM | OAuth flows stable, but Discord API may have changed |
-| SSE best practices | MEDIUM | Core patterns stable, Vercel-specific behavior may differ |
-| JWT security | HIGH | Fundamental security principles, unlikely to change |
-
-**Limitations:**
-- WebSearch unavailable — could not verify current Next.js 14 best practices (2026)
-- Could not check for recent Discord API changes or rate limit updates
-- Vercel serverless behavior may have changed since training data
-- No access to official Next.js documentation for App Router updates
-
-**Recommended validation:**
-- Cross-reference SSE implementation with current Vercel Edge Runtime docs
-- Verify Discord OAuth rate limits and caching recommendations
-- Check Next.js 14.x changelog for App Router security updates
-- Review React Query v5 migration guide (if applicable)
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| CSRF HMAC alignment break (Pitfall 1) | CSRF HMAC alignment phase — first deploy | E2E test: all mutations succeed after backend Phase 37 deploys with dual-check active |
+| Cursor pagination cache corruption (Pitfall 2) | Cursor pagination migration phase | React Query DevTools: infinite scroll stops on `nextCursor === null`; no "[object Object]" in pagination |
+| SSR cookie name mismatch (Pitfall 3) | SSR cookie forwarding phase | Integration test: full page refresh on authenticated route returns 200, not 401 |
+| Error envelope shape mismatch (Pitfall 4) | Error envelope migration phase | Unit test `sanitizeError()` with both `{ error: "string" }` and `{ error: { code, message } }` shapes |
+| Rate limit global cooldown interference (Pitfall 5) | Rate limit 503/429 resilience phase | Test: trigger 429 on bot-status poll, verify account mutation succeeds immediately after |
+| SSE dual-instance race (Pitfall 6) | SSE lifecycle hardening phase | Manual test: rapidly switch tab visibility 10x, verify single EventSource in DevTools Network |
+| Infinite query N-page refetch (Pitfall 7) | React Query cache optimization phase | Network tab: after delete mutation, only 1 accounts request fires (not N for loaded pages) |
 
 ---
 
 ## Sources
 
-Due to WebSearch unavailability, all findings based on training data knowledge of:
-- Next.js 13/14 App Router patterns (as of mid-2024)
-- Discord Developer Documentation (OAuth flows, API structure)
-- Multi-tenant SaaS security best practices (OWASP, industry standards)
-- React Query documentation (v4/v5)
-- Vercel serverless function behavior (Edge Runtime, Node.js Runtime)
+- OWASP CSRF Prevention Cheat Sheet (Signed Double-Submit Cookie): https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html
+- csrf-csrf library (HMAC double-submit implementation): https://github.com/Psifi-Solutions/csrf-csrf
+- TanStack Query Infinite Queries docs: https://tanstack.com/query/latest/docs/framework/react/guides/infinite-queries
+- React Query staleTime vs gcTime: https://www.codemzy.com/blog/react-query-cachetime-staletime
+- Next.js CSP and nonce discussion (GitHub #54907): https://github.com/vercel/next.js/discussions/54907
+- Next.js SSR cookie handling: https://nextjs.org/docs/app/api-reference/functions/cookies
+- SSE memory leak in Express: https://github.com/expressjs/express/issues/2248
+- rate-limit-redis (Valkey support): https://github.com/express-rate-limit/rate-limit-redis
+- API backward compatibility (Google AIP-180): https://google.aip.dev/180
+- Cursor vs offset pagination: https://developer.zendesk.com/documentation/api-basics/pagination/comparing-cursor-pagination-and-offset-pagination/
+- Codebase inspection: src/lib/fetch-with-retry.ts, src/hooks/use-sse.ts, src/lib/server/error-sanitizer.ts, src/proxy.ts, src/hooks/use-tracking.ts
 
-**Recommended authoritative sources for validation:**
-- Next.js App Router documentation: https://nextjs.org/docs/app
-- Discord Developer Portal: https://discord.com/developers/docs
-- OWASP Multi-tenancy Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Multitenant_Architecture_Cheat_Sheet.html
-- Vercel Edge Runtime docs: https://vercel.com/docs/functions/edge-functions/edge-runtime
-- React Query documentation: https://tanstack.com/query/latest/docs/react/overview
+---
+*Pitfalls research for: Next.js 14 Dashboard — v1.2 Security Audit & Optimization (adding cursor pagination, SSR cookie forwarding, CSRF HMAC, rate limit resilience, error envelope migration, SSE hardening, React Query optimization)*
+*Researched: 2026-02-22*

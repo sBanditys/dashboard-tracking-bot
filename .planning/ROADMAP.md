@@ -34,7 +34,7 @@ Full details: `milestones/v1.0-ROADMAP.md`
 - [x] **Phase 13: Alert & Import Management** - Alert thresholds and CSV import/export (completed 2026-02-17)
 - [x] **Phase 14: Fix Import Confirm CSRF Bypass** - Gap closure: replace raw fetch() with fetchWithRetry() in useConfirmImport (completed 2026-02-22)
 - [x] **Phase 15: Reactivate Next.js Middleware** - Gap closure: rename proxy.ts → middleware.ts to restore CSRF + CSP (completed 2026-02-22)
-- [ ] **Phase 16: Restore Next.js Middleware (Undo Regression)** - Gap closure: undo post-verification regression that renamed middleware.ts → proxy.ts
+- [x] **Phase 16: Restore Next.js Middleware (Undo Regression)** - Gap closure: undo post-verification regression that renamed middleware.ts → proxy.ts (completed 2026-02-22)
 
 ## Phase Details
 
@@ -182,7 +182,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13
 | 13. Alert & Import Management | v1.1 | Complete    | 2026-02-17 | - |
 | 14. Fix Import Confirm CSRF Bypass | 1/1 | Complete    | 2026-02-22 | - |
 | 15. Reactivate Next.js Middleware | 2/2 | Complete    | 2026-02-22 | - |
-| 16. Restore Next.js Middleware (Undo Regression) | 0/1 | Not started | - | - |
+| 16. Restore Next.js Middleware (Undo Regression) | 1/1 | Complete   | 2026-02-22 | - |
 
 ---
 *Created: 2026-01-24*

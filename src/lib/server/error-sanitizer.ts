@@ -11,6 +11,18 @@
  * preserving error codes needed for client-side logic.
  */
 
+// New envelope shape from backend (Stripe-inspired)
+// TODO(v1.3): Remove old envelope support after backend fully migrates
+interface NewBackendErrorEnvelope {
+  error: {
+    code: string;
+    message: string;
+    requestId: string;
+    details?: unknown;
+  };
+}
+
+// Old envelope shape (flat) — existing BackendError interface covers this
 interface BackendError {
   message?: string;
   error?: string;
@@ -18,6 +30,37 @@ interface BackendError {
   stack?: string;
   details?: unknown;
   statusCode?: number;
+}
+
+/**
+ * Type guard: returns true if body matches the new nested error envelope shape.
+ */
+function isNewEnvelope(body: unknown): body is NewBackendErrorEnvelope {
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    'error' in body &&
+    typeof (body as Record<string, unknown>).error === 'object' &&
+    (body as Record<string, unknown>).error !== null
+  );
+}
+
+/**
+ * Extract error code and message from either backend envelope shape.
+ * New shape: { error: { code, message } }
+ * Old shape: { error: string, code? }
+ * TODO(v1.3): Remove old envelope support
+ */
+function extractBackendError(body: unknown): { code?: string; message?: string } {
+  if (isNewEnvelope(body)) {
+    return { code: body.error.code, message: body.error.message };
+  }
+  // Old flat shape
+  const old = (typeof body === 'object' && body !== null ? body : {}) as BackendError;
+  return {
+    code: old.code,
+    message: old.message || (typeof old.error === 'string' ? old.error : undefined),
+  };
 }
 
 export interface SanitizedError {
@@ -85,12 +128,8 @@ export function sanitizeError(
   backendResponse: unknown,
   context: string
 ): SanitizedError {
-  // Parse backend response -- could be object, string, or undefined
-  const parsed: BackendError = typeof backendResponse === 'object' && backendResponse !== null
-    ? backendResponse as BackendError
-    : {};
-
-  const code = parsed.code;
+  // Extract error code and message from either old or new backend envelope shape
+  const { code, message } = extractBackendError(backendResponse);
 
   // Preserve known error codes for client-side logic
   // (e.g., 'unverified_email' triggers redirect in fetchWithRetry)
@@ -99,7 +138,7 @@ export function sanitizeError(
   }
 
   // Check if the backend message is safe to forward
-  const backendMsg = parsed.message || parsed.error || '';
+  const backendMsg = message || '';
   if (backendMsg && isMessageSafe(backendMsg)) {
     return { error: backendMsg, ...(code && { code }) };
   }

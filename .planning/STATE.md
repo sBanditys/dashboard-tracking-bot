@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface — independent of bot uptime.
-**Current focus:** Phase 12 - Bonus System
+**Current focus:** Phase 14 - Fix Import Confirm CSRF Bypass
 
 ## Current Position
 
-Phase: 12 of 13 (Bonus System)
-Plan: 4 of 4 completed in current phase (Plans 02, 03, 04 run as Wave 2)
-Status: In Progress
-Last activity: 2026-02-21 — Completed 12-04-PLAN.md (Bonus Leaderboard Tab)
+Phase: 14 of 14 (Fix Import Confirm CSRF Bypass)
+Plan: 1 of 1 completed in current phase
+Status: Complete
+Last activity: 2026-02-22 — Completed 14-01-PLAN.md (Fix Import Confirm CSRF Bypass)
 
 Progress: [█████████░░░░░░░░░░░] 60/TBD (Phase 1-8 complete from v1.0, Phase 9: 3/3 plans complete, Phase 10: 3/3 plans complete, Phase 11: 2/2 plans complete, Phase 12: 1/4 plans complete, Phase 13: 5/5 plans complete)
 
@@ -60,6 +60,7 @@ Progress: [█████████░░░░░░░░░░░] 60/TBD 
 | Phase 12-bonus-system P02 | 4m 22s | 2 tasks | 11 files |
 | Phase 12-bonus-system P03 | 3m 37s | 2 tasks | 2 files |
 | Phase 12-bonus-system P04 | 3m 20s | 2 tasks | 2 files |
+| Phase 14-fix-import-confirm-csrf-bypass P01 | 41s | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,7 @@ Recent decisions affecting current work:
 - [Phase 12-bonus-system]: LeaderboardTab createModalOpen state pre-declared in page.tsx so Plan 03 activation only requires uncommenting import+JSX
 - **12-02 (Bonus UI Core)**: Inner tabs lazy-render (only active tab mounted); BulkConfirmModal inline (shows amount); Notes textarea below group name for space efficiency; LeaderboardTab/WeekPicker/CreateRoundModal pre-created by IDE linter ahead of Plans 03/04
 - **12-03 (Bonus Creation Form)**: Groups fetched from useBrands() brands[].groups[] flatten — no dedicated groups endpoint; window.confirm() for retroactive extra confirmation; overriddenGroups Set tracks per-group target overrides
+- [Phase 14-fix-import-confirm-csrf-bypass]: Single-line fix: replace raw fetch() with fetchWithRetry() in useConfirmImport; credentials: include passes through and fetchWithRetry returns standard Response so SSE streaming works identically
 
 ### Pending Todos
 
@@ -112,9 +114,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-21 (execute-phase)
-Stopped at: Completed 12-04-PLAN.md (Bonus Leaderboard Tab)
-Resume file: Phase 12 complete (all 4 plans done)
+Last session: 2026-02-22 (execute-phase)
+Stopped at: Completed 14-01-PLAN.md (Fix Import Confirm CSRF Bypass)
+Resume file: Phase 14 complete (1/1 plans done)
 
 ---
-*Last updated: 2026-02-21 (12-03 complete)*
+*Last updated: 2026-02-22 (14-01 complete)*

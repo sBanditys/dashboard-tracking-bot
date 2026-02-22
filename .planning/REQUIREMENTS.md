@@ -11,7 +11,7 @@ Requirements for security hardening and backend alignment. Each maps to roadmap 
 
 - [ ] **AUTH-01**: User session persists when access token expires (refresh token automatically rotates)
 - [ ] **AUTH-02**: User with unverified Discord email cannot log in (backend rejects, dashboard shows clear error)
-- [ ] **AUTH-03**: All frontend mutation requests include CSRF token via double-submit cookie pattern
+- [x] **AUTH-03**: All frontend mutation requests include CSRF token via double-submit cookie pattern
 - [ ] **AUTH-04**: Dashboard serves Content-Security-Policy headers preventing XSS vectors
 - [ ] **AUTH-05**: Proxy layer sanitizes backend error messages (no stack traces or internal details leak to client)
 - [ ] **AUTH-06**: All raw SQL queries in dashboard-related backend routes use parameterized `Prisma.sql` template tags
@@ -44,7 +44,7 @@ Requirements for security hardening and backend alignment. Each maps to roadmap 
 - [ ] **IMPEX-01**: Admin can export accounts to CSV with brand/group/platform filters
 - [ ] **IMPEX-02**: User can download CSV import template
 - [ ] **IMPEX-03**: Admin can upload CSV for import preview with validation
-- [ ] **IMPEX-04**: Admin can confirm and execute import with progress indicator
+- [x] **IMPEX-04**: Admin can confirm and execute import with progress indicator
 
 ## v2 Requirements
 
@@ -82,7 +82,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-01 | Phase 9 | Pending |
 | AUTH-02 | Phase 9 | Pending |
 | AUTH-06 | Phase 9 | Pending |
-| AUTH-03 | Phase 14 | Pending |
+| AUTH-03 | Phase 14 | Complete |
 | AUTH-04 | Phase 10 | Pending |
 | AUTH-05 | Phase 10 | Pending |
 | SESS-01 | Phase 11 | Pending |
@@ -102,7 +102,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IMPEX-01 | Phase 13 | Pending |
 | IMPEX-02 | Phase 13 | Pending |
 | IMPEX-03 | Phase 13 | Pending |
-| IMPEX-04 | Phase 14 | Pending |
+| IMPEX-04 | Phase 14 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 24 total

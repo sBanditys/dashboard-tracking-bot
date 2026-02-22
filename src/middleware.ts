@@ -110,21 +110,24 @@ function setCsrfCookie(response: NextResponse, token: string): void {
   });
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Generate CSP nonce for this request
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const requestId = crypto.randomUUID();
 
   // CSRF validation runs BEFORE auth redirect logic
   // Only validate CSRF on API routes (page routes don't need it)
   const isApiRoute = pathname.startsWith('/api/');
   const isAuthRoute = pathname.startsWith('/api/auth/');
+  const isCspReportRoute = pathname === '/api/csp-report';
   const requestMethod = request.method.toUpperCase();
   const isMutationMethod = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(requestMethod);
 
-  // CSRF validation for mutation API requests (excluding auth routes)
-  if (isApiRoute && !isAuthRoute && isMutationMethod) {
+  // CSRF validation for mutation API requests (excluding auth routes and CSP report route)
+  // CSP report route is exempt because browsers send violation reports without custom headers
+  if (isApiRoute && !isAuthRoute && !isCspReportRoute && isMutationMethod) {
     const cookieToken = request.cookies.get('_csrf_token')?.value;
     const headerToken = request.headers.get('X-CSRF-Token');
 
@@ -155,12 +158,14 @@ export async function proxy(request: NextRequest) {
     );
   }
 
-  // Build request headers — inject CSP nonce for pages, and refreshed auth cookie if available
+  // Build request headers — inject CSP nonce for pages, X-Request-ID for all routes,
+  // and refreshed auth cookie if available
   const requestHeaders = new Headers(request.headers);
   if (!isApiRoute) {
     requestHeaders.set('x-nonce', nonce);
     requestHeaders.set('Content-Security-Policy', buildCspHeader(nonce));
   }
+  requestHeaders.set('X-Request-ID', requestId);
   if (refreshedTokens) {
     // Inject new auth_token into request cookies so downstream route handlers see it
     const existingCookies = requestHeaders.get('cookie') || '';
@@ -171,12 +176,8 @@ export async function proxy(request: NextRequest) {
   }
 
   // Create response with (potentially modified) request headers
-  let response: NextResponse;
-  if (!isApiRoute || refreshedTokens) {
-    response = NextResponse.next({ request: { headers: requestHeaders } });
-  } else {
-    response = NextResponse.next();
-  }
+  // Always pass requestHeaders since X-Request-ID is now always set
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
 
   // Set refreshed tokens as browser cookies
   if (refreshedTokens) {
@@ -210,20 +211,27 @@ export async function proxy(request: NextRequest) {
     for (const [key, value] of Object.entries(securityHeaders)) {
       response.headers.set(key, value);
     }
+    response.headers.set('X-Request-ID', requestId);
+    if (process.env.NODE_ENV === 'production') {
+      response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
     return response;
   }
 
   if (isDashboardRoute && !hasSessionCookie) {
-    const loginUrl = new URL('/login', request.url);
-    // Store callback URL for post-login redirect
+    const landingUrl = new URL('/', request.url);
     if (pathname !== '/') {
-      loginUrl.searchParams.set('callbackUrl', pathname);
+      landingUrl.searchParams.set('returnTo', pathname);
     }
-    const redirectResponse = NextResponse.redirect(loginUrl);
-    // Apply security headers to redirect (but no CSP for redirects - they don't render content)
+    const redirectResponse = NextResponse.redirect(landingUrl);
+    // Apply security headers + X-Request-ID + HSTS to redirect
     const securityHeaders = getSecurityHeaders(nonce);
     for (const [key, value] of Object.entries(securityHeaders)) {
       redirectResponse.headers.set(key, value);
+    }
+    redirectResponse.headers.set('X-Request-ID', requestId);
+    if (process.env.NODE_ENV === 'production') {
+      redirectResponse.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     }
     return redirectResponse;
   }
@@ -235,6 +243,10 @@ export async function proxy(request: NextRequest) {
     const securityHeaders = getSecurityHeaders(nonce);
     for (const [key, value] of Object.entries(securityHeaders)) {
       redirectResponse.headers.set(key, value);
+    }
+    redirectResponse.headers.set('X-Request-ID', requestId);
+    if (process.env.NODE_ENV === 'production') {
+      redirectResponse.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     }
     return redirectResponse;
   }
@@ -256,19 +268,30 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Cache-Control: no-store for authenticated page responses
+  if (!isApiRoute && hasSessionCookie) {
+    response.headers.set('Cache-Control', 'no-store');
+  }
+
+  // Set X-Request-ID on all responses
+  response.headers.set('X-Request-ID', requestId);
+
+  // HSTS: only in production
+  if (process.env.NODE_ENV === 'production') {
+    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+
   return response;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - legal routes
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico
-     * - images and other static assets
-     */
-    '/((?!legal|_next/static|_next/image|favicon.ico|.*\\.png$).*)',
+    {
+      source: '/((?!legal|_next/static|_next/image|favicon.ico|.*\\.png$).*)',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
   ],
 };

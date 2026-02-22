@@ -28,13 +28,14 @@ export function buildCspHeader(nonce: string): string {
     "style-src 'self' 'unsafe-inline'",
     // Discord CDN for avatars, plus blob/data for potential image handling
     "img-src 'self' blob: data: https://cdn.discordapp.com",
-    "font-src 'self'",
-    "connect-src 'self'",
+    "font-src 'self' https://fonts.gstatic.com",
+    "connect-src 'self' wss:",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
     "upgrade-insecure-requests",
+    "report-uri /api/csp-report",
   ];
 
   return directives.join('; ');

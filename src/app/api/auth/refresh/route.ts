@@ -48,8 +48,8 @@ export async function POST() {
     }
 
     // Forward CSRF token if available (backend validates CSRF for cookie-authenticated requests)
-    // The dashboard proxy sets the cookie as '_csrf_token', but the backend expects 'csrf_token'
-    const csrfToken = cookieStore.get('_csrf_token')?.value
+    // The dashboard proxy sets the cookie as 'csrf_token'; forward it to the backend as-is
+    const csrfToken = cookieStore.get('csrf_token')?.value
     if (csrfToken) {
       cookieParts.push(`csrf_token=${encodeURIComponent(csrfToken)}`)
     }

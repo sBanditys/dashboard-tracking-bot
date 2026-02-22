@@ -67,7 +67,7 @@ async function refreshTokensFromMiddleware(
       fetchHeaders['X-Internal-Secret'] = INTERNAL_SECRET;
 
     // Forward CSRF token so backend double-submit check passes when no Bearer token
-    const csrfToken = request.cookies.get('_csrf_token')?.value;
+    const csrfToken = request.cookies.get('csrf_token')?.value;
     if (csrfToken) {
       fetchHeaders['X-CSRF-Token'] = csrfToken;
       cookieParts.push(`csrf_token=${encodeURIComponent(csrfToken)}`);
@@ -102,7 +102,7 @@ async function refreshTokensFromMiddleware(
  * the X-CSRF-Token header against the cookie on mutation requests.
  */
 function setCsrfCookie(response: NextResponse, token: string): void {
-  response.cookies.set('_csrf_token', token, {
+  response.cookies.set('csrf_token', token, {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     httpOnly: false, // Client JS must read the token to send in header
@@ -128,7 +128,7 @@ export async function proxy(request: NextRequest) {
   // CSRF validation for mutation API requests (excluding auth routes and CSP report route)
   // CSP report route is exempt because browsers send violation reports without custom headers
   if (isApiRoute && !isAuthRoute && !isCspReportRoute && isMutationMethod) {
-    const cookieToken = request.cookies.get('_csrf_token')?.value;
+    const cookieToken = request.cookies.get('csrf_token')?.value;
     const headerToken = request.headers.get('X-CSRF-Token');
 
     if (!cookieToken || !headerToken || cookieToken !== headerToken) {

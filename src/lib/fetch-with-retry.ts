@@ -111,11 +111,27 @@ function isAuthEndpoint(url: string): boolean {
   return url.includes('/api/auth/');
 }
 
+/**
+ * Extract error code from either backend envelope shape.
+ * New shape: { error: { code } }, Old shape: { code }
+ * TODO(v1.3): Remove old envelope support (body?.code path)
+ */
+function extractErrorCode(body: unknown): string | undefined {
+  if (body === null || typeof body !== 'object') return undefined;
+  const b = body as Record<string, unknown>;
+  // New shape: { error: { code } }
+  if (typeof b.error === 'object' && b.error !== null) {
+    return (b.error as Record<string, unknown>).code as string | undefined;
+  }
+  // Old shape: { code }
+  return b.code as string | undefined;
+}
+
 function getCsrfToken(): string | undefined {
   if (typeof document === 'undefined') return undefined;
   return document.cookie
     .split('; ')
-    .find(row => row.startsWith('_csrf_token='))
+    .find(row => row.startsWith('csrf_token='))
     ?.split('=')[1];
 }
 
@@ -253,7 +269,7 @@ export async function fetchWithRetry(
           const clonedResponse = response.clone();
           const body = await clonedResponse.json().catch(() => null);
 
-          if (body?.code === 'EBADCSRFTOKEN') {
+          if (extractErrorCode(body) === 'EBADCSRFTOKEN') {
             // Trigger middleware to refresh CSRF cookie via lightweight GET request
             await fetch('/api/auth/session', { method: 'GET', credentials: 'include' });
 
@@ -274,7 +290,7 @@ export async function fetchWithRetry(
           const clonedResponse = response.clone();
           const body = await clonedResponse.json().catch(() => null);
 
-          if (body?.code === 'EBADCSRFTOKEN') {
+          if (extractErrorCode(body) === 'EBADCSRFTOKEN') {
             toast.error('Session error, please refresh the page');
             return response;
           }
@@ -290,7 +306,7 @@ export async function fetchWithRetry(
           const clonedResponse = response.clone();
           const body = await clonedResponse.json().catch(() => null);
 
-          if (body?.code === 'unverified_email') {
+          if (extractErrorCode(body) === 'unverified_email') {
             if (typeof window !== 'undefined') {
               window.location.replace('/auth/unverified-email');
             }

@@ -29,7 +29,7 @@ Full details: `milestones/v1.0-ROADMAP.md`
 
 - [ ] **Phase 9: Authentication Security** - Backend security fixes (refresh tokens, verified email, SQL injection audit)
 - [x] **Phase 10: Frontend Security Hardening** - CSRF protection, CSP headers, error sanitization (completed 2026-02-16)
-- [ ] **Phase 11: Session Management** - View and revoke active sessions
+- [x] **Phase 11: Session Management** - View and revoke active sessions (completed 2026-02-22)
 - [x] **Phase 12: Bonus System** - Complete bonus rounds UI with payments and leaderboard (completed 2026-02-21)
 - [x] **Phase 13: Alert & Import Management** - Alert thresholds and CSV import/export (completed 2026-02-17)
 
@@ -134,7 +134,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13
 | 8. Polish & Optimization | v1.0 | 9/9 | Complete | 2026-02-14 |
 | 9. Authentication Security | v1.1 | 0/3 | Not started | - |
 | 10. Frontend Security Hardening | v1.1 | Complete    | 2026-02-16 | - |
-| 11. Session Management | v1.1 | 0/2 | Not started | - |
+| 11. Session Management | v1.1 | Complete    | 2026-02-22 | - |
 | 12. Bonus System | 4/4 | Complete    | 2026-02-21 | - |
 | 13. Alert & Import Management | v1.1 | Complete    | 2026-02-17 | - |
 

@@ -86,6 +86,7 @@ function ThemedToaster() {
       visibleToasts={3}
       theme={isLight ? 'light' : 'dark'}
       toastOptions={{
+        duration: 5000,
         style: {
           background: isLight ? '#fffdfa' : '#19150f',
           border: isLight ? '1px solid rgba(116, 94, 63, 0.24)' : '1px solid rgba(208, 173, 109, 0.22)',

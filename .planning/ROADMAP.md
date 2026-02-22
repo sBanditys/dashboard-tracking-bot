@@ -34,6 +34,7 @@ Full details: `milestones/v1.0-ROADMAP.md`
 - [x] **Phase 13: Alert & Import Management** - Alert thresholds and CSV import/export (completed 2026-02-17)
 - [x] **Phase 14: Fix Import Confirm CSRF Bypass** - Gap closure: replace raw fetch() with fetchWithRetry() in useConfirmImport (completed 2026-02-22)
 - [x] **Phase 15: Reactivate Next.js Middleware** - Gap closure: rename proxy.ts → middleware.ts to restore CSRF + CSP (completed 2026-02-22)
+- [ ] **Phase 16: Restore Next.js Middleware (Undo Regression)** - Gap closure: undo post-verification regression that renamed middleware.ts → proxy.ts
 
 ## Phase Details
 
@@ -146,6 +147,19 @@ Plans:
 - [ ] 15-01-PLAN.md — Rename proxy.ts to middleware.ts, enhance security headers, CSP report route, auth redirect returnTo
 - [ ] 15-02-PLAN.md — Playwright E2E tests for security headers, CSRF cookies, and auth redirects
 
+### Phase 16: Restore Next.js Middleware (Undo Regression)
+**Goal**: Next.js middleware is active again, restoring CSRF cookie issuance, CSP header injection, and auth redirects
+**Depends on**: Phase 15
+**Requirements**: AUTH-03, AUTH-04
+**Gap Closure:** Closes regression from post-Phase 15 commit 2feb03e
+**Success Criteria** (what must be TRUE):
+  1. `src/middleware.ts` exists with `export async function middleware` (not proxy.ts/proxy)
+  2. `_csrf_token` cookie is set on page responses (CSRF double-submit pattern active)
+  3. `Content-Security-Policy` header is present on all page responses
+  4. Auth redirect happens at SSR level for unauthenticated requests to protected routes
+**Plans**: 1 plan
+- [ ] 16-01-PLAN.md — Rename proxy.ts → middleware.ts, restore middleware export, verify activation
+
 ## Progress
 
 **Execution Order:**
@@ -168,6 +182,7 @@ Phases execute in numeric order: 9 → 10 → 11 → 12 → 13
 | 13. Alert & Import Management | v1.1 | Complete    | 2026-02-17 | - |
 | 14. Fix Import Confirm CSRF Bypass | 1/1 | Complete    | 2026-02-22 | - |
 | 15. Reactivate Next.js Middleware | 2/2 | Complete    | 2026-02-22 | - |
+| 16. Restore Next.js Middleware (Undo Regression) | 0/1 | Not started | - | - |
 
 ---
 *Created: 2026-01-24*

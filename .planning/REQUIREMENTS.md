@@ -11,8 +11,8 @@ Requirements for security hardening and backend alignment. Each maps to roadmap 
 
 - [x] **AUTH-01**: User session persists when access token expires (refresh token automatically rotates)
 - [x] **AUTH-02**: User with unverified Discord email cannot log in (backend rejects, dashboard shows clear error)
-- [ ] **AUTH-03**: All frontend mutation requests include CSRF token via double-submit cookie pattern
-- [ ] **AUTH-04**: Dashboard serves Content-Security-Policy headers preventing XSS vectors
+- [x] **AUTH-03**: All frontend mutation requests include CSRF token via double-submit cookie pattern
+- [x] **AUTH-04**: Dashboard serves Content-Security-Policy headers preventing XSS vectors
 - [x] **AUTH-05**: Proxy layer sanitizes backend error messages (no stack traces or internal details leak to client)
 - [x] **AUTH-06**: All raw SQL queries in dashboard-related backend routes use parameterized `Prisma.sql` template tags
 
@@ -82,8 +82,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-01 | Phase 9 | Complete |
 | AUTH-02 | Phase 9 | Complete |
 | AUTH-06 | Phase 9 | Complete |
-| AUTH-03 | Phase 15 | Pending |
-| AUTH-04 | Phase 15 | Pending |
+| AUTH-03 | Phase 15 | Complete |
+| AUTH-04 | Phase 15 | Complete |
 | AUTH-05 | Phase 10 | Complete |
 | SESS-01 | Phase 11 | Complete |
 | SESS-02 | Phase 11 | Complete |

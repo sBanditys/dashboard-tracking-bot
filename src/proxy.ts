@@ -110,7 +110,7 @@ function setCsrfCookie(response: NextResponse, token: string): void {
   });
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Generate CSP nonce for this request

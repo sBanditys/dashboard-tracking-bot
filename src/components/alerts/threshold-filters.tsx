@@ -94,7 +94,6 @@ export function ThresholdFilters({ filters, onFiltersChange, groups }: Threshold
     if (debouncedSearch !== filters.search) {
       onFiltersChange({ ...filters, search: debouncedSearch || undefined })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch])
 
   const groupOptions = [

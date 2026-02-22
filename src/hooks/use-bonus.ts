@@ -87,7 +87,6 @@ export function useBonusRounds(guildId: string, filter: RoundFilter) {
       }
       setHasMore(query.data.has_more)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.data])
 
   const loadMore = () => {

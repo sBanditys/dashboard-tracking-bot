@@ -256,8 +256,10 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  // Always set a fresh CSRF token cookie
-  setCsrfCookie(response, crypto.randomUUID());
+  // Always set a fresh CSRF token cookie (HMAC-signed when secret + jti available)
+  const jti = extractJtiFromAuthToken(request);
+  const csrfToken = await generateHmacCsrfToken(jti);
+  setCsrfCookie(response, csrfToken);
 
   const hasSessionCookie = Boolean(authToken || refreshToken || refreshedTokens);
   const isLoginRoute = pathname === '/login';

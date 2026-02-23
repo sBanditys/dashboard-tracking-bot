@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 
-export type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'error'
+export type ConnectionState = 'connecting' | 'reconnecting' | 'connected' | 'disconnected' | 'error'
 
 interface UseSSEOptions {
     onMessage: (data: unknown) => void
@@ -14,8 +14,20 @@ interface UseSSEOptions {
     reconnectCooldown?: number
 }
 
+// Heartbeat constants
+const HEARTBEAT_TIMEOUT = 45_000        // 45s silence = stalled connection
+const HEARTBEAT_CHECK_INTERVAL = 5_000  // poll every 5s
+const HIDE_GRACE_MS = 15_000            // 15s grace period before disconnecting on tab hide
+
 /**
  * React hook for Server-Sent Events (SSE) connections with exponential backoff reconnection.
+ *
+ * Features:
+ * - Heartbeat timeout: closes and reconnects stalled connections after 45s of silence (SSE-01)
+ * - Generation counter: prevents dual EventSource instances during rapid tab switches (SSE-02)
+ * - 15-second tab-hide grace period: avoids disconnect/reconnect churn for brief tab switches
+ * - Retry reset on tab return after grace expiry: recovers exhausted retries (SSE-03)
+ * - 'reconnecting' state: visible feedback during stall-triggered reconnects
  *
  * @param url - SSE endpoint URL, or null to disable connection
  * @param options - Configuration options
@@ -39,6 +51,15 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
     const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const lastConnectTimeRef = useRef<number>(0)
 
+    // Generation counter — prevents stale connections from interfering with active ones (SSE-02)
+    const connectGenerationRef = useRef<number>(0)
+    // Last data event timestamp — used to detect stalled connections (SSE-01)
+    const lastEventTimeRef = useRef<number>(Date.now())
+    // Heartbeat polling interval handle (SSE-01)
+    const heartbeatCheckRef = useRef<ReturnType<typeof setInterval> | null>(null)
+    // Tab-hide grace timer — 15s before actually closing the connection
+    const hideGraceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
     // Store callbacks in refs to avoid effect re-runs
     const onMessageRef = useRef(onMessage)
     const onErrorRef = useRef(onError)
@@ -48,11 +69,50 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
         onErrorRef.current = onError
     }, [onMessage, onError])
 
+    /** Clear the heartbeat check interval */
+    const clearHeartbeat = useCallback(() => {
+        if (heartbeatCheckRef.current !== null) {
+            clearInterval(heartbeatCheckRef.current)
+            heartbeatCheckRef.current = null
+        }
+    }, [])
+
+    /** Start the heartbeat check interval for a given connection generation */
+    const startHeartbeat = useCallback((generation: number) => {
+        clearHeartbeat()
+        lastEventTimeRef.current = Date.now()
+
+        heartbeatCheckRef.current = setInterval(() => {
+            const elapsed = Date.now() - lastEventTimeRef.current
+            if (elapsed > HEARTBEAT_TIMEOUT) {
+                if (connectGenerationRef.current !== generation) {
+                    // Stale heartbeat — a newer connection took over, stop this interval
+                    clearInterval(heartbeatCheckRef.current!)
+                    heartbeatCheckRef.current = null
+                    return
+                }
+                // Genuine stall detected on the active connection
+                eventSourceRef.current?.close()
+                clearHeartbeat()
+                setConnectionState('reconnecting')
+                connect()
+            }
+        }, HEARTBEAT_CHECK_INTERVAL)
+    // connect is defined below; we use a ref pattern to avoid circular dep
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [clearHeartbeat])
+
     const connect = useCallback(() => {
         if (!url) {
             setConnectionState('disconnected')
             return
         }
+
+        // Increment generation — any previous in-flight connection is now stale (SSE-02)
+        const generation = ++connectGenerationRef.current
+
+        // Clear any existing heartbeat from the previous generation
+        clearHeartbeat()
 
         // Enforce cooldown between connection attempts to avoid rate limit storms
         const now = Date.now()
@@ -72,11 +132,25 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
         eventSourceRef.current = es
 
         es.onopen = () => {
+            // Stale connection — a newer generation has already taken over
+            if (connectGenerationRef.current !== generation) {
+                es.close()
+                return
+            }
             setConnectionState('connected')
-            retryCountRef.current = 0 // Reset on successful connection
+            retryCountRef.current = 0
+            lastEventTimeRef.current = Date.now()
+            startHeartbeat(generation)
         }
 
         es.onmessage = (event) => {
+            // Stale connection — discard
+            if (connectGenerationRef.current !== generation) {
+                es.close()
+                return
+            }
+            // Reset silence timer on every data event
+            lastEventTimeRef.current = Date.now()
             try {
                 const data = JSON.parse(event.data)
                 onMessageRef.current(data)
@@ -87,8 +161,14 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
         }
 
         es.onerror = () => {
+            // Stale connection — discard
+            if (connectGenerationRef.current !== generation) {
+                es.close()
+                return
+            }
             es.close()
             setConnectionState('disconnected')
+            clearHeartbeat()
 
             if (retryCountRef.current < maxRetries) {
                 // Exponential backoff with 50% jitter
@@ -107,7 +187,7 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
                 onErrorRef.current?.()
             }
         }
-    }, [url, maxRetries, initialRetryDelay, maxRetryDelay, reconnectCooldown])
+    }, [url, maxRetries, initialRetryDelay, maxRetryDelay, reconnectCooldown, clearHeartbeat, startHeartbeat])
 
     const reconnect = useCallback(() => {
         retryCountRef.current = 0
@@ -116,8 +196,9 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
             clearTimeout(retryTimeoutRef.current)
             retryTimeoutRef.current = null
         }
+        clearHeartbeat()
         connect()
-    }, [connect])
+    }, [connect, clearHeartbeat])
 
     useEffect(() => {
         connect()
@@ -127,23 +208,41 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
             if (retryTimeoutRef.current) {
                 clearTimeout(retryTimeoutRef.current)
             }
+            clearHeartbeat()
+            if (hideGraceTimerRef.current) {
+                clearTimeout(hideGraceTimerRef.current)
+            }
         }
-    }, [connect])
+    }, [connect, clearHeartbeat])
 
-    // Handle tab visibility changes - close connection when hidden, reconnect when visible
+    // Handle tab visibility changes with 15-second grace period
     useEffect(() => {
         const handleVisibilityChange = () => {
             if (document.hidden) {
-                // Tab is hidden - close connection to prevent leaks
-                eventSourceRef.current?.close()
+                // Tab hidden — clear any pending retry and start grace period
                 if (retryTimeoutRef.current) {
                     clearTimeout(retryTimeoutRef.current)
                     retryTimeoutRef.current = null
                 }
-                setConnectionState('disconnected')
-            } else if (url) {
-                // Tab is visible again - reconnect
-                connect()
+                // Start grace period — don't disconnect immediately
+                hideGraceTimerRef.current = setTimeout(() => {
+                    eventSourceRef.current?.close()
+                    clearHeartbeat()
+                    setConnectionState('disconnected')
+                }, HIDE_GRACE_MS)
+            } else {
+                // Tab visible again
+                if (hideGraceTimerRef.current !== null) {
+                    // Within grace period — cancel the pending disconnect, connection still open
+                    clearTimeout(hideGraceTimerRef.current)
+                    hideGraceTimerRef.current = null
+                    // Do nothing — connection is still alive
+                } else {
+                    // Grace period already fired (tab was hidden > 15s) — reconnect
+                    // Reset retry count so exhausted retries don't block recovery (SSE-03)
+                    retryCountRef.current = 0
+                    connect()
+                }
             }
         }
 
@@ -151,8 +250,11 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
 
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange)
+            if (hideGraceTimerRef.current) {
+                clearTimeout(hideGraceTimerRef.current)
+            }
         }
-    }, [url, connect])
+    }, [url, connect, clearHeartbeat])
 
     return { connectionState, reconnect }
 }

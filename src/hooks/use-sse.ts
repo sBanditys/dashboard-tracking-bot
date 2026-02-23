@@ -264,5 +264,32 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
         }
     }, [url, connect, clearHeartbeat])
 
+    // Handle browser online/offline events — immediate detection when network drops
+    useEffect(() => {
+        const handleOffline = () => {
+            eventSourceRef.current?.close()
+            if (retryTimeoutRef.current) {
+                clearTimeout(retryTimeoutRef.current)
+                retryTimeoutRef.current = null
+            }
+            clearHeartbeat()
+            setConnectionState('disconnected')
+        }
+
+        const handleOnline = () => {
+            // Network restored — reset retries and reconnect
+            retryCountRef.current = 0
+            connect()
+        }
+
+        window.addEventListener('offline', handleOffline)
+        window.addEventListener('online', handleOnline)
+
+        return () => {
+            window.removeEventListener('offline', handleOffline)
+            window.removeEventListener('online', handleOnline)
+        }
+    }, [connect, clearHeartbeat])
+
     return { connectionState, reconnect }
 }

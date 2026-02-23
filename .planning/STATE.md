@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-22)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface — independent of bot uptime.
-**Current focus:** v1.2 Security Audit & Optimization — Phase 20 Cursor Pagination Migration
+**Current focus:** v1.2 Security Audit & Optimization — Phase 21 CSRF HMAC Signing
 
 ## Current Position
 
-Phase: 20 of 23 (Cursor Pagination Migration) — COMPLETE
-Plan: 2 of 2 in current phase — COMPLETE
-Status: Phase 20 Plan 02 complete — optimistic add/delete, resetQueries for all infinite list mutations; TypeScript clean
-Last activity: 2026-02-23 — Phase 20 Plan 02 complete (optimistic onMutate/onError/onSettled in useAddAccount and useDeleteAccount; resetQueries migration across use-bulk-operations, use-trash, use-guilds, use-import)
+Phase: 21 of 23 (CSRF HMAC Signing) — IN PROGRESS
+Plan: 1 of 1 in current phase — COMPLETE
+Status: Phase 21 Plan 01 complete — HMAC-signed CSRF tokens via crypto.subtle in proxy.ts; TypeScript clean
+Last activity: 2026-02-23 — Phase 21 Plan 01 complete (generateHmacCsrfToken, extractJtiFromAuthToken, CSRF_HMAC_SECRET constant; CSRF call site wired to HMAC generation)
 
-Progress: [██░░░░░░░░] 19% (v1.2) — 76/83 total plans complete across all milestones
+Progress: [██░░░░░░░░] 23% (v1.2) — 77/83 total plans complete across all milestones
 
 ## Milestones
 
@@ -64,6 +64,7 @@ Progress: [██░░░░░░░░] 19% (v1.2) — 76/83 total plans comp
 | Phase 19 P03 | 51s | 2 tasks | 2 files |
 | Phase 20 P01 | 4m 1s | 2 tasks | 7 files |
 | Phase 20 P02 | 2m 14s | 2 tasks | 5 files |
+| Phase 21 P01 | 1m 3s | 2 tasks | 1 file |
 
 ## Accumulated Context
 
@@ -98,6 +99,10 @@ Recent decisions affecting v1.2 work:
 - [Phase 19]: Early return narrowed from 'isError' to 'isError && !data' — polling failures fall through to ConnectionIssuesBanner inline render
 - [Phase 20]: resetQueries used for all infinite list mutations (accounts, posts) to prevent mixed-shape cache pages with stale cursors; invalidateQueries kept for non-infinite queries
 - [Phase 20]: No success toast for normal add/delete account operations — optimistic list update IS the feedback per locked decision
+- [Phase 21]: CSRF_HMAC_SECRET falls back to INTERNAL_API_SECRET — single env var covers both internal auth and CSRF HMAC
+- [Phase 21]: Per-request crypto.subtle.importKey — no module-scope CryptoKey caching (avoids secret rotation issues)
+- [Phase 21]: Double-submit cookie check preserved alongside HMAC — belt-and-suspenders, middleware fast-fails tampered requests
+- [Phase 21]: Silent fallback to plain 64-char hex token when jti or CSRF_HMAC_SECRET absent — graceful degradation for local dev
 
 ### Pending Todos
 
@@ -105,15 +110,14 @@ None.
 
 ### Blockers/Concerns
 
-- Phase 21 (CSRF HMAC): Highest risk — requires coordinated deploy with backend Phase 37 dual-check window
-- Open question: Does backend Phase 37 HMAC use `INTERNAL_API_SECRET` or a separate CSRF secret? (confirm before Phase 21)
+- Phase 21 (CSRF HMAC): Dashboard HMAC generation is complete — backend Phase 37 dual-check mode must be confirmed live before production deployment
 - Open question: Which of backend Phases 35-39 are already live? (confirm before starting next cursor-dependent work)
 
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 20-02-PLAN.md
-Resume file: .planning/ (next: Phase 21)
+Stopped at: Completed 21-01-PLAN.md
+Resume file: .planning/ (next: Phase 22 or remaining Phase 21 verification)
 
 ---
-*Last updated: 2026-02-23 (Phase 20 Plan 02 complete — optimistic updates for add/delete account, resetQueries for all infinite list mutations across 5 hooks)*
+*Last updated: 2026-02-23 (Phase 21 Plan 01 complete — HMAC-signed CSRF tokens via crypto.subtle in proxy.ts; generateHmacCsrfToken, extractJtiFromAuthToken, CSRF_HMAC_SECRET with fallback chain)*

@@ -48,7 +48,7 @@ Full details: `milestones/v1.1-ROADMAP.md`
 - [x] **Phase 18: SSE Lifecycle Hardening** - Close stalled connections, prevent dual instances, and reset exhausted retries (completed 2026-02-23)
 - [x] **Phase 19: Auth Hardening & Resilience** - SSR cookie forwarding, 503 retry handling, and rate limit isolation (completed 2026-02-23)
 - [x] **Phase 20: Cursor Pagination Migration** - Migrate accounts and posts hooks to cursor-based infinite scroll (completed 2026-02-23)
-- [ ] **Phase 21: CSRF HMAC Signing** - Generate HMAC-signed CSRF tokens matching backend Phase 37 validation
+- [x] **Phase 21: CSRF HMAC Signing** - Generate HMAC-signed CSRF tokens matching backend Phase 37 validation (completed 2026-02-23)
 - [ ] **Phase 22: Performance Optimization** - Optimize bundle imports, React Query stale times, and cold start contributors
 - [ ] **Phase 23: Security Audit Report** - Comprehensive OWASP/CWE audit report covering hardened codebase
 
@@ -178,7 +178,7 @@ Plans:
 | 18. SSE Lifecycle Hardening | 2/2 | Complete    | 2026-02-23 | - |
 | 19. Auth Hardening & Resilience | 3/3 | Complete    | 2026-02-23 | - |
 | 20. Cursor Pagination Migration | 2/2 | Complete    | 2026-02-23 | - |
-| 21. CSRF HMAC Signing | v1.2 | 0/1 | Not started | - |
+| 21. CSRF HMAC Signing | 1/1 | Complete   | 2026-02-23 | - |
 | 22. Performance Optimization | v1.2 | 0/3 | Not started | - |
 | 23. Security Audit Report | v1.2 | 0/1 | Not started | - |
 

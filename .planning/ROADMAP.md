@@ -107,12 +107,12 @@ Plans:
   1. Scrolling to the bottom of the accounts list loads the next page of results using a cursor, not an offset page number
   2. Scrolling to the bottom of the posts list loads the next page of results using a cursor
   3. Adding or removing a tracked account resets the list from the beginning — no mixed-shape cache pages appear
-  4. TypeScript types for pagination accept both cursor-shape and offset-shape responses without compilation errors
-**Plans**: TBD
+  4. TypeScript types for pagination use cursor-only shape (no offset types) and compile without errors
+**Plans**: 2 plans
 
 Plans:
-- [ ] 20-01: Migrate accounts and posts hooks to cursor pagination with dual-shape TypeScript types
-- [ ] 20-02: Replace invalidateQueries with resetQueries for infinite scroll mutation cache management
+- [ ] 20-01-PLAN.md — Migrate types and infinite hooks to cursor pagination, add end-of-list and stale cursor UI
+- [ ] 20-02-PLAN.md — Optimistic add/delete mutations with resetQueries for all account/post mutation hooks
 
 ### Phase 21: CSRF HMAC Signing
 **Goal**: Server-to-server mutations send cryptographically signed CSRF tokens that the backend can verify with HMAC

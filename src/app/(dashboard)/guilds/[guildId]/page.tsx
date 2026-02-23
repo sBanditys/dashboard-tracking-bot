@@ -96,15 +96,13 @@ export default function GuildDetailPage({ params }: PageProps) {
                     <h1 className="text-3xl font-bold text-white">{guild.name}</h1>
                     <p className="text-gray-400">{guild.client.name}</p>
                 </div>
-                {status && (
-                    <BotStatus
-                        healthy={status.bot_healthy}
-                        lastHeartbeat={status.bot?.last_heartbeat}
-                        version={status.bot?.version}
-                        connectionState={connectionState}
-                        onReconnect={reconnect}
-                    />
-                )}
+                <BotStatus
+                    healthy={status?.bot_healthy}
+                    lastHeartbeat={status?.bot?.last_heartbeat}
+                    version={status?.bot?.version}
+                    connectionState={connectionState}
+                    onReconnect={reconnect}
+                />
             </div>
 
             <GuildTabs guildId={guildId} />

@@ -5,7 +5,7 @@ import { safeFormatDistanceToNow } from '@/lib/date-utils'
 import type { ConnectionState } from '@/hooks/use-sse'
 
 interface BotStatusProps {
-    healthy: boolean
+    healthy?: boolean
     lastHeartbeat?: string
     version?: string | null
     className?: string
@@ -32,7 +32,17 @@ export function BotStatus({
             }
         }
 
-        // Error state - connection lost
+        // Reconnecting state (stall-triggered reconnect — was previously connected)
+        if (connectionState === 'reconnecting') {
+            return {
+                dotClass: 'bg-yellow-500 animate-pulse',
+                textClass: 'text-yellow-400',
+                text: 'Reconnecting...',
+                subtext: null,
+            }
+        }
+
+        // Error state - connection lost, retries exhausted
         if (connectionState === 'error') {
             return {
                 dotClass: 'bg-yellow-500',
@@ -42,7 +52,27 @@ export function BotStatus({
             }
         }
 
-        // Connected or disconnected (fallback to polling) - show actual bot status
+        // Disconnected state - SSE not connected
+        if (connectionState === 'disconnected') {
+            return {
+                dotClass: 'bg-gray-400',
+                textClass: 'text-gray-400',
+                text: 'Disconnected',
+                subtext: null,
+            }
+        }
+
+        // Connected but status data not yet loaded
+        if (healthy === undefined) {
+            return {
+                dotClass: 'bg-green-500 animate-pulse',
+                textClass: 'text-green-400',
+                text: 'Connected',
+                subtext: null,
+            }
+        }
+
+        // Connected — show actual bot status
         if (healthy) {
             return {
                 dotClass: 'bg-green-500 animate-pulse',
@@ -66,7 +96,7 @@ export function BotStatus({
     }
 
     const status = getStatusDisplay()
-    const isClickable = connectionState === 'error' && onReconnect
+    const isClickable = (connectionState === 'error' || connectionState === 'reconnecting') && onReconnect
 
     const content = (
         <>

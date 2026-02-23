@@ -23,9 +23,9 @@ Requirements for v1.2 Security Audit & Optimization. Each maps to roadmap phases
 
 ### Real-Time & Connectivity
 
-- [ ] **SSE-01**: `useSSE` implements heartbeat timeout (45 seconds) that closes and reconnects stalled connections that stop sending events
-- [ ] **SSE-02**: `useSSE` uses generation counter (`connectGenerationRef`) to prevent dual EventSource instances when tab visibility changes rapidly within reconnect cooldown window
-- [ ] **SSE-03**: `useSSE` resets `retryCountRef` on tab visibility restore so exhausted retries during hidden state do not permanently kill the connection
+- [x] **SSE-01**: `useSSE` implements heartbeat timeout (45 seconds) that closes and reconnects stalled connections that stop sending events
+- [x] **SSE-02**: `useSSE` uses generation counter (`connectGenerationRef`) to prevent dual EventSource instances when tab visibility changes rapidly within reconnect cooldown window
+- [x] **SSE-03**: `useSSE` resets `retryCountRef` on tab visibility restore so exhausted retries during hidden state do not permanently kill the connection
 - [ ] **SSE-04**: `refetchInterval` only fires when `connectionState === 'error'` (retries exhausted), not during transient reconnects, preventing polling/SSE race conditions
 
 ### Data & Pagination
@@ -84,9 +84,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-02 | Phase 19 | Pending |
 | AUTH-03 | Phase 19 | Pending |
 | AUTH-04 | Phase 19 | Pending |
-| SSE-01 | Phase 18 | Pending |
-| SSE-02 | Phase 18 | Pending |
-| SSE-03 | Phase 18 | Pending |
+| SSE-01 | Phase 18 | Complete |
+| SSE-02 | Phase 18 | Complete |
+| SSE-03 | Phase 18 | Complete |
 | SSE-04 | Phase 18 | Pending |
 | PAGE-01 | Phase 20 | Pending |
 | PAGE-02 | Phase 20 | Pending |

@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 
 ## Current Position
 
-Phase: 17 of 23 (Error Envelope & API Alignment) — COMPLETE
-Plan: 2 of 2 in current phase — COMPLETE
-Status: Phase complete — ready for Phase 18
-Last activity: 2026-02-23 — Phase 17 Plan 02 complete (hook error extraction, Zod audit, retry buttons)
+Phase: 18 of 23 (SSE Lifecycle Hardening) — IN PROGRESS
+Plan: 1 of 2 in current phase — COMPLETE
+Status: Phase 18 Plan 01 complete — ready for Plan 02
+Last activity: 2026-02-23 — Phase 18 Plan 01 complete (heartbeat timeout, generation counter, grace period, BotStatus reconnecting state)
 
-Progress: [█░░░░░░░░░] 15% (v1.2) — 72/82 total plans complete across all milestones
+Progress: [█░░░░░░░░░] 17% (v1.2) — 73/82 total plans complete across all milestones
 
 ## Milestones
 
@@ -57,6 +57,7 @@ Progress: [█░░░░░░░░░] 15% (v1.2) — 72/82 total plans comp
 | 16-01 | 1m | 2 | 2 |
 | Phase 17 P01 | 2m 21s | 2 tasks | 5 files |
 | Phase 17 P02 | 311s | 3 tasks | 17 files |
+| Phase 18 P01 | 116s | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,10 @@ Recent decisions affecting v1.2 work:
 - [Phase 17]: Zod v4 .check() uses ctx.value/ctx.issues pattern (not simple predicate) — corrected from plan spec during execution
 - [Phase 17]: Toast auto-dismiss at 5000ms globally in providers.tsx toastOptions
 - [Phase 17]: Retry buttons use refetch() from React Query hook directly — not window.location.reload()
+- [Phase 18]: HEARTBEAT_TIMEOUT = 45s; HIDE_GRACE_MS = 15s (locked); HEARTBEAT_CHECK_INTERVAL = 5s
+- [Phase 18]: 'reconnecting' state set only on heartbeat-triggered reconnects, not initial connects
+- [Phase 18]: isClickable includes 'reconnecting' — force reconnect available during stall recovery
+- [Phase 18]: BotStatus healthy prop made optional — always renders on guild page even before SSE data
 
 ### Pending Todos
 
@@ -90,8 +95,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 17-02-PLAN.md
-Resume file: .planning/ (next phase — Phase 18)
+Stopped at: Completed 18-01-PLAN.md
+Resume file: .planning/phases/18-sse-lifecycle-hardening/ (next: 18-02)
 
 ---
-*Last updated: 2026-02-23 (Phase 17 complete — all 2 plans done)*
+*Last updated: 2026-02-23 (Phase 18 Plan 01 complete — SSE lifecycle hardening, heartbeat/grace/generation counter)*

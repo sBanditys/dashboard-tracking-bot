@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 
 ## Current Position
 
-Phase: 18 of 23 (SSE Lifecycle Hardening) — IN PROGRESS
-Plan: 1 of 2 in current phase — COMPLETE
-Status: Phase 18 Plan 01 complete — ready for Plan 02
-Last activity: 2026-02-23 — Phase 18 Plan 01 complete (heartbeat timeout, generation counter, grace period, BotStatus reconnecting state)
+Phase: 18 of 23 (SSE Lifecycle Hardening) — COMPLETE
+Plan: 2 of 2 in current phase — COMPLETE
+Status: Phase 18 complete — all SSE lifecycle hardening goals met
+Last activity: 2026-02-23 — Phase 18 Plan 02 complete (refetchInterval gate tightened to connectionState === 'error' only)
 
-Progress: [█░░░░░░░░░] 17% (v1.2) — 73/82 total plans complete across all milestones
+Progress: [█░░░░░░░░░] 17% (v1.2) — 74/82 total plans complete across all milestones
 
 ## Milestones
 
@@ -58,6 +58,7 @@ Progress: [█░░░░░░░░░] 17% (v1.2) — 73/82 total plans comp
 | Phase 17 P01 | 2m 21s | 2 tasks | 5 files |
 | Phase 17 P02 | 311s | 3 tasks | 17 files |
 | Phase 18 P01 | 116s | 2 tasks | 3 files |
+| Phase 18 P02 | 30s | 1 task | 1 file |
 
 ## Accumulated Context
 
@@ -80,6 +81,7 @@ Recent decisions affecting v1.2 work:
 - [Phase 18]: 'reconnecting' state set only on heartbeat-triggered reconnects, not initial connects
 - [Phase 18]: isClickable includes 'reconnecting' — force reconnect available during stall recovery
 - [Phase 18]: BotStatus healthy prop made optional — always renders on guild page even before SSE data
+- [Phase 18]: refetchInterval gates on connectionState === 'error' only — not on !isSSEConnected boolean; prevents polling during transient reconnects
 
 ### Pending Todos
 
@@ -95,8 +97,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 18-01-PLAN.md
-Resume file: .planning/phases/18-sse-lifecycle-hardening/ (next: 18-02)
+Stopped at: Completed 18-02-PLAN.md
+Resume file: .planning/ (next: Phase 19)
 
 ---
-*Last updated: 2026-02-23 (Phase 18 Plan 01 complete — SSE lifecycle hardening, heartbeat/grace/generation counter)*
+*Last updated: 2026-02-23 (Phase 18 complete — SSE lifecycle hardening, heartbeat/grace/generation counter/polling gate)*

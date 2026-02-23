@@ -45,7 +45,7 @@ Full details: `milestones/v1.1-ROADMAP.md`
 **Milestone Goal:** Align dashboard with backend v2.6 changes, harden security posture, optimize performance, and produce a comprehensive security audit report. No new user-facing features — hardening and alignment only.
 
 - [x] **Phase 17: Error Envelope & API Alignment** - Dual-parse both error shapes so all API errors display correctly (completed 2026-02-22)
-- [ ] **Phase 18: SSE Lifecycle Hardening** - Close stalled connections, prevent dual instances, and reset exhausted retries
+- [x] **Phase 18: SSE Lifecycle Hardening** - Close stalled connections, prevent dual instances, and reset exhausted retries (completed 2026-02-23)
 - [ ] **Phase 19: Auth Hardening & Resilience** - SSR cookie forwarding, 503 retry handling, and rate limit isolation
 - [ ] **Phase 20: Cursor Pagination Migration** - Migrate accounts and posts hooks to cursor-based infinite scroll
 - [ ] **Phase 21: CSRF HMAC Signing** - Generate HMAC-signed CSRF tokens matching backend Phase 37 validation
@@ -174,7 +174,7 @@ Plans:
 | 15. Reactivate Next.js Middleware | v1.1 | 2/2 | Complete | 2026-02-22 |
 | 16. Restore Next.js Middleware | v1.1 | 1/1 | Complete | 2026-02-22 |
 | 17. Error Envelope & API Alignment | 2/2 | Complete    | 2026-02-22 | - |
-| 18. SSE Lifecycle Hardening | 1/2 | In Progress|  | - |
+| 18. SSE Lifecycle Hardening | 2/2 | Complete   | 2026-02-23 | - |
 | 19. Auth Hardening & Resilience | v1.2 | 0/2 | Not started | - |
 | 20. Cursor Pagination Migration | v1.2 | 0/2 | Not started | - |
 | 21. CSRF HMAC Signing | v1.2 | 0/1 | Not started | - |

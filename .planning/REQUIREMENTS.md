@@ -18,8 +18,8 @@ Requirements for v1.2 Security Audit & Optimization. Each maps to roadmap phases
 
 - [ ] **AUTH-01**: Proxy layer generates HMAC-signed CSRF tokens using `crypto.subtle` and `INTERNAL_API_SECRET` for server-to-server mutations, matching backend Phase 37 HMAC validation
 - [x] **AUTH-02**: SSR route handlers forward `auth_token` cookie as `Authorization: Bearer` header when calling `backendFetch`, enabling authenticated server-rendered pages
-- [ ] **AUTH-03**: `fetchWithRetry` handles 503 responses with user-facing retry toast for mutations and silent backoff for reads, instead of treating 503 as unrecoverable
-- [ ] **AUTH-04**: Global rate limit cooldown (`globalRateLimitUntil`) separated so background polling 429s do not block user-initiated mutations
+- [x] **AUTH-03**: `fetchWithRetry` handles 503 responses with user-facing retry toast for mutations and silent backoff for reads, instead of treating 503 as unrecoverable
+- [x] **AUTH-04**: Global rate limit cooldown (`globalRateLimitUntil`) separated so background polling 429s do not block user-initiated mutations
 
 ### Real-Time & Connectivity
 
@@ -82,8 +82,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ERR-04 | Phase 17 | Complete |
 | AUTH-01 | Phase 21 | Pending |
 | AUTH-02 | Phase 19 | Complete |
-| AUTH-03 | Phase 19 | Pending |
-| AUTH-04 | Phase 19 | Pending |
+| AUTH-03 | Phase 19 | Complete |
+| AUTH-04 | Phase 19 | Complete |
 | SSE-01 | Phase 18 | Complete |
 | SSE-02 | Phase 18 | Complete |
 | SSE-03 | Phase 18 | Complete |

@@ -46,7 +46,7 @@ Full details: `milestones/v1.1-ROADMAP.md`
 
 - [x] **Phase 17: Error Envelope & API Alignment** - Dual-parse both error shapes so all API errors display correctly (completed 2026-02-22)
 - [x] **Phase 18: SSE Lifecycle Hardening** - Close stalled connections, prevent dual instances, and reset exhausted retries (completed 2026-02-23)
-- [ ] **Phase 19: Auth Hardening & Resilience** - SSR cookie forwarding, 503 retry handling, and rate limit isolation
+- [x] **Phase 19: Auth Hardening & Resilience** - SSR cookie forwarding, 503 retry handling, and rate limit isolation (completed 2026-02-23)
 - [ ] **Phase 20: Cursor Pagination Migration** - Migrate accounts and posts hooks to cursor-based infinite scroll
 - [ ] **Phase 21: CSRF HMAC Signing** - Generate HMAC-signed CSRF tokens matching backend Phase 37 validation
 - [ ] **Phase 22: Performance Optimization** - Optimize bundle imports, React Query stale times, and cold start contributors
@@ -175,7 +175,7 @@ Plans:
 | 16. Restore Next.js Middleware | v1.1 | 1/1 | Complete | 2026-02-22 |
 | 17. Error Envelope & API Alignment | 2/2 | Complete    | 2026-02-22 | - |
 | 18. SSE Lifecycle Hardening | 2/2 | Complete    | 2026-02-23 | - |
-| 19. Auth Hardening & Resilience | 1/2 | In Progress|  | - |
+| 19. Auth Hardening & Resilience | 2/2 | Complete   | 2026-02-23 | - |
 | 20. Cursor Pagination Migration | v1.2 | 0/2 | Not started | - |
 | 21. CSRF HMAC Signing | v1.2 | 0/1 | Not started | - |
 | 22. Performance Optimization | v1.2 | 0/3 | Not started | - |

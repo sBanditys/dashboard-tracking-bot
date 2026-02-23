@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 ## Current Position
 
 Phase: 19 of 23 (Auth Hardening & Resilience) — IN PROGRESS
-Plan: 1 of 3 in current phase — COMPLETE
-Status: Phase 19 Plan 01 complete — backendFetch SSR cookie auto-forwarding implemented
-Last activity: 2026-02-23 — Phase 19 Plan 01 complete (backendFetch auto-forwards auth_token as Bearer in SSR context)
+Plan: 2 of 3 in current phase — COMPLETE
+Status: Phase 19 Plan 02 complete — mutation 503 retry, split rate limit buckets, RateLimitBanner, ConnectionIssuesBanner
+Last activity: 2026-02-23 — Phase 19 Plan 02 complete (mutation retry with onRetry callbacks, blocking overlay on GuildSettingsForm, sessionStorage-persisted polling rate limit cooldown)
 
-Progress: [█░░░░░░░░░] 18% (v1.2) — 75/83 total plans complete across all milestones
+Progress: [██░░░░░░░░] 19% (v1.2) — 76/83 total plans complete across all milestones
 
 ## Milestones
 
@@ -60,6 +60,7 @@ Progress: [█░░░░░░░░░] 18% (v1.2) — 75/83 total plans comp
 | Phase 18 P01 | 116s | 2 tasks | 3 files |
 | Phase 18 P02 | 30s | 1 task | 1 file |
 | Phase 19 P01 | 37s | 1 task | 1 file |
+| Phase 19 P02 | 418s | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,10 @@ Recent decisions affecting v1.2 work:
 - [Phase 19]: backendFetch uses dynamic import try/catch for next/headers — defensive pattern even though file is server-only (imports crypto)
 - [Phase 19]: backendFetch is forward-only (no expiry check) — proxy.ts middleware proactively refreshes auth_token before SSR page requests land
 - [Phase 19]: !headers.has('Authorization') guard on auto-forwarding — backward-compatible with all existing routes that set Authorization explicitly
+- [Phase 19 P02]: Split globalRateLimitUntil into pollingRateLimitUntil + mutationRateLimitUntil — prevents polling 429 from blocking user mutations
+- [Phase 19 P02]: pollingRateLimitUntil persisted to sessionStorage; rate-limit-updated custom event dispatched on each write for reactive RateLimitBanner
+- [Phase 19 P02]: MUTATION_MAX_RETRIES=5 for 503 retries; didRetryRef pattern prevents 'Changes saved' toast on non-retry success paths
+- [Phase 19 P02]: ConnectionIssuesBanner gates on isError && hasData — distinguishes polling failures from initial load failures
 
 ### Pending Todos
 
@@ -101,8 +106,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 19-01-PLAN.md
-Resume file: .planning/ (next: Phase 19 Plan 02)
+Stopped at: Completed 19-02-PLAN.md
+Resume file: .planning/ (next: Phase 19 Plan 03)
 
 ---
-*Last updated: 2026-02-23 (Phase 19 Plan 01 complete — backendFetch SSR cookie auto-forwarding via dynamic import try/catch)*
+*Last updated: 2026-02-23 (Phase 19 Plan 02 complete — mutation retry, split rate limits, RateLimitBanner, ConnectionIssuesBanner)*

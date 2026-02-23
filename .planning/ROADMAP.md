@@ -92,11 +92,11 @@ Plans:
   1. A server-rendered page that calls the backend returns the user's authenticated data rather than a 401 or empty response
   2. A mutation attempted when the backend returns 503 shows a retry toast instead of silently failing
   3. Background polling hitting a rate limit does not prevent a user from submitting a settings save or other mutation for up to 15 minutes
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 19-01: Forward auth_token cookie as Authorization header in SSR route handlers
-- [ ] 19-02: Handle 503 with retry toast and separate global rate limit cooldown for mutations vs reads
+- [ ] 19-01-PLAN.md — Auto-forward auth_token cookie as Authorization Bearer in backendFetch for SSR context
+- [ ] 19-02-PLAN.md — Mutation 503 retry with blocking overlay, split rate limit buckets, rate limit/connection banners
 
 ### Phase 20: Cursor Pagination Migration
 **Goal**: Accounts and posts infinite scroll works correctly against the backend's cursor-based pagination API

@@ -134,6 +134,10 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
         const es = new EventSource(url)
         eventSourceRef.current = es
 
+        // Guard against EventSource firing onerror multiple times
+        // (browser auto-reconnect can fire additional errors before close takes effect)
+        let errorHandled = false
+
         es.onopen = () => {
             // Stale connection — a newer generation has already taken over
             if (connectGenerationRef.current !== generation) {
@@ -164,16 +168,20 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
         }
 
         es.onerror = () => {
+            // Prevent double-processing — browser may fire multiple onerror events
+            if (errorHandled) return
+            errorHandled = true
+
             // Stale connection — discard
             if (connectGenerationRef.current !== generation) {
                 es.close()
                 return
             }
             es.close()
-            setConnectionState('disconnected')
             clearHeartbeat()
 
             if (retryCountRef.current < maxRetries) {
+                setConnectionState('disconnected')
                 // Exponential backoff with 50% jitter
                 const delay = Math.min(
                     initialRetryDelay * Math.pow(2, retryCountRef.current),

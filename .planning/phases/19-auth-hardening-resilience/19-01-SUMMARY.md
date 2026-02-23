@@ -62,7 +62,7 @@ Each task was committed atomically:
 
 1. **Task 1: Add SSR cookie auto-forwarding to backendFetch** - `180f22f` (feat)
 
-**Plan metadata:** _(to be added after final commit)_
+**Plan metadata:** `a681113` (docs: complete plan)
 
 ## Files Created/Modified
 - `src/lib/server/backend-fetch.ts` - Added auto-forwarding block before INTERNAL_SECRET block; updated JSDoc

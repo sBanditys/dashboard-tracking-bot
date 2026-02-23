@@ -29,9 +29,24 @@ const LONG_RATE_LIMIT_THRESHOLD_MS = 10000; // fail fast when cooldown is clearl
 const RETRYABLE_SERVER_STATUSES = new Set([500, 502, 503, 504]);
 const RETRYABLE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const CSRF_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+const MUTATION_MAX_RETRIES = 5;
 let refreshPromise: Promise<boolean> | null = null;
 let sessionRecoveryInProgress = false;
-let globalRateLimitUntil = 0;
+let pollingRateLimitUntil = 0;    // for GET/HEAD/OPTIONS
+let mutationRateLimitUntil = 0;   // for POST/PUT/PATCH/DELETE
+
+// On module load, restore pollingRateLimitUntil from sessionStorage
+try {
+  const stored = sessionStorage.getItem('polling_rate_limit_until');
+  if (stored) {
+    const expiry = parseInt(stored, 10);
+    if (expiry > Date.now()) {
+      pollingRateLimitUntil = expiry;
+    } else {
+      sessionStorage.removeItem('polling_rate_limit_until');
+    }
+  }
+} catch { /* SSR or private browsing */ }
 
 export class RateLimitError extends Error {
   status: number;
@@ -135,14 +150,26 @@ function getCsrfToken(): string | undefined {
     ?.split('=')[1];
 }
 
-function getRateLimitRemainingMs(): number {
-  return Math.max(0, globalRateLimitUntil - Date.now());
+function getRateLimitRemainingMs(isMutation: boolean): number {
+  const until = isMutation ? mutationRateLimitUntil : pollingRateLimitUntil;
+  return Math.max(0, until - Date.now());
 }
 
-function setRateLimitCooldown(ms: number): void {
+function setRateLimitCooldown(ms: number, isMutation: boolean): void {
   if (ms <= 0) return;
   const boundedMs = Math.min(ms, MAX_RATE_LIMIT_WINDOW_MS);
-  globalRateLimitUntil = Math.max(globalRateLimitUntil, Date.now() + boundedMs);
+  const expiryTime = Date.now() + boundedMs;
+  if (isMutation) {
+    mutationRateLimitUntil = Math.max(mutationRateLimitUntil, expiryTime);
+  } else {
+    pollingRateLimitUntil = Math.max(pollingRateLimitUntil, expiryTime);
+    try {
+      sessionStorage.setItem('polling_rate_limit_until', String(pollingRateLimitUntil));
+    } catch { /* SSR or private browsing — ignore */ }
+    try {
+      window.dispatchEvent(new CustomEvent('rate-limit-updated'));
+    } catch { /* SSR */ }
+  }
 }
 
 async function refreshSession(): Promise<boolean> {
@@ -205,22 +232,30 @@ async function recoverExpiredSession(): Promise<void> {
  *
  * @param url - URL to fetch
  * @param options - Fetch options
- * @param config - Max retries (number) or config object with maxRetries and skipGlobalCooldown
+ * @param config - Max retries (number) or config object with maxRetries, skipGlobalCooldown, onRetry, onRetrySettled
  * @returns Response object
  * @throws Error if all retries exhausted
  */
 export async function fetchWithRetry(
   url: string,
   options?: RequestInit,
-  config?: number | { maxRetries?: number; skipGlobalCooldown?: boolean }
+  config?: number | {
+    maxRetries?: number;
+    skipGlobalCooldown?: boolean;
+    onRetry?: (attempt: number, maxAttempts: number) => void;
+    onRetrySettled?: () => void;
+  }
 ): Promise<Response> {
   const maxRetries = typeof config === 'number' ? config : config?.maxRetries ?? DEFAULT_MAX_RETRIES;
   const skipGlobalCooldown = typeof config === 'number' ? false : config?.skipGlobalCooldown ?? false;
+  const onRetry = typeof config === 'number' ? undefined : config?.onRetry;
+  const onRetrySettled = typeof config === 'number' ? undefined : config?.onRetrySettled;
   const requestMethod = (options?.method || 'GET').toUpperCase();
   const canRetryRequest = RETRYABLE_METHODS.has(requestMethod);
+  const isMutation = !RETRYABLE_METHODS.has(requestMethod);
 
   if (!skipGlobalCooldown && !isAuthEndpoint(url)) {
-    const cooldownMs = getRateLimitRemainingMs();
+    const cooldownMs = getRateLimitRemainingMs(isMutation);
     if (cooldownMs > 0) {
       throw new RateLimitError(cooldownMs);
     }
@@ -230,157 +265,177 @@ export async function fetchWithRetry(
   let didRetryAfterRefresh = false;
   let didRetryAfterCsrf = false;
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      // Inject CSRF token for mutation requests (not auth endpoints)
-      let requestOptions = options;
-      if (CSRF_METHODS.has(requestMethod) && !isAuthEndpoint(url)) {
-        const csrfToken = getCsrfToken();
-        if (csrfToken) {
-          const headers = new Headers(options?.headers);
-          headers.set('X-CSRF-Token', csrfToken);
-          requestOptions = { ...options, headers };
+  try {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        // Inject CSRF token for mutation requests (not auth endpoints)
+        let requestOptions = options;
+        if (CSRF_METHODS.has(requestMethod) && !isAuthEndpoint(url)) {
+          const csrfToken = getCsrfToken();
+          if (csrfToken) {
+            const headers = new Headers(options?.headers);
+            headers.set('X-CSRF-Token', csrfToken);
+            requestOptions = { ...options, headers };
+          }
         }
-      }
 
-      const response = await fetch(url, requestOptions);
+        const response = await fetch(url, requestOptions);
 
-      if (response.status === 401 && !didRetryAfterRefresh && !isAuthEndpoint(url)) {
-        const refreshed = await refreshSession();
-        if (refreshed) {
-          didRetryAfterRefresh = true;
-          // After successful token refresh, retry the original request.
-          // The refreshed auth_token cookie is sent automatically if
-          // the caller includes credentials: 'include' in the options.
+        if (response.status === 401 && !didRetryAfterRefresh && !isAuthEndpoint(url)) {
+          const refreshed = await refreshSession();
+          if (refreshed) {
+            didRetryAfterRefresh = true;
+            // After successful token refresh, retry the original request.
+            // The refreshed auth_token cookie is sent automatically if
+            // the caller includes credentials: 'include' in the options.
+            continue;
+          }
+
+          await recoverExpiredSession();
+          return response;
+        }
+
+        if (response.status === 401 && didRetryAfterRefresh && !isAuthEndpoint(url)) {
+          await recoverExpiredSession();
+        }
+
+        // Handle 403 CSRF token errors — silent retry with fresh token
+        if (response.status === 403 && !didRetryAfterCsrf && !isAuthEndpoint(url)) {
+          try {
+            const clonedResponse = response.clone();
+            const body = await clonedResponse.json().catch(() => null);
+
+            if (extractErrorCode(body) === 'EBADCSRFTOKEN') {
+              // Trigger middleware to refresh CSRF cookie via lightweight GET request
+              await fetch('/api/auth/session', { method: 'GET', credentials: 'include' });
+
+              // Wait briefly for cookie to propagate
+              await sleep(100);
+
+              didRetryAfterCsrf = true;
+              continue; // Retry with fresh token
+            }
+          } catch {
+            // If CSRF retry setup fails, continue with normal 403 handling
+          }
+        }
+
+        // If CSRF retry also failed, show persistent error
+        if (response.status === 403 && didRetryAfterCsrf && !isAuthEndpoint(url)) {
+          try {
+            const clonedResponse = response.clone();
+            const body = await clonedResponse.json().catch(() => null);
+
+            if (extractErrorCode(body) === 'EBADCSRFTOKEN') {
+              toast.error('Session error, please refresh the page');
+              return response;
+            }
+          } catch {
+            // Continue with normal 403 handling
+          }
+        }
+
+        // Handle 403 unverified_email errors — redirect to dedicated error page
+        if (response.status === 403 && !isAuthEndpoint(url)) {
+          try {
+            // Clone response to read body without consuming original
+            const clonedResponse = response.clone();
+            const body = await clonedResponse.json().catch(() => null);
+
+            if (extractErrorCode(body) === 'unverified_email') {
+              if (typeof window !== 'undefined') {
+                window.location.replace('/auth/unverified-email');
+              }
+              return response;
+            }
+          } catch {
+            // If parsing fails, continue with normal response handling
+          }
+        }
+
+        // Handle 429 Too Many Requests — retry with backoff
+        if (response.status === 429) {
+          // When skipGlobalCooldown is set, return the raw response so the
+          // caller can read the body and show a domain-specific error message
+          // instead of the generic RateLimitError.
+          if (skipGlobalCooldown) return response;
+
+          const retryAfterHeader = response.headers.get('Retry-After');
+          const retryAfterSeconds = retryAfterHeader ? parseInt(retryAfterHeader, 10) : NaN;
+          const cooldownMs = !isNaN(retryAfterSeconds) && retryAfterSeconds > 0
+            ? retryAfterSeconds * 1000
+            : MAX_RATE_LIMIT_WINDOW_MS;
+          setRateLimitCooldown(cooldownMs, isMutation);
+
+          const rateLimitRetryCap = Math.min(MAX_RATE_LIMIT_RETRIES, maxRetries);
+          const shouldFailFast =
+            !canRetryRequest ||
+            cooldownMs >= LONG_RATE_LIMIT_THRESHOLD_MS || attempt >= rateLimitRetryCap;
+
+          if (shouldFailFast) {
+            throw new RateLimitError(cooldownMs);
+          }
+
+          console.warn(
+            `Rate limited (429). Retrying in ${Math.round(cooldownMs / 1000)}s (attempt ${attempt + 1}/${rateLimitRetryCap})...`
+          );
+
+          await sleep(cooldownMs);
           continue;
         }
 
-        await recoverExpiredSession();
+        // Handle transient server errors with backoff.
+        // Skip non-transient statuses like 501 (Not Implemented) to fail fast.
+        if (canRetryRequest && RETRYABLE_SERVER_STATUSES.has(response.status) && attempt < maxRetries) {
+          const delay = calculateBackoff(attempt);
+          console.warn(
+            `Server error (${response.status}). Retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 1}/${maxRetries})...`
+          );
+          await sleep(delay);
+          continue;
+        }
+
+        // Mutation 503 retry with onRetry callback
+        if (!canRetryRequest && response.status === 503 && attempt < MUTATION_MAX_RETRIES) {
+          const delay = calculateBackoff(attempt);
+          onRetry?.(attempt + 1, MUTATION_MAX_RETRIES);
+          console.warn(`Mutation 503 — retrying (attempt ${attempt + 1}/${MUTATION_MAX_RETRIES})...`);
+          await sleep(delay);
+          continue;
+        }
+
+        // All other responses (2xx, 3xx, 4xx) — return immediately, don't retry
         return response;
-      }
+      } catch (error) {
+        if (error instanceof RateLimitError) {
+          throw error;
+        }
 
-      if (response.status === 401 && didRetryAfterRefresh && !isAuthEndpoint(url)) {
-        await recoverExpiredSession();
-      }
+        // Network error or fetch failure
+        lastError = error instanceof Error ? error : new Error(String(error));
 
-      // Handle 403 CSRF token errors — silent retry with fresh token
-      if (response.status === 403 && !didRetryAfterCsrf && !isAuthEndpoint(url)) {
-        try {
-          const clonedResponse = response.clone();
-          const body = await clonedResponse.json().catch(() => null);
-
-          if (extractErrorCode(body) === 'EBADCSRFTOKEN') {
-            // Trigger middleware to refresh CSRF cookie via lightweight GET request
-            await fetch('/api/auth/session', { method: 'GET', credentials: 'include' });
-
-            // Wait briefly for cookie to propagate
-            await sleep(100);
-
-            didRetryAfterCsrf = true;
-            continue; // Retry with fresh token
+        if (!canRetryRequest || attempt >= maxRetries) {
+          // Fire onRetry for mutation network errors so overlay/toast appears
+          if (!canRetryRequest) {
+            onRetry?.(attempt + 1, MUTATION_MAX_RETRIES);
           }
-        } catch {
-          // If CSRF retry setup fails, continue with normal 403 handling
-        }
-      }
-
-      // If CSRF retry also failed, show persistent error
-      if (response.status === 403 && didRetryAfterCsrf && !isAuthEndpoint(url)) {
-        try {
-          const clonedResponse = response.clone();
-          const body = await clonedResponse.json().catch(() => null);
-
-          if (extractErrorCode(body) === 'EBADCSRFTOKEN') {
-            toast.error('Session error, please refresh the page');
-            return response;
-          }
-        } catch {
-          // Continue with normal 403 handling
-        }
-      }
-
-      // Handle 403 unverified_email errors — redirect to dedicated error page
-      if (response.status === 403 && !isAuthEndpoint(url)) {
-        try {
-          // Clone response to read body without consuming original
-          const clonedResponse = response.clone();
-          const body = await clonedResponse.json().catch(() => null);
-
-          if (extractErrorCode(body) === 'unverified_email') {
-            if (typeof window !== 'undefined') {
-              window.location.replace('/auth/unverified-email');
-            }
-            return response;
-          }
-        } catch {
-          // If parsing fails, continue with normal response handling
-        }
-      }
-
-      // Handle 429 Too Many Requests — retry with backoff
-      if (response.status === 429) {
-        // When skipGlobalCooldown is set, return the raw response so the
-        // caller can read the body and show a domain-specific error message
-        // instead of the generic RateLimitError.
-        if (skipGlobalCooldown) return response;
-
-        const retryAfter = response.headers.get('Retry-After');
-        const delay = parseRetryAfter(retryAfter) ?? RATE_LIMIT_FALLBACK_MS;
-        setRateLimitCooldown(delay);
-
-        const rateLimitRetryCap = Math.min(MAX_RATE_LIMIT_RETRIES, maxRetries);
-        const shouldFailFast =
-          !canRetryRequest ||
-          delay >= LONG_RATE_LIMIT_THRESHOLD_MS || attempt >= rateLimitRetryCap;
-
-        if (shouldFailFast) {
-          throw new RateLimitError(delay);
+          throw new Error(
+            canRetryRequest
+              ? `Request failed after ${maxRetries} retries: ${lastError.message}`
+              : `Request failed: ${lastError.message}`
+          );
         }
 
-        console.warn(
-          `Rate limited (429). Retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 1}/${rateLimitRetryCap})...`
-        );
-
-        await sleep(delay);
-        continue;
-      }
-
-      // Handle transient server errors with backoff.
-      // Skip non-transient statuses like 501 (Not Implemented) to fail fast.
-      if (canRetryRequest && RETRYABLE_SERVER_STATUSES.has(response.status) && attempt < maxRetries) {
         const delay = calculateBackoff(attempt);
         console.warn(
-          `Server error (${response.status}). Retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 1}/${maxRetries})...`
+          `Network error: ${lastError.message}. Retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 1}/${maxRetries})...`
         );
+
         await sleep(delay);
-        continue;
       }
-
-      // All other responses (2xx, 3xx, 4xx) — return immediately, don't retry
-      return response;
-    } catch (error) {
-      if (error instanceof RateLimitError) {
-        throw error;
-      }
-
-      // Network error or fetch failure
-      lastError = error instanceof Error ? error : new Error(String(error));
-
-      if (!canRetryRequest || attempt >= maxRetries) {
-        throw new Error(
-          canRetryRequest
-            ? `Request failed after ${maxRetries} retries: ${lastError.message}`
-            : `Request failed: ${lastError.message}`
-        );
-      }
-
-      const delay = calculateBackoff(attempt);
-      console.warn(
-        `Network error: ${lastError.message}. Retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 1}/${maxRetries})...`
-      );
-
-      await sleep(delay);
     }
+  } finally {
+    onRetrySettled?.();
   }
 
   // Should never reach here, but TypeScript needs this

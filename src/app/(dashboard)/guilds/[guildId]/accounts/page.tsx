@@ -1,6 +1,7 @@
 'use client'
 
 import { use, useState, useEffect, useCallback, useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
 import { useInView } from 'react-intersection-observer'
 import { RefreshCw } from 'lucide-react'
@@ -57,6 +58,8 @@ export default function AccountsPage({ params }: PageProps) {
     const [pageSize, setPageSize] = usePersistentState(`${guildId}-accounts-pageSize`, 50)
     const [showAddModal, setShowAddModal] = useState(false)
 
+    const queryClient = useQueryClient()
+
     // Bulk operation state
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showReassignModal, setShowReassignModal] = useState(false)
@@ -84,11 +87,14 @@ export default function AccountsPage({ params }: PageProps) {
         data,
         isLoading,
         isError,
+        error,
         refetch,
         hasNextPage,
         isFetchingNextPage,
         fetchNextPage,
     } = useAccountsInfinite(guildId, pageSize, filters)
+
+    const isCursorInvalid = isError && (error as Error & { code?: string })?.code === 'CURSOR_INVALID'
 
     // Intersection observer for infinite scroll
     const { ref, inView } = useInView({ threshold: 0, rootMargin: '100px' })
@@ -363,6 +369,41 @@ export default function AccountsPage({ params }: PageProps) {
             {isFetchingNextPage && (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
                     <AccountCardSkeleton count={3} />
+                </div>
+            )}
+
+            {/* End-of-list message */}
+            {!isLoading && data && !hasNextPage && accounts.length > 0 && (
+                <p className="text-center py-4 text-sm text-gray-500">You&apos;ve reached the end</p>
+            )}
+
+            {/* Stale cursor UI */}
+            {isCursorInvalid && (
+                <div className="text-center py-4 space-y-2">
+                    <p className="text-sm text-gray-400">List has changed.</p>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            queryClient.resetQueries({ queryKey: ['guild', guildId, 'accounts'] })
+                        }}
+                        className="text-sm text-accent-purple hover:text-accent-purple/80 transition-colors"
+                    >
+                        Refresh from start
+                    </button>
+                </div>
+            )}
+
+            {/* Generic fetch failure retry */}
+            {isError && !isCursorInvalid && !isFetchingNextPage && (
+                <div className="text-center py-4 space-y-2">
+                    <p className="text-sm text-gray-400">Failed to load more.</p>
+                    <button
+                        type="button"
+                        onClick={() => fetchNextPage()}
+                        className="text-sm text-accent-purple hover:text-accent-purple/80 transition-colors"
+                    >
+                        Try again
+                    </button>
                 </div>
             )}
 

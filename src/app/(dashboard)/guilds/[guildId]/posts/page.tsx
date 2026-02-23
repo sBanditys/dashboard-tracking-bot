@@ -1,6 +1,7 @@
 'use client'
 
 import { use, useState, useEffect, useCallback, useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useInView } from 'react-intersection-observer'
 import { RefreshCw } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
@@ -45,6 +46,8 @@ export default function PostsPage({ params }: PageProps) {
     const [dateRange, setDateRange] = usePersistentState<DateRange | undefined>(`${guildId}-posts-dateRange`, undefined)
     const [pageSize, setPageSize] = usePersistentState(`${guildId}-posts-pageSize`, 50)
 
+    const queryClient = useQueryClient()
+
     // Bulk operation state
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [bulkResults, setBulkResults] = useState<BulkOperationResult | null>(null)
@@ -79,6 +82,8 @@ export default function PostsPage({ params }: PageProps) {
         isFetchingNextPage,
         fetchNextPage,
     } = usePostsInfinite(guildId, pageSize, filters)
+
+    const isCursorInvalid = isError && (error as Error & { code?: string })?.code === 'CURSOR_INVALID'
 
     // Intersection observer for infinite scroll
     const { ref, inView } = useInView({ threshold: 0, rootMargin: '100px' })
@@ -223,7 +228,7 @@ export default function PostsPage({ params }: PageProps) {
         }
     }, [bulkResults])
 
-    if (isError) {
+    if (isError && !data) {
         const errorMessage = error instanceof Error
             ? error.message
             : 'Failed to load posts'
@@ -352,6 +357,41 @@ export default function PostsPage({ params }: PageProps) {
             {isFetchingNextPage && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                     <PostCardSkeleton count={4} />
+                </div>
+            )}
+
+            {/* End-of-list message */}
+            {!isLoading && data && !hasNextPage && posts.length > 0 && (
+                <p className="text-center py-4 text-sm text-gray-500">You&apos;ve reached the end</p>
+            )}
+
+            {/* Stale cursor UI */}
+            {isCursorInvalid && (
+                <div className="text-center py-4 space-y-2">
+                    <p className="text-sm text-gray-400">List has changed.</p>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            queryClient.resetQueries({ queryKey: ['guild', guildId, 'posts'] })
+                        }}
+                        className="text-sm text-accent-purple hover:text-accent-purple/80 transition-colors"
+                    >
+                        Refresh from start
+                    </button>
+                </div>
+            )}
+
+            {/* Generic fetch failure retry */}
+            {isError && !isCursorInvalid && !isFetchingNextPage && (
+                <div className="text-center py-4 space-y-2">
+                    <p className="text-sm text-gray-400">Failed to load more.</p>
+                    <button
+                        type="button"
+                        onClick={() => fetchNextPage()}
+                        className="text-sm text-accent-purple hover:text-accent-purple/80 transition-colors"
+                    >
+                        Try again
+                    </button>
                 </div>
             )}
 

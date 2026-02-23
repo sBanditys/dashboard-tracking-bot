@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import { parseApiError } from '@/lib/api-error'
@@ -28,8 +28,10 @@ function normalizeExportRecord(payload: unknown): ExportRecord {
  */
 export function useCreateExport(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async (request: ExportRequest) => {
             const response = await fetchWithRetry(`/api/guilds/${guildId}/exports`, {
                 method: 'POST',
@@ -37,7 +39,19 @@ export function useCreateExport(guildId: string) {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(request),
-            }, { skipGlobalCooldown: true })
+            }, {
+                skipGlobalCooldown: true,
+                onRetry: (attempt) => {
+                    setIsRetrying(true)
+                    didRetryRef.current = true
+                    if (attempt === 1) {
+                        toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                    }
+                },
+                onRetrySettled: () => {
+                    setIsRetrying(false)
+                },
+            })
 
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}))
@@ -57,9 +71,15 @@ export function useCreateExport(guildId: string) {
             return { record, quota: payload.quota }
         },
         onSuccess: ({ quota }) => {
-            toast.success('Export created successfully', {
-                description: 'Processing will begin shortly',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            } else {
+                toast.success('Export created successfully', {
+                    description: 'Processing will begin shortly',
+                })
+            }
+            didRetryRef.current = false
 
             // Immediately update quota in all cached export history queries
             if (quota) {
@@ -72,13 +92,21 @@ export function useCreateExport(guildId: string) {
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'exports'] })
         },
         onError: (error) => {
-            // Refresh quota display after failed export attempt
-            queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'exports'] })
-            toast.error('Failed to create export', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                // Refresh quota display after failed export attempt
+                queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'exports'] })
+                toast.error('Failed to create export', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }
 
 /**

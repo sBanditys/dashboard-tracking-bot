@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useSSE, type ConnectionState } from '@/hooks/use-sse'
-import { useCallback } from 'react'
+import { useCallback, useState, useRef } from 'react'
 import { toast } from 'sonner'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import { parseApiError } from '@/lib/api-error'
@@ -145,13 +145,27 @@ interface UpdateSettingsRequest {
 
 export function useUpdateGuildSettings(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async (settings: UpdateSettingsRequest) => {
             const response = await fetchWithRetry(`/api/guilds/${guildId}/settings`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings),
+            }, {
+                onRetry: (attempt, maxAttempts) => {
+                    setIsRetrying(true)
+                    didRetryRef.current = true
+                    if (attempt === 1) {
+                        toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                    }
+                    console.warn(`Settings mutation retry ${attempt}/${maxAttempts}`)
+                },
+                onRetrySettled: () => {
+                    setIsRetrying(false)
+                },
             })
 
             if (!response.ok) {
@@ -188,18 +202,32 @@ export function useUpdateGuildSettings(guildId: string) {
             if (context?.previousGuild) {
                 queryClient.setQueryData(['guild', guildId], context.previousGuild)
             }
-            toast.error('Failed to update settings', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Failed to update settings', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
         onSuccess: () => {
-            toast.success('Settings saved successfully')
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            } else {
+                toast.success('Settings saved successfully')
+            }
+            didRetryRef.current = false
         },
         onSettled: () => {
             // Always refetch after error or success to sync with server
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
         },
     })
+
+    return { ...mutation, isRetrying }
 }
 
 import type { ChannelsResponse } from '@/types/guild'
@@ -227,11 +255,24 @@ export function useGuildChannels(guildId: string) {
  */
 export function useDeleteAccount(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async (accountId: string) => {
             const response = await fetchWithRetry(`/api/guilds/${guildId}/accounts/${accountId}`, {
                 method: 'DELETE',
+            }, {
+                onRetry: (attempt) => {
+                    setIsRetrying(true)
+                    didRetryRef.current = true
+                    if (attempt === 1) {
+                        toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                    }
+                },
+                onRetrySettled: () => {
+                    setIsRetrying(false)
+                },
             })
             if (!response.ok) {
                 const body = await response.json()
@@ -240,16 +281,30 @@ export function useDeleteAccount(guildId: string) {
             return response.json()
         },
         onSuccess: () => {
-            toast.success('Account deleted successfully')
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            } else {
+                toast.success('Account deleted successfully')
+            }
+            didRetryRef.current = false
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] })
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
         },
         onError: (error) => {
-            toast.error('Failed to delete account', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Failed to delete account', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }
 
 /**
@@ -257,11 +312,24 @@ export function useDeleteAccount(guildId: string) {
  */
 export function useDeleteBrand(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async (brandId: string) => {
             const response = await fetchWithRetry(`/api/guilds/${guildId}/brands/${brandId}`, {
                 method: 'DELETE',
+            }, {
+                onRetry: (attempt) => {
+                    setIsRetrying(true)
+                    didRetryRef.current = true
+                    if (attempt === 1) {
+                        toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                    }
+                },
+                onRetrySettled: () => {
+                    setIsRetrying(false)
+                },
             })
             if (!response.ok) {
                 const body = await response.json()
@@ -270,14 +338,28 @@ export function useDeleteBrand(guildId: string) {
             return response.json()
         },
         onSuccess: () => {
-            toast.success('Brand deleted successfully')
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            } else {
+                toast.success('Brand deleted successfully')
+            }
+            didRetryRef.current = false
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'brands'] })
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
         },
         onError: (error) => {
-            toast.error('Failed to delete brand', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Failed to delete brand', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }

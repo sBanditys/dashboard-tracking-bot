@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useRef } from 'react'
 import { toast } from 'sonner'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import { parseApiError } from '@/lib/api-error'
@@ -29,8 +30,10 @@ export function useEmailConfig(guildId: string) {
  */
 export function useUpdateEmailConfig(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async (data: {
             deliveryMode: 'immediate' | 'digest'
             digestHour?: number | null
@@ -39,6 +42,17 @@ export function useUpdateEmailConfig(guildId: string) {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
+            }, {
+                onRetry: (attempt) => {
+                    setIsRetrying(true)
+                    didRetryRef.current = true
+                    if (attempt === 1) {
+                        toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                    }
+                },
+                onRetrySettled: () => {
+                    setIsRetrying(false)
+                },
             })
             if (!response.ok) {
                 const body = await response.json()
@@ -47,15 +61,29 @@ export function useUpdateEmailConfig(guildId: string) {
             return response.json()
         },
         onSuccess: () => {
-            toast.success('Email delivery settings updated')
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            } else {
+                toast.success('Email delivery settings updated')
+            }
+            didRetryRef.current = false
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'email-config'] })
         },
         onError: (error) => {
-            toast.error('Failed to update email settings', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Failed to update email settings', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }
 
 /**
@@ -63,13 +91,26 @@ export function useUpdateEmailConfig(guildId: string) {
  */
 export function useAddRecipient(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async (data: { email: string }) => {
             const response = await fetchWithRetry(`/api/guilds/${guildId}/email-recipients`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
+            }, {
+                onRetry: (attempt) => {
+                    setIsRetrying(true)
+                    didRetryRef.current = true
+                    if (attempt === 1) {
+                        toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                    }
+                },
+                onRetrySettled: () => {
+                    setIsRetrying(false)
+                },
             })
             if (!response.ok) {
                 const body = await response.json()
@@ -78,17 +119,31 @@ export function useAddRecipient(guildId: string) {
             return response.json()
         },
         onSuccess: () => {
-            toast.success('Verification email sent', {
-                description: 'The recipient must verify their email address',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            } else {
+                toast.success('Verification email sent', {
+                    description: 'The recipient must verify their email address',
+                })
+            }
+            didRetryRef.current = false
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'email-config'] })
         },
         onError: (error) => {
-            toast.error('Failed to add recipient', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Failed to add recipient', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }
 
 /**
@@ -96,12 +151,26 @@ export function useAddRecipient(guildId: string) {
  */
 export function useRemoveRecipient(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async (recipientId: string) => {
             const response = await fetchWithRetry(
                 `/api/guilds/${guildId}/email-recipients/${recipientId}`,
-                { method: 'DELETE' }
+                { method: 'DELETE' },
+                {
+                    onRetry: (attempt) => {
+                        setIsRetrying(true)
+                        didRetryRef.current = true
+                        if (attempt === 1) {
+                            toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                        }
+                    },
+                    onRetrySettled: () => {
+                        setIsRetrying(false)
+                    },
+                }
             )
             if (!response.ok) {
                 const body = await response.json()
@@ -109,28 +178,57 @@ export function useRemoveRecipient(guildId: string) {
             }
         },
         onSuccess: () => {
-            toast.success('Recipient removed')
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            } else {
+                toast.success('Recipient removed')
+            }
+            didRetryRef.current = false
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'email-config'] })
         },
         onError: (error) => {
-            toast.error('Failed to remove recipient', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Failed to remove recipient', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }
 
 /**
  * Resend verification email to a recipient
  */
 export function useResendVerification(guildId: string) {
-    return useMutation({
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
+
+    const mutation = useMutation({
         mutationFn: async (recipientId: string) => {
             const response = await fetchWithRetry(
                 `/api/guilds/${guildId}/email-recipients/${recipientId}/resend-verification`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                },
+                {
+                    onRetry: (attempt) => {
+                        setIsRetrying(true)
+                        didRetryRef.current = true
+                        if (attempt === 1) {
+                            toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                        }
+                    },
+                    onRetrySettled: () => {
+                        setIsRetrying(false)
+                    },
                 }
             )
             if (!response.ok) {
@@ -140,12 +238,26 @@ export function useResendVerification(guildId: string) {
             return response.json()
         },
         onSuccess: () => {
-            toast.success('Verification email resent')
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            } else {
+                toast.success('Verification email resent')
+            }
+            didRetryRef.current = false
         },
         onError: (error) => {
-            toast.error('Failed to resend verification', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Failed to resend verification', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }

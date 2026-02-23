@@ -1,6 +1,7 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useRef } from 'react'
 import { toast } from 'sonner'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import { parseApiError } from '@/lib/api-error'
@@ -11,8 +12,10 @@ import type { BulkOperationResult } from '@/types/bulk'
  */
 export function useBulkDelete(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async (params: { ids: string[]; dataType: 'accounts' | 'posts' }) => {
             const response = await fetchWithRetry(`/api/guilds/${guildId}/bulk/delete`, {
                 method: 'POST',
@@ -20,6 +23,17 @@ export function useBulkDelete(guildId: string) {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(params),
+            }, {
+                onRetry: (attempt) => {
+                    setIsRetrying(true)
+                    didRetryRef.current = true
+                    if (attempt === 1) {
+                        toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                    }
+                },
+                onRetrySettled: () => {
+                    setIsRetrying(false)
+                },
             })
 
             if (!response.ok) {
@@ -30,6 +44,10 @@ export function useBulkDelete(guildId: string) {
             return response.json() as Promise<BulkOperationResult>
         },
         onSuccess: (data, variables) => {
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+            }
+            didRetryRef.current = false
             // Invalidate relevant queries based on data type
             if (variables.dataType === 'accounts') {
                 queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] })
@@ -41,11 +59,19 @@ export function useBulkDelete(guildId: string) {
             // BulkResultsToast handles success display
         },
         onError: (error) => {
-            toast.error('Bulk delete failed', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Bulk delete failed', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }
 
 /**
@@ -53,8 +79,10 @@ export function useBulkDelete(guildId: string) {
  */
 export function useBulkReassign(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async (params: {
             ids: string[]
             targetBrandId: string
@@ -66,6 +94,17 @@ export function useBulkReassign(guildId: string) {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(params),
+            }, {
+                onRetry: (attempt) => {
+                    setIsRetrying(true)
+                    didRetryRef.current = true
+                    if (attempt === 1) {
+                        toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                    }
+                },
+                onRetrySettled: () => {
+                    setIsRetrying(false)
+                },
             })
 
             if (!response.ok) {
@@ -76,6 +115,10 @@ export function useBulkReassign(guildId: string) {
             return response.json() as Promise<BulkOperationResult>
         },
         onSuccess: () => {
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+            }
+            didRetryRef.current = false
             // Reassignment affects accounts, brands (account counts), and guild details
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] })
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'brands'] })
@@ -83,9 +126,17 @@ export function useBulkReassign(guildId: string) {
             // BulkResultsToast handles success display
         },
         onError: (error) => {
-            toast.error('Bulk reassign failed', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Bulk reassign failed', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }

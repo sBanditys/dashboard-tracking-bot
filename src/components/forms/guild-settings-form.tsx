@@ -5,6 +5,7 @@ import { ChannelSelect } from '@/components/ui/channel-select'
 import type { GuildSettings, GuildDetails } from '@/types/guild'
 import { useState, useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { Loader2 } from 'lucide-react'
 
 interface GuildSettingsFormProps {
   guildId: string
@@ -18,7 +19,7 @@ interface GuildSettingsFormProps {
 export function GuildSettingsForm({ guildId, settings }: GuildSettingsFormProps) {
   const queryClient = useQueryClient()
   const { data: channelsData, isLoading: channelsLoading } = useGuildChannels(guildId)
-  const mutation = useUpdateGuildSettings(guildId)
+  const { isRetrying, ...mutation } = useUpdateGuildSettings(guildId)
 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
   const [showStaleWarning, setShowStaleWarning] = useState(false)
@@ -100,7 +101,16 @@ export function GuildSettingsForm({ guildId, settings }: GuildSettingsFormProps)
   const channels = channelsData?.channels ?? []
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-6">
+    <div className="relative bg-surface border border-border rounded-lg p-6">
+      {/* Blocking overlay during mutation retry — prevents edits while retrying */}
+      {isRetrying && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/60 backdrop-blur-[1px]">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Saving changes...</span>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-lg font-semibold text-white">Guild Settings</h2>

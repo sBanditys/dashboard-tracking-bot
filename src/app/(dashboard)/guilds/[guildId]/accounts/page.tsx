@@ -18,6 +18,7 @@ import { TypeToConfirmModal } from '@/components/ui/type-to-confirm-modal'
 import { ReassignModal } from '@/components/bulk/reassign-modal'
 import { BulkResultsToast } from '@/components/bulk/bulk-results-toast'
 import { EmptyState, NoResults } from '@/components/empty-state'
+import { ConnectionIssuesBanner } from '@/components/connection-issues-banner'
 import { ScrollToTop } from '@/components/scroll-to-top'
 import { ScrollToBottom } from '@/components/scroll-to-bottom'
 import { AddAccountModal } from '@/components/forms/add-account-modal'
@@ -268,6 +269,8 @@ export default function AccountsPage({ params }: PageProps) {
             </header>
 
             <GuildTabs guildId={guildId} />
+
+            <ConnectionIssuesBanner isError={isError} hasData={!!data} />
 
             <FilterBar>
                 <SearchInput

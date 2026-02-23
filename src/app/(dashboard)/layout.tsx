@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { Topbar } from '@/components/layout/topbar'
 import { MobileDrawer } from '@/components/layout/mobile-drawer'
 import { Breadcrumbs } from '@/components/layout/breadcrumbs'
+import { RateLimitBanner } from '@/components/rate-limit-banner'
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
 
 export default function DashboardLayout({
@@ -34,6 +35,7 @@ export default function DashboardLayout({
         <Topbar onMenuClick={() => setDrawerOpen(true)} />
         <main className="relative z-0 flex-1 overflow-auto p-4 md:p-6">
           <Breadcrumbs />
+          <RateLimitBanner />
           {children}
         </main>
       </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
@@ -47,7 +47,10 @@ export function useImportTemplate(guildId: string) {
  * Upload a CSV file for import preview and validation
  */
 export function useImportPreview(guildId: string) {
-    return useMutation({
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
+
+    const mutation = useMutation({
         mutationFn: async (file: File): Promise<ImportPreview> => {
             const formData = new FormData()
             formData.append('file', file)
@@ -58,6 +61,18 @@ export function useImportPreview(guildId: string) {
                     method: 'POST',
                     body: formData,
                     // Do NOT set Content-Type — browser sets it with boundary for multipart
+                },
+                {
+                    onRetry: (attempt) => {
+                        setIsRetrying(true)
+                        didRetryRef.current = true
+                        if (attempt === 1) {
+                            toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                        }
+                    },
+                    onRetrySettled: () => {
+                        setIsRetrying(false)
+                    },
                 }
             )
             if (!response.ok) {
@@ -66,12 +81,26 @@ export function useImportPreview(guildId: string) {
             }
             return response.json()
         },
+        onSuccess: () => {
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+            }
+            didRetryRef.current = false
+        },
         onError: (error) => {
-            toast.error('Import preview failed', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Import preview failed', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }
 
 /**

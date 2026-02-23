@@ -1,6 +1,7 @@
 'use client'
 
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useRef } from 'react'
 import { toast } from 'sonner'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import { parseApiError } from '@/lib/api-error'
@@ -63,8 +64,10 @@ export function useActiveThresholdCount(guildId: string) {
  */
 export function useCreateThreshold(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async ({
             groupId,
             data,
@@ -78,6 +81,18 @@ export function useCreateThreshold(guildId: string) {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data),
+                },
+                {
+                    onRetry: (attempt) => {
+                        setIsRetrying(true)
+                        didRetryRef.current = true
+                        if (attempt === 1) {
+                            toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                        }
+                    },
+                    onRetrySettled: () => {
+                        setIsRetrying(false)
+                    },
                 }
             )
             if (!response.ok) {
@@ -87,15 +102,29 @@ export function useCreateThreshold(guildId: string) {
             return response.json()
         },
         onSuccess: () => {
-            toast.success('Alert threshold created')
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            } else {
+                toast.success('Alert threshold created')
+            }
+            didRetryRef.current = false
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'alerts'] })
         },
         onError: (error) => {
-            toast.error('Failed to create threshold', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Failed to create threshold', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }
 
 /**
@@ -103,8 +132,10 @@ export function useCreateThreshold(guildId: string) {
  */
 export function useDeleteThreshold(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async ({
             groupId,
             thresholdId,
@@ -114,7 +145,19 @@ export function useDeleteThreshold(guildId: string) {
         }): Promise<void> => {
             const response = await fetchWithRetry(
                 `/api/guilds/${guildId}/groups/${groupId}/alert-thresholds/${thresholdId}`,
-                { method: 'DELETE' }
+                { method: 'DELETE' },
+                {
+                    onRetry: (attempt) => {
+                        setIsRetrying(true)
+                        didRetryRef.current = true
+                        if (attempt === 1) {
+                            toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                        }
+                    },
+                    onRetrySettled: () => {
+                        setIsRetrying(false)
+                    },
+                }
             )
             if (!response.ok) {
                 const body = await response.json()
@@ -122,15 +165,29 @@ export function useDeleteThreshold(guildId: string) {
             }
         },
         onSuccess: () => {
-            toast.success('Alert threshold deleted')
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            } else {
+                toast.success('Alert threshold deleted')
+            }
+            didRetryRef.current = false
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'alerts'] })
         },
         onError: (error) => {
-            toast.error('Failed to delete threshold', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Failed to delete threshold', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }
 
 /**
@@ -138,8 +195,10 @@ export function useDeleteThreshold(guildId: string) {
  */
 export function useToggleThreshold(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async ({
             groupId,
             thresholdId,
@@ -155,6 +214,18 @@ export function useToggleThreshold(guildId: string) {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ enabled }),
+                },
+                {
+                    onRetry: (attempt) => {
+                        setIsRetrying(true)
+                        didRetryRef.current = true
+                        if (attempt === 1) {
+                            toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                        }
+                    },
+                    onRetrySettled: () => {
+                        setIsRetrying(false)
+                    },
                 }
             )
             if (!response.ok) {
@@ -164,14 +235,27 @@ export function useToggleThreshold(guildId: string) {
             return response.json()
         },
         onSuccess: () => {
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            }
+            didRetryRef.current = false
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'alerts'] })
         },
         onError: (error) => {
-            toast.error('Failed to toggle threshold', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Failed to toggle threshold', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }
 
 /**
@@ -179,8 +263,10 @@ export function useToggleThreshold(guildId: string) {
  */
 export function useUpdateAlertSettings(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async ({
             groupId,
             data,
@@ -194,6 +280,18 @@ export function useUpdateAlertSettings(guildId: string) {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data),
+                },
+                {
+                    onRetry: (attempt) => {
+                        setIsRetrying(true)
+                        didRetryRef.current = true
+                        if (attempt === 1) {
+                            toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                        }
+                    },
+                    onRetrySettled: () => {
+                        setIsRetrying(false)
+                    },
                 }
             )
             if (!response.ok) {
@@ -203,15 +301,29 @@ export function useUpdateAlertSettings(guildId: string) {
             return response.json()
         },
         onSuccess: () => {
-            toast.success('Alert settings updated')
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            } else {
+                toast.success('Alert settings updated')
+            }
+            didRetryRef.current = false
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'alerts'] })
         },
         onError: (error) => {
-            toast.error('Failed to update alert settings', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Failed to update alert settings', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }
 
 /**
@@ -219,8 +331,10 @@ export function useUpdateAlertSettings(guildId: string) {
  */
 export function useBulkToggleThresholds(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async (
             items: { groupId: string; thresholdId: string; enabled: boolean }[]
         ): Promise<void> => {
@@ -232,6 +346,18 @@ export function useBulkToggleThresholds(guildId: string) {
                             method: 'PATCH',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ enabled }),
+                        },
+                        {
+                            onRetry: (attempt) => {
+                                setIsRetrying(true)
+                                didRetryRef.current = true
+                                if (attempt === 1) {
+                                    toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                                }
+                            },
+                            onRetrySettled: () => {
+                                setIsRetrying(false)
+                            },
                         }
                     )
                 )
@@ -242,15 +368,29 @@ export function useBulkToggleThresholds(guildId: string) {
             }
         },
         onSuccess: () => {
-            toast.success('Thresholds updated')
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            } else {
+                toast.success('Thresholds updated')
+            }
+            didRetryRef.current = false
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'alerts'] })
         },
         onError: (error) => {
-            toast.error('Bulk toggle partially failed', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Bulk toggle partially failed', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }
 
 /**
@@ -258,8 +398,10 @@ export function useBulkToggleThresholds(guildId: string) {
  */
 export function useBulkDeleteThresholds(guildId: string) {
     const queryClient = useQueryClient()
+    const [isRetrying, setIsRetrying] = useState(false)
+    const didRetryRef = useRef(false)
 
-    return useMutation({
+    const mutation = useMutation({
         mutationFn: async (
             items: { groupId: string; thresholdId: string }[]
         ): Promise<void> => {
@@ -267,7 +409,19 @@ export function useBulkDeleteThresholds(guildId: string) {
                 items.map(({ groupId, thresholdId }) =>
                     fetchWithRetry(
                         `/api/guilds/${guildId}/groups/${groupId}/alert-thresholds/${thresholdId}`,
-                        { method: 'DELETE' }
+                        { method: 'DELETE' },
+                        {
+                            onRetry: (attempt) => {
+                                setIsRetrying(true)
+                                didRetryRef.current = true
+                                if (attempt === 1) {
+                                    toast.loading('Retrying...', { id: 'mutation-retry', duration: Infinity })
+                                }
+                            },
+                            onRetrySettled: () => {
+                                setIsRetrying(false)
+                            },
+                        }
                     )
                 )
             )
@@ -277,13 +431,27 @@ export function useBulkDeleteThresholds(guildId: string) {
             }
         },
         onSuccess: () => {
-            toast.success('Thresholds deleted')
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            } else {
+                toast.success('Thresholds deleted')
+            }
+            didRetryRef.current = false
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'alerts'] })
         },
         onError: (error) => {
-            toast.error('Bulk delete partially failed', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            })
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.error('Failed to save changes. Please try again later.')
+            } else {
+                toast.error('Bulk delete partially failed', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                })
+            }
+            didRetryRef.current = false
         },
     })
+
+    return { ...mutation, isRetrying }
 }

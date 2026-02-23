@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 
 ## Current Position
 
-Phase: 19 of 23 (Auth Hardening & Resilience) — IN PROGRESS
-Plan: 2 of 3 in current phase — COMPLETE
-Status: Phase 19 Plan 02 complete — mutation 503 retry, split rate limit buckets, RateLimitBanner, ConnectionIssuesBanner
-Last activity: 2026-02-23 — Phase 19 Plan 02 complete (mutation retry with onRetry callbacks, blocking overlay on GuildSettingsForm, sessionStorage-persisted polling rate limit cooldown)
+Phase: 19 of 23 (Auth Hardening & Resilience) — COMPLETE
+Plan: 3 of 3 in current phase — COMPLETE
+Status: Phase 19 Plan 03 complete — mutation 503 retry inner loop (5x), ConnectionIssuesBanner reachable; all 6/6 must-have truths achieved
+Last activity: 2026-02-23 — Phase 19 Plan 03 complete (gap closure: dedicated mutationAttempt counter, narrowed early return in accounts page)
 
 Progress: [██░░░░░░░░] 19% (v1.2) — 76/83 total plans complete across all milestones
 
@@ -61,6 +61,7 @@ Progress: [██░░░░░░░░] 19% (v1.2) — 76/83 total plans comp
 | Phase 18 P02 | 30s | 1 task | 1 file |
 | Phase 19 P01 | 37s | 1 task | 1 file |
 | Phase 19 P02 | 418s | 2 tasks | 11 files |
+| Phase 19 P03 | 51s | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,8 @@ Recent decisions affecting v1.2 work:
 - [Phase 19 P02]: pollingRateLimitUntil persisted to sessionStorage; rate-limit-updated custom event dispatched on each write for reactive RateLimitBanner
 - [Phase 19 P02]: MUTATION_MAX_RETRIES=5 for 503 retries; didRetryRef pattern prevents 'Changes saved' toast on non-retry success paths
 - [Phase 19 P02]: ConnectionIssuesBanner gates on isError && hasData — distinguishes polling failures from initial load failures
+- [Phase 19]: Mutation 503 retry uses self-contained inner loop with mutationAttempt counter (1..5), independent of outer DEFAULT_MAX_RETRIES=3 bound
+- [Phase 19]: Early return narrowed from 'isError' to 'isError && !data' — polling failures fall through to ConnectionIssuesBanner inline render
 
 ### Pending Todos
 
@@ -106,8 +109,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 19-02-PLAN.md
-Resume file: .planning/ (next: Phase 19 Plan 03)
+Stopped at: Completed 19-03-PLAN.md
+Resume file: .planning/ (next: Phase 20)
 
 ---
-*Last updated: 2026-02-23 (Phase 19 Plan 02 complete — mutation retry, split rate limits, RateLimitBanner, ConnectionIssuesBanner)*
+*Last updated: 2026-02-23 (Phase 19 Plan 03 complete — gap closure: mutation 503 inner loop 5x, ConnectionIssuesBanner reachable; Phase 19 COMPLETE)*

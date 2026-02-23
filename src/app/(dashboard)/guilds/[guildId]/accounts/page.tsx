@@ -233,7 +233,7 @@ export default function AccountsPage({ params }: PageProps) {
         }
     }, [bulkResults])
 
-    if (isError) {
+    if (isError && !data) {
         return (
             <div className="flex flex-col items-center justify-center py-12 gap-4">
                 <p className="text-sm text-red-400">Failed to load accounts</p>

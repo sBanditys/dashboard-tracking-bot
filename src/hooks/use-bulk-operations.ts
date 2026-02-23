@@ -48,13 +48,13 @@ export function useBulkDelete(guildId: string) {
                 toast.dismiss('mutation-retry')
             }
             didRetryRef.current = false
-            // Invalidate relevant queries based on data type
+            // Reset relevant infinite queries based on data type (clears stale pages)
             if (variables.dataType === 'accounts') {
-                queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] })
+                queryClient.resetQueries({ queryKey: ['guild', guildId, 'accounts'] })
             } else if (variables.dataType === 'posts') {
-                queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'posts'] })
+                queryClient.resetQueries({ queryKey: ['guild', guildId, 'posts'] })
             }
-            // Always invalidate guild details (counts may have changed)
+            // Always invalidate guild details (counts may have changed) — non-infinite query
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
             // BulkResultsToast handles success display
         },
@@ -119,8 +119,9 @@ export function useBulkReassign(guildId: string) {
                 toast.dismiss('mutation-retry')
             }
             didRetryRef.current = false
-            // Reassignment affects accounts, brands (account counts), and guild details
-            queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] })
+            // Reset accounts infinite query (clears stale pages after reassignment)
+            queryClient.resetQueries({ queryKey: ['guild', guildId, 'accounts'] })
+            // Invalidate non-infinite queries (brands account counts, guild details)
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'brands'] })
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
             // BulkResultsToast handles success display

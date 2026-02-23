@@ -181,8 +181,8 @@ export function useConfirmImport(guildId: string) {
                 }
             }
 
-            // Invalidate accounts cache after successful import
-            queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] })
+            // Reset accounts infinite list after successful import (clears stale pages)
+            queryClient.resetQueries({ queryKey: ['guild', guildId, 'accounts'] })
         } catch (err) {
             const importError = err instanceof Error ? err : new Error(String(err))
             setError(importError)

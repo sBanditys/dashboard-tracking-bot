@@ -131,13 +131,15 @@ export function useRestoreItem(guildId: string) {
         },
         onSuccess: (data, variables) => {
             toast.success('Item restored successfully')
-            // Invalidate trash, the restored data type list, and guild details
+            // Invalidate trash — non-infinite query, still uses invalidateQueries
             queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'trash'] })
+            // Reset infinite lists (clears stale pages after restore)
             if (variables.dataType === 'accounts') {
-                queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] })
+                queryClient.resetQueries({ queryKey: ['guild', guildId, 'accounts'] })
             } else if (variables.dataType === 'posts') {
-                queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'posts'] })
+                queryClient.resetQueries({ queryKey: ['guild', guildId, 'posts'] })
             }
+            // Invalidate guild details — non-infinite query
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
         },
         onError: (error) => {

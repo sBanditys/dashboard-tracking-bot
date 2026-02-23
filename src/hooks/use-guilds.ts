@@ -288,7 +288,7 @@ export function useDeleteAccount(guildId: string) {
                 toast.success('Account deleted successfully')
             }
             didRetryRef.current = false
-            queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] })
+            queryClient.resetQueries({ queryKey: ['guild', guildId, 'accounts'] })
             queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
         },
         onError: (error) => {

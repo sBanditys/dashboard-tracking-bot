@@ -60,6 +60,9 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
     // Tab-hide grace timer — 15s before actually closing the connection
     const hideGraceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+    // Ref to always hold the latest connect function — breaks circular dep between startHeartbeat and connect
+    const connectRef = useRef<() => void>(() => {})
+
     // Store callbacks in refs to avoid effect re-runs
     const onMessageRef = useRef(onMessage)
     const onErrorRef = useRef(onError)
@@ -95,11 +98,9 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
                 eventSourceRef.current?.close()
                 clearHeartbeat()
                 setConnectionState('reconnecting')
-                connect()
+                connectRef.current()
             }
         }, HEARTBEAT_CHECK_INTERVAL)
-    // connect is defined below; we use a ref pattern to avoid circular dep
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [clearHeartbeat])
 
     const connect = useCallback(() => {
@@ -127,7 +128,9 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
         }
         lastConnectTimeRef.current = now
 
-        setConnectionState('connecting')
+        // Preserve 'reconnecting' state if set by heartbeat stall detection;
+        // otherwise this is an initial or retry connection → 'connecting'
+        setConnectionState((prev) => prev === 'reconnecting' ? 'reconnecting' : 'connecting')
         const es = new EventSource(url)
         eventSourceRef.current = es
 
@@ -189,6 +192,9 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
         }
     }, [url, maxRetries, initialRetryDelay, maxRetryDelay, reconnectCooldown, clearHeartbeat, startHeartbeat])
 
+    // Keep connectRef in sync so startHeartbeat always calls the latest connect
+    connectRef.current = connect
+
     const reconnect = useCallback(() => {
         retryCountRef.current = 0
         eventSourceRef.current?.close()
@@ -226,6 +232,8 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
                 }
                 // Start grace period — don't disconnect immediately
                 hideGraceTimerRef.current = setTimeout(() => {
+                    // Null the ref FIRST so tab-return knows grace has expired
+                    hideGraceTimerRef.current = null
                     eventSourceRef.current?.close()
                     clearHeartbeat()
                     setConnectionState('disconnected')

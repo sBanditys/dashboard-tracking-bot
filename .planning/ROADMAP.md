@@ -174,7 +174,7 @@ Plans:
 | 15. Reactivate Next.js Middleware | v1.1 | 2/2 | Complete | 2026-02-22 |
 | 16. Restore Next.js Middleware | v1.1 | 1/1 | Complete | 2026-02-22 |
 | 17. Error Envelope & API Alignment | 2/2 | Complete    | 2026-02-22 | - |
-| 18. SSE Lifecycle Hardening | 2/2 | Complete   | 2026-02-23 | - |
+| 18. SSE Lifecycle Hardening | 2/2 | Complete    | 2026-02-23 | - |
 | 19. Auth Hardening & Resilience | v1.2 | 0/2 | Not started | - |
 | 20. Cursor Pagination Migration | v1.2 | 0/2 | Not started | - |
 | 21. CSRF HMAC Signing | v1.2 | 0/1 | Not started | - |

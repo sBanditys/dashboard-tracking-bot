@@ -395,13 +395,39 @@ export async function fetchWithRetry(
           continue;
         }
 
-        // Mutation 503 retry with onRetry callback
-        if (!canRetryRequest && response.status === 503 && attempt < MUTATION_MAX_RETRIES) {
-          const delay = calculateBackoff(attempt);
-          onRetry?.(attempt + 1, MUTATION_MAX_RETRIES);
-          console.warn(`Mutation 503 — retrying (attempt ${attempt + 1}/${MUTATION_MAX_RETRIES})...`);
-          await sleep(delay);
-          continue;
+        // Mutation 503 retry with dedicated counter (independent of outer loop maxRetries)
+        if (!canRetryRequest && response.status === 503) {
+          for (let mutationAttempt = 1; mutationAttempt <= MUTATION_MAX_RETRIES; mutationAttempt++) {
+            const delay = calculateBackoff(mutationAttempt - 1);
+            onRetry?.(mutationAttempt, MUTATION_MAX_RETRIES);
+            console.warn(`Mutation 503 — retrying (attempt ${mutationAttempt}/${MUTATION_MAX_RETRIES})...`);
+            await sleep(delay);
+
+            try {
+              // Re-inject CSRF token for retry
+              let retryOptions = options;
+              if (CSRF_METHODS.has(requestMethod) && !isAuthEndpoint(url)) {
+                const csrfToken = getCsrfToken();
+                if (csrfToken) {
+                  const headers = new Headers(options?.headers);
+                  headers.set('X-CSRF-Token', csrfToken);
+                  retryOptions = { ...options, headers };
+                }
+              }
+
+              const retryResponse = await fetch(url, retryOptions);
+              if (retryResponse.status !== 503) {
+                return retryResponse;
+              }
+            } catch (retryError) {
+              // Network error during retry — continue trying
+              if (mutationAttempt >= MUTATION_MAX_RETRIES) {
+                throw retryError instanceof Error ? retryError : new Error(String(retryError));
+              }
+            }
+          }
+          // All 5 retries exhausted — return the original 503 response
+          return response;
         }
 
         // All other responses (2xx, 3xx, 4xx) — return immediately, don't retry

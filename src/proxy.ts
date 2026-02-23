@@ -10,6 +10,9 @@ const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET;
 const DASHBOARD_REFRESH_COOKIE_NAME = (process.env.DASHBOARD_REFRESH_COOKIE_NAME || 'dashboard_rt').trim();
 const DASHBOARD_ACCESS_COOKIE_NAME = (process.env.DASHBOARD_ACCESS_COOKIE_NAME || 'dashboard_at').trim();
 const REFRESH_BUFFER_MS = 5 * 60 * 1000; // Refresh 5 minutes before expiry
+// CSRF HMAC secret — must match backend's CSRF_HMAC_SECRET env var.
+// Falls back to INTERNAL_API_SECRET for backward compatibility with CONTEXT.md spec.
+const CSRF_HMAC_SECRET = (process.env.CSRF_HMAC_SECRET || process.env.INTERNAL_API_SECRET || '').trim();
 
 /**
  * Check if a JWT access token is expired or close to expiry.
@@ -94,6 +97,60 @@ async function refreshTokensFromMiddleware(
   } catch {
     return null;
   }
+}
+
+/**
+ * Extract the JTI (JWT ID) from the dashboard's auth_token cookie.
+ * Used to session-bind HMAC CSRF tokens.
+ * Returns null if the cookie is absent, malformed, or has no jti field.
+ */
+function extractJtiFromAuthToken(request: NextRequest): string | null {
+  try {
+    const tokenValue = request.cookies.get('auth_token')?.value;
+    if (!tokenValue) return null;
+    const parts = tokenValue.split('.');
+    if (parts.length < 2) return null;
+    // Decode base64url payload
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf-8'));
+    return typeof payload.jti === 'string' ? payload.jti : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Generate an HMAC-signed CSRF token matching the backend Phase 37 contract.
+ * Token format: randomValue.hmac (129 chars) when HMAC is enabled.
+ * Falls back to plain randomValue (64-char hex) when secret or jti is absent.
+ */
+async function generateHmacCsrfToken(jti: string | null): Promise<string> {
+  // Generate 32 random bytes → 64-char hex string
+  const randomBytes = new Uint8Array(32);
+  crypto.getRandomValues(randomBytes);
+  const randomValue = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  // Graceful fallback: return plain random token if no secret or no jti
+  if (!jti || !CSRF_HMAC_SECRET) {
+    return randomValue;
+  }
+
+  // Import HMAC key from shared secret
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(CSRF_HMAC_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  // Sign the payload: "jti:randomValue"
+  const payload = `${jti}:${randomValue}`;
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
+  const hmac = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  return `${randomValue}.${hmac}`;
 }
 
 /**

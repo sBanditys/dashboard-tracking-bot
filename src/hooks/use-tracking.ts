@@ -1,6 +1,6 @@
 'use client'
 
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient, type InfiniteData, type QueryKey } from '@tanstack/react-query'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import { parseApiError } from '@/lib/api-error'
 import type {
@@ -8,6 +8,7 @@ import type {
     AccountsResponse,
     PostsResponse,
     PostFilters,
+    Account,
 } from '@/types/tracking'
 
 /**
@@ -142,7 +143,6 @@ export function usePostsInfinite(
 }
 
 // Source: Pattern combining Headless UI Dialog + React Query mutation
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, useRef } from 'react'
 import { toast } from 'sonner'
 
@@ -151,7 +151,7 @@ export function useDeleteAccount(guildId: string) {
   const [isRetrying, setIsRetrying] = useState(false)
   const didRetryRef = useRef(false)
 
-  const mutation = useMutation({
+  const mutation = useMutation<unknown, Error, string, { previousData: [QueryKey, unknown][] }>({
     mutationFn: async (accountId: string) => {
       const response = await fetchWithRetry(`/api/guilds/${guildId}/accounts/${accountId}`, {
         method: 'DELETE',
@@ -175,19 +175,34 @@ export function useDeleteAccount(guildId: string) {
 
       return response.json()
     },
-    onSuccess: () => {
-      if (didRetryRef.current) {
-        toast.dismiss('mutation-retry')
-        toast.success('Changes saved')
-      } else {
-        toast.success('Account deleted successfully')
-      }
-      didRetryRef.current = false
-      // Invalidate accounts list and guild details (account_count)
-      queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] })
-      queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
+    onMutate: async (accountId: string) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['guild', guildId, 'accounts'] })
+      // Snapshot previous data
+      const previousData = queryClient.getQueriesData<unknown>({ queryKey: ['guild', guildId, 'accounts'] })
+      // Optimistically remove the account from all pages
+      queryClient.setQueriesData(
+        { queryKey: ['guild', guildId, 'accounts', 'infinite'] },
+        (old: InfiniteData<AccountsResponse> | undefined) => {
+          if (!old) return old
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              accounts: page.accounts.filter((a) => a.id !== accountId),
+            })),
+          }
+        }
+      )
+      return { previousData }
     },
-    onError: (error) => {
+    onError: (error, _accountId, context) => {
+      // Restore optimistic cache on error
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) =>
+          queryClient.setQueryData(queryKey, data)
+        )
+      }
       if (didRetryRef.current) {
         toast.dismiss('mutation-retry')
         toast.error('Failed to save changes. Please try again later.')
@@ -197,6 +212,20 @@ export function useDeleteAccount(guildId: string) {
         })
       }
       didRetryRef.current = false
+    },
+    onSuccess: () => {
+      if (didRetryRef.current) {
+        toast.dismiss('mutation-retry')
+        toast.success('Changes saved')
+      }
+      // No success toast for normal (non-retry) operations — optimistic list change IS the feedback
+      didRetryRef.current = false
+      // Invalidate guild details (account_count) — non-infinite query, still uses invalidateQueries
+      queryClient.invalidateQueries({ queryKey: ['guild', guildId] })
+    },
+    onSettled: () => {
+      // Always reset accounts infinite list from server to ensure consistency
+      queryClient.resetQueries({ queryKey: ['guild', guildId, 'accounts'] })
     },
   })
 
@@ -223,7 +252,7 @@ export function useAddAccount(guildId: string) {
     const [isRetrying, setIsRetrying] = useState(false)
     const didRetryRef = useRef(false)
 
-    const mutation = useMutation({
+    const mutation = useMutation<unknown, Error, AddAccountRequest, { previousData: [QueryKey, unknown][] }>({
         mutationFn: async (data: AddAccountRequest) => {
             const response = await fetchWithRetry(`/api/guilds/${guildId}/accounts`, {
                 method: 'POST',
@@ -251,20 +280,41 @@ export function useAddAccount(guildId: string) {
 
             return response.json();
         },
-        onSuccess: () => {
-            if (didRetryRef.current) {
-                toast.dismiss('mutation-retry')
-                toast.success('Changes saved')
-            } else {
-                toast.success('Account added successfully')
-            }
-            didRetryRef.current = false
-            // Invalidate accounts list, guild details, and brands (account_count updates)
-            queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'accounts'] });
-            queryClient.invalidateQueries({ queryKey: ['guild', guildId] });
-            queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'brands'] });
+        onMutate: async (newAccountData: AddAccountRequest) => {
+            await queryClient.cancelQueries({ queryKey: ['guild', guildId, 'accounts'] })
+            const previousData = queryClient.getQueriesData<unknown>({ queryKey: ['guild', guildId, 'accounts'] })
+            queryClient.setQueriesData(
+                { queryKey: ['guild', guildId, 'accounts', 'infinite'] },
+                (old: InfiniteData<AccountsResponse> | undefined) => {
+                    if (!old) return old
+                    const optimisticAccount: Account = {
+                        id: `optimistic-${Date.now()}`,
+                        platform: newAccountData.platform,
+                        username: newAccountData.username,
+                        brand: '',
+                        group: null,
+                        is_verified: false,
+                        verified_at: null,
+                        refresh: null,
+                        created_at: new Date().toISOString(),
+                    }
+                    return {
+                        ...old,
+                        pages: old.pages.map((page, i) =>
+                            i === 0 ? { ...page, accounts: [optimisticAccount, ...page.accounts] } : page
+                        ),
+                    }
+                }
+            )
+            return { previousData }
         },
-        onError: (error) => {
+        onError: (error, _newAccountData, context) => {
+            // Restore optimistic cache on error
+            if (context?.previousData) {
+                context.previousData.forEach(([queryKey, data]) =>
+                    queryClient.setQueryData(queryKey, data)
+                )
+            }
             if (didRetryRef.current) {
                 toast.dismiss('mutation-retry')
                 toast.error('Failed to save changes. Please try again later.')
@@ -274,6 +324,21 @@ export function useAddAccount(guildId: string) {
                 })
             }
             didRetryRef.current = false
+        },
+        onSuccess: () => {
+            if (didRetryRef.current) {
+                toast.dismiss('mutation-retry')
+                toast.success('Changes saved')
+            }
+            // No success toast for normal (non-retry) operations — optimistic list change IS the feedback
+            didRetryRef.current = false
+            // Invalidate guild details and brands (account_count updates) — non-infinite queries
+            queryClient.invalidateQueries({ queryKey: ['guild', guildId] });
+            queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'brands'] });
+        },
+        onSettled: () => {
+            // Always reset accounts infinite list from server to ensure consistency
+            queryClient.resetQueries({ queryKey: ['guild', guildId, 'accounts'] })
         },
     });
 

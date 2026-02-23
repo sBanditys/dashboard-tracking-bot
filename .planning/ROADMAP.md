@@ -92,11 +92,12 @@ Plans:
   1. A server-rendered page that calls the backend returns the user's authenticated data rather than a 401 or empty response
   2. A mutation attempted when the backend returns 503 shows a retry toast instead of silently failing
   3. Background polling hitting a rate limit does not prevent a user from submitting a settings save or other mutation for up to 15 minutes
-**Plans**: 2 plans
+**Plans**: 3 plans
 
 Plans:
 - [ ] 19-01-PLAN.md — Auto-forward auth_token cookie as Authorization Bearer in backendFetch for SSR context
 - [ ] 19-02-PLAN.md — Mutation 503 retry with blocking overlay, split rate limit buckets, rate limit/connection banners
+- [ ] 19-03-PLAN.md — Gap closure: fix mutation retry count (5 not 3) and make ConnectionIssuesBanner reachable
 
 ### Phase 20: Cursor Pagination Migration
 **Goal**: Accounts and posts infinite scroll works correctly against the backend's cursor-based pagination API
@@ -175,7 +176,7 @@ Plans:
 | 16. Restore Next.js Middleware | v1.1 | 1/1 | Complete | 2026-02-22 |
 | 17. Error Envelope & API Alignment | 2/2 | Complete    | 2026-02-22 | - |
 | 18. SSE Lifecycle Hardening | 2/2 | Complete    | 2026-02-23 | - |
-| 19. Auth Hardening & Resilience | 2/2 | Complete   | 2026-02-23 | - |
+| 19. Auth Hardening & Resilience | 2/3 | In Progress | 2026-02-23 | - |
 | 20. Cursor Pagination Migration | v1.2 | 0/2 | Not started | - |
 | 21. CSRF HMAC Signing | v1.2 | 0/1 | Not started | - |
 | 22. Performance Optimization | v1.2 | 0/3 | Not started | - |

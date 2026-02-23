@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 
 ## Current Position
 
-Phase: 19 of 23 (Auth Hardening & Resilience) — COMPLETE
-Plan: 3 of 3 in current phase — COMPLETE
-Status: Phase 19 Plan 03 complete — mutation 503 retry inner loop (5x), ConnectionIssuesBanner reachable; all 6/6 must-have truths achieved
-Last activity: 2026-02-23 — Phase 19 Plan 03 complete (gap closure: dedicated mutationAttempt counter, narrowed early return in accounts page)
+Phase: 20 of 23 (Cursor Pagination Migration) — IN PROGRESS
+Plan: 1 of 1 in current phase — COMPLETE
+Status: Phase 20 Plan 01 complete — cursor pagination hooks, types, and end-of-list/stale cursor UI; TypeScript clean
+Last activity: 2026-02-23 — Phase 20 Plan 01 complete (cursor migration: initialPageParam null, getNextPageParam cursor, CURSOR_INVALID detection, end-of-list + stale cursor + retry UI)
 
 Progress: [██░░░░░░░░] 19% (v1.2) — 76/83 total plans complete across all milestones
 
@@ -62,6 +62,7 @@ Progress: [██░░░░░░░░] 19% (v1.2) — 76/83 total plans comp
 | Phase 19 P01 | 37s | 1 task | 1 file |
 | Phase 19 P02 | 418s | 2 tasks | 11 files |
 | Phase 19 P03 | 51s | 2 tasks | 2 files |
+| Phase 20 P01 | 4m 1s | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -101,16 +102,15 @@ None.
 
 ### Blockers/Concerns
 
-- Phase 20 (Cursor pagination): Blocked until backend Phase 39 is deployed
 - Phase 21 (CSRF HMAC): Highest risk — requires coordinated deploy with backend Phase 37 dual-check window
 - Open question: Does backend Phase 37 HMAC use `INTERNAL_API_SECRET` or a separate CSRF secret? (confirm before Phase 21)
-- Open question: Which of backend Phases 35-39 are already live? (confirm before starting Phase 20)
+- Open question: Which of backend Phases 35-39 are already live? (confirm before starting next cursor-dependent work)
 
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 19-03-PLAN.md
-Resume file: .planning/ (next: Phase 20)
+Stopped at: Completed 20-01-PLAN.md
+Resume file: .planning/ (next: Phase 21)
 
 ---
-*Last updated: 2026-02-23 (Phase 19 Plan 03 complete — gap closure: mutation 503 inner loop 5x, ConnectionIssuesBanner reachable; Phase 19 COMPLETE)*
+*Last updated: 2026-02-23 (Phase 20 Plan 01 complete — cursor pagination: initialPageParam null, CURSOR_INVALID detection, end-of-list and stale cursor UI; export files updated to cursor loop)*

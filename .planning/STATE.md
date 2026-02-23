@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-22)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface — independent of bot uptime.
-**Current focus:** v1.2 Security Audit & Optimization — Phase 18 (next phase)
+**Current focus:** v1.2 Security Audit & Optimization — Phase 19 Auth Hardening & Resilience
 
 ## Current Position
 
-Phase: 18 of 23 (SSE Lifecycle Hardening) — COMPLETE
-Plan: 2 of 2 in current phase — COMPLETE
-Status: Phase 18 complete — all SSE lifecycle hardening goals met
-Last activity: 2026-02-23 — Phase 18 Plan 02 complete (refetchInterval gate tightened to connectionState === 'error' only)
+Phase: 19 of 23 (Auth Hardening & Resilience) — IN PROGRESS
+Plan: 1 of 3 in current phase — COMPLETE
+Status: Phase 19 Plan 01 complete — backendFetch SSR cookie auto-forwarding implemented
+Last activity: 2026-02-23 — Phase 19 Plan 01 complete (backendFetch auto-forwards auth_token as Bearer in SSR context)
 
-Progress: [█░░░░░░░░░] 17% (v1.2) — 74/82 total plans complete across all milestones
+Progress: [█░░░░░░░░░] 18% (v1.2) — 75/83 total plans complete across all milestones
 
 ## Milestones
 
@@ -59,6 +59,7 @@ Progress: [█░░░░░░░░░] 17% (v1.2) — 74/82 total plans comp
 | Phase 17 P02 | 311s | 3 tasks | 17 files |
 | Phase 18 P01 | 116s | 2 tasks | 3 files |
 | Phase 18 P02 | 30s | 1 task | 1 file |
+| Phase 19 P01 | 37s | 1 task | 1 file |
 
 ## Accumulated Context
 
@@ -82,6 +83,9 @@ Recent decisions affecting v1.2 work:
 - [Phase 18]: isClickable includes 'reconnecting' — force reconnect available during stall recovery
 - [Phase 18]: BotStatus healthy prop made optional — always renders on guild page even before SSE data
 - [Phase 18]: refetchInterval gates on connectionState === 'error' only — not on !isSSEConnected boolean; prevents polling during transient reconnects
+- [Phase 19]: backendFetch uses dynamic import try/catch for next/headers — defensive pattern even though file is server-only (imports crypto)
+- [Phase 19]: backendFetch is forward-only (no expiry check) — proxy.ts middleware proactively refreshes auth_token before SSR page requests land
+- [Phase 19]: !headers.has('Authorization') guard on auto-forwarding — backward-compatible with all existing routes that set Authorization explicitly
 
 ### Pending Todos
 
@@ -97,8 +101,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 18-02-PLAN.md
-Resume file: .planning/ (next: Phase 19)
+Stopped at: Completed 19-01-PLAN.md
+Resume file: .planning/ (next: Phase 19 Plan 02)
 
 ---
-*Last updated: 2026-02-23 (Phase 18 complete — SSE lifecycle hardening, heartbeat/grace/generation counter/polling gate)*
+*Last updated: 2026-02-23 (Phase 19 Plan 01 complete — backendFetch SSR cookie auto-forwarding via dynamic import try/catch)*

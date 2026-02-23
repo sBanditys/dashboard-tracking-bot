@@ -111,7 +111,6 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
 
         // Increment generation — any previous in-flight connection is now stale (SSE-02)
         const generation = ++connectGenerationRef.current
-        console.warn(`[SSE] connect() gen=${generation} retryCount=${retryCountRef.current}`)
 
         // Clear any existing heartbeat from the previous generation
         clearHeartbeat()
@@ -122,7 +121,7 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
         if (timeSinceLastConnect < reconnectCooldown && lastConnectTimeRef.current > 0) {
             const waitTime = reconnectCooldown - timeSinceLastConnect
             retryTimeoutRef.current = setTimeout(() => {
-                lastConnectTimeRef.current = Date.now()
+                // Don't set lastConnectTimeRef here — let connect() set it after passing the cooldown check
                 connect()
             }, waitTime)
             return
@@ -173,11 +172,8 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
             if (errorHandled) return
             errorHandled = true
 
-            const isStale = connectGenerationRef.current !== generation
-            console.warn(`[SSE] onerror gen=${generation} current=${connectGenerationRef.current} stale=${isStale} retryCount=${retryCountRef.current}`)
-
             // Stale connection — discard
-            if (isStale) {
+            if (connectGenerationRef.current !== generation) {
                 es.close()
                 return
             }
@@ -198,7 +194,6 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
                     connect()
                 }, delay + jitter)
             } else {
-                console.warn(`[SSE] RETRIES EXHAUSTED — setting error state`)
                 setConnectionState('error')
                 onErrorRef.current?.()
             }
@@ -237,7 +232,6 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
     // Handle tab visibility changes with 15-second grace period
     useEffect(() => {
         const handleVisibilityChange = () => {
-            console.warn(`[SSE] visibility changed: hidden=${document.hidden} retryCount=${retryCountRef.current}`)
             if (document.hidden) {
                 // Tab hidden — clear any pending retry and start grace period
                 if (retryTimeoutRef.current) {
@@ -281,7 +275,6 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
     // Handle browser online/offline events — immediate detection when network drops
     useEffect(() => {
         const handleOffline = () => {
-            console.warn(`[SSE] OFFLINE event`)
             eventSourceRef.current?.close()
             if (retryTimeoutRef.current) {
                 clearTimeout(retryTimeoutRef.current)
@@ -292,7 +285,6 @@ export function useSSE(url: string | null, options: UseSSEOptions) {
         }
 
         const handleOnline = () => {
-            console.warn(`[SSE] ONLINE event`)
             // Network restored — reset retries and reconnect
             retryCountRef.current = 0
             connect()

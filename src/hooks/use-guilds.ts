@@ -106,8 +106,6 @@ export function useGuildStatusRealtime(guildId: string) {
         { onMessage }
     )
 
-    const isSSEConnected = connectionState === 'connected'
-
     const query = useQuery<GuildStatus>({
         queryKey: ['guild', guildId, 'status'],
         queryFn: async () => {
@@ -118,8 +116,8 @@ export function useGuildStatusRealtime(guildId: string) {
             return response.json()
         },
         staleTime: 30 * 1000, // 30 seconds
-        // Enable fallback polling when SSE is not connected
-        refetchInterval: isSSEConnected ? false : 60 * 1000,
+        // Only fall back to polling when retries are exhausted ('error') — not during transient reconnects
+        refetchInterval: connectionState === 'error' ? 60_000 : false,
         enabled: !!guildId,
     })
 

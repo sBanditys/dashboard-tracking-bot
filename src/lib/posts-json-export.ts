@@ -87,11 +87,11 @@ function downloadJson(filename: string, payload: unknown): void {
   URL.revokeObjectURL(url)
 }
 
-async function fetchPostsPage(guildId: string, page: number, limit: number): Promise<PostsResponse> {
+async function fetchPostsPage(guildId: string, cursor: string | null, limit: number): Promise<PostsResponse> {
   const params = new URLSearchParams({
-    page: page.toString(),
     limit: limit.toString(),
   })
+  if (cursor) params.set('cursor', cursor)
 
   const response = await fetchWithRetry(`/api/guilds/${guildId}/posts?${params.toString()}`)
 
@@ -114,19 +114,19 @@ export async function exportAllPostsMetricsJson(
     x: [],
   }
 
-  let page = 1
-  let totalPages = 1
+  let cursor: string | null = null
+  let hasMore = true
 
-  while (page <= totalPages) {
-    const data = await fetchPostsPage(guildId, page, POSTS_EXPORT_PAGE_LIMIT)
+  while (hasMore) {
+    const data = await fetchPostsPage(guildId, cursor, POSTS_EXPORT_PAGE_LIMIT)
     for (const post of data.posts ?? []) {
       if (post.platform in rowsByPlatform) {
         rowsByPlatform[post.platform as PlatformKey].push(toPostExportRow(post))
       }
     }
 
-    totalPages = Math.max(1, data.pagination?.total_pages ?? 1)
-    page += 1
+    hasMore = data.has_more
+    cursor = data.next_cursor
   }
 
   const grouped = PLATFORM_GROUPS

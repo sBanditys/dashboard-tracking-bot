@@ -2,11 +2,9 @@
  * Tracking-related types (brands, accounts, posts)
  */
 
-export interface Pagination {
-    page: number
-    limit: number
-    total: number
-    total_pages: number
+export interface CursorPagination {
+    next_cursor: string | null
+    has_more: boolean
 }
 
 export interface AccountGroup {
@@ -51,7 +49,8 @@ export interface Account {
 
 export interface AccountsResponse {
     accounts: Account[]
-    pagination: Pagination
+    next_cursor: string | null
+    has_more: boolean
 }
 
 export interface PostMetrics {
@@ -78,7 +77,8 @@ export interface Post {
 
 export interface PostsResponse {
     posts: Post[]
-    pagination: Pagination
+    next_cursor: string | null
+    has_more: boolean
 }
 
 export interface PostFilters {

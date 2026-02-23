@@ -29,67 +29,6 @@ export function useBrands(guildId: string) {
 }
 
 /**
- * Fetch paginated accounts for a guild
- */
-export function useAccounts(guildId: string, page: number = 1, limit: number = 25) {
-    return useQuery<AccountsResponse>({
-        queryKey: ['guild', guildId, 'accounts', page, limit],
-        queryFn: async () => {
-            const response = await fetchWithRetry(`/api/guilds/${guildId}/accounts?page=${page}&limit=${limit}`)
-            if (!response.ok) {
-                throw new Error('Failed to fetch accounts')
-            }
-            return response.json()
-        },
-        staleTime: 2 * 60 * 1000,
-        enabled: !!guildId,
-    })
-}
-
-/**
- * Build query string from filters
- */
-function buildPostQuery(page: number, limit: number, filters: PostFilters): string {
-    const params = new URLSearchParams()
-    params.set('page', page.toString())
-    params.set('limit', limit.toString())
-
-    if (filters.platform) params.set('platform', filters.platform)
-    if (filters.status) params.set('status', filters.status)
-    if (filters.brand_id) params.set('brand_id', filters.brand_id)
-    if (filters.from) params.set('from', filters.from)
-    if (filters.to) params.set('to', filters.to)
-    if (filters.sort_by) params.set('sort_by', filters.sort_by)
-    if (filters.sort_order) params.set('sort_order', filters.sort_order)
-
-    return params.toString()
-}
-
-/**
- * Fetch paginated posts for a guild with filters
- */
-export function usePosts(
-    guildId: string,
-    page: number = 1,
-    limit: number = 25,
-    filters: PostFilters = {}
-) {
-    return useQuery<PostsResponse>({
-        queryKey: ['guild', guildId, 'posts', page, limit, filters],
-        queryFn: async () => {
-            const query = buildPostQuery(page, limit, filters)
-            const response = await fetchWithRetry(`/api/guilds/${guildId}/posts?${query}`)
-            if (!response.ok) {
-                throw new Error('Failed to fetch posts')
-            }
-            return response.json()
-        },
-        staleTime: 60 * 1000, // 1 minute
-        enabled: !!guildId,
-    })
-}
-
-/**
  * Account filters for infinite query
  */
 export interface AccountFilters {
@@ -99,22 +38,20 @@ export interface AccountFilters {
 }
 
 /**
- * Build query string from account filters
+ * Build query string from account filters (cursor-based)
  */
-function buildAccountQuery(page: number, limit: number, filters: AccountFilters): string {
+function buildAccountQuery(cursor: string | null, limit: number, filters: AccountFilters): string {
     const params = new URLSearchParams()
-    params.set('page', page.toString())
     params.set('limit', limit.toString())
-
+    if (cursor) params.set('cursor', cursor)
     if (filters.search) params.set('search', filters.search)
     if (filters.platform) params.set('platform', filters.platform)
     if (filters.group) params.set('group', filters.group)
-
     return params.toString()
 }
 
 /**
- * Fetch paginated accounts with infinite scroll
+ * Fetch paginated accounts with infinite scroll (cursor-based)
  */
 export function useAccountsInfinite(
     guildId: string,
@@ -126,20 +63,22 @@ export function useAccountsInfinite(
         queryFn: async ({ pageParam }) => {
             const query = buildAccountQuery(pageParam, limit, filters)
             const response = await fetchWithRetry(`/api/guilds/${guildId}/accounts?${query}`)
+            if (response.status === 400 || response.status === 422) {
+                const err = new Error('Cursor expired or invalid')
+                ;(err as Error & { code: string }).code = 'CURSOR_INVALID'
+                throw err
+            }
             if (!response.ok) {
                 throw new Error('Failed to fetch accounts')
             }
             return response.json() as Promise<AccountsResponse>
         },
-        initialPageParam: 1,
-        getNextPageParam: (lastPage) => {
-            if (lastPage.pagination.page >= lastPage.pagination.total_pages) {
-                return undefined
-            }
-            return lastPage.pagination.page + 1
-        },
+        initialPageParam: null as string | null,
+        getNextPageParam: (lastPage) =>
+            lastPage.has_more ? lastPage.next_cursor : undefined,
         staleTime: 2 * 60 * 1000, // 2 minutes per DEV-002
         enabled: !!guildId,
+        retry: 2,
     })
 }
 
@@ -151,12 +90,12 @@ export interface PostFiltersExtended extends PostFilters {
 }
 
 /**
- * Build query string from extended post filters
+ * Build query string from extended post filters (cursor-based)
  */
-function buildPostQueryExtended(page: number, limit: number, filters: PostFiltersExtended): string {
+function buildPostQueryExtended(cursor: string | null, limit: number, filters: PostFiltersExtended): string {
     const params = new URLSearchParams()
-    params.set('page', page.toString())
     params.set('limit', limit.toString())
+    if (cursor) params.set('cursor', cursor)
 
     if (filters.search) params.set('search', filters.search)
     if (filters.platform) params.set('platform', filters.platform)
@@ -171,13 +110,8 @@ function buildPostQueryExtended(page: number, limit: number, filters: PostFilter
 }
 
 /**
- * Fetch paginated posts with infinite scroll
+ * Fetch paginated posts with infinite scroll (cursor-based)
  */
-
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState, useRef } from 'react'
-import { toast } from 'sonner'
-
 export function usePostsInfinite(
     guildId: string,
     limit: number = 50,
@@ -188,24 +122,30 @@ export function usePostsInfinite(
         queryFn: async ({ pageParam }) => {
             const query = buildPostQueryExtended(pageParam, limit, filters)
             const response = await fetchWithRetry(`/api/guilds/${guildId}/posts?${query}`)
+            if (response.status === 400 || response.status === 422) {
+                const err = new Error('Cursor expired or invalid')
+                ;(err as Error & { code: string }).code = 'CURSOR_INVALID'
+                throw err
+            }
             if (!response.ok) {
                 throw new Error('Failed to fetch posts')
             }
             return response.json() as Promise<PostsResponse>
         },
-        initialPageParam: 1,
-        getNextPageParam: (lastPage) => {
-            if (lastPage.pagination.page >= lastPage.pagination.total_pages) {
-                return undefined
-            }
-            return lastPage.pagination.page + 1
-        },
+        initialPageParam: null as string | null,
+        getNextPageParam: (lastPage) =>
+            lastPage.has_more ? lastPage.next_cursor : undefined,
         staleTime: 60 * 1000, // 1 minute (posts update more frequently)
         enabled: !!guildId,
+        retry: 2,
     })
 }
 
 // Source: Pattern combining Headless UI Dialog + React Query mutation
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useRef } from 'react'
+import { toast } from 'sonner'
+
 export function useDeleteAccount(guildId: string) {
   const queryClient = useQueryClient()
   const [isRetrying, setIsRetrying] = useState(false)

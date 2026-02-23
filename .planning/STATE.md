@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-22)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface — independent of bot uptime.
-**Current focus:** v1.2 Security Audit & Optimization — Phase 19 Auth Hardening & Resilience
+**Current focus:** v1.2 Security Audit & Optimization — Phase 20 Cursor Pagination Migration
 
 ## Current Position
 
-Phase: 20 of 23 (Cursor Pagination Migration) — IN PROGRESS
-Plan: 1 of 1 in current phase — COMPLETE
-Status: Phase 20 Plan 01 complete — cursor pagination hooks, types, and end-of-list/stale cursor UI; TypeScript clean
-Last activity: 2026-02-23 — Phase 20 Plan 01 complete (cursor migration: initialPageParam null, getNextPageParam cursor, CURSOR_INVALID detection, end-of-list + stale cursor + retry UI)
+Phase: 20 of 23 (Cursor Pagination Migration) — COMPLETE
+Plan: 2 of 2 in current phase — COMPLETE
+Status: Phase 20 Plan 02 complete — optimistic add/delete, resetQueries for all infinite list mutations; TypeScript clean
+Last activity: 2026-02-23 — Phase 20 Plan 02 complete (optimistic onMutate/onError/onSettled in useAddAccount and useDeleteAccount; resetQueries migration across use-bulk-operations, use-trash, use-guilds, use-import)
 
 Progress: [██░░░░░░░░] 19% (v1.2) — 76/83 total plans complete across all milestones
 
@@ -63,6 +63,7 @@ Progress: [██░░░░░░░░] 19% (v1.2) — 76/83 total plans comp
 | Phase 19 P02 | 418s | 2 tasks | 11 files |
 | Phase 19 P03 | 51s | 2 tasks | 2 files |
 | Phase 20 P01 | 4m 1s | 2 tasks | 7 files |
+| Phase 20 P02 | 2m 14s | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,8 @@ Recent decisions affecting v1.2 work:
 - [Phase 19 P02]: ConnectionIssuesBanner gates on isError && hasData — distinguishes polling failures from initial load failures
 - [Phase 19]: Mutation 503 retry uses self-contained inner loop with mutationAttempt counter (1..5), independent of outer DEFAULT_MAX_RETRIES=3 bound
 - [Phase 19]: Early return narrowed from 'isError' to 'isError && !data' — polling failures fall through to ConnectionIssuesBanner inline render
+- [Phase 20]: resetQueries used for all infinite list mutations (accounts, posts) to prevent mixed-shape cache pages with stale cursors; invalidateQueries kept for non-infinite queries
+- [Phase 20]: No success toast for normal add/delete account operations — optimistic list update IS the feedback per locked decision
 
 ### Pending Todos
 
@@ -109,8 +112,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 20-01-PLAN.md
+Stopped at: Completed 20-02-PLAN.md
 Resume file: .planning/ (next: Phase 21)
 
 ---
-*Last updated: 2026-02-23 (Phase 20 Plan 01 complete — cursor pagination: initialPageParam null, CURSOR_INVALID detection, end-of-list and stale cursor UI; export files updated to cursor loop)*
+*Last updated: 2026-02-23 (Phase 20 Plan 02 complete — optimistic updates for add/delete account, resetQueries for all infinite list mutations across 5 hooks)*

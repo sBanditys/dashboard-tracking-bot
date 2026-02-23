@@ -32,7 +32,7 @@ Requirements for v1.2 Security Audit & Optimization. Each maps to roadmap phases
 
 - [x] **PAGE-01**: Accounts and posts hooks migrated from offset-based (`page`, `total_pages`) to cursor-based (`next_cursor`, `has_more`) pagination using `useInfiniteQuery` with `initialPageParam: null`
 - [x] **PAGE-02**: Pagination TypeScript types updated to support both offset and cursor shapes during backend transition window, with cursor as the primary path
-- [ ] **PAGE-03**: Infinite scroll mutations use `queryClient.resetQueries` (not `invalidateQueries`) to prevent mixed-shape cache pages after data changes
+- [x] **PAGE-03**: Infinite scroll mutations use `queryClient.resetQueries` (not `invalidateQueries`) to prevent mixed-shape cache pages after data changes
 
 ### Performance
 
@@ -90,7 +90,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SSE-04 | Phase 18 | Complete |
 | PAGE-01 | Phase 20 | Complete |
 | PAGE-02 | Phase 20 | Complete |
-| PAGE-03 | Phase 20 | Pending |
+| PAGE-03 | Phase 20 | Complete |
 | PERF-01 | Phase 22 | Pending |
 | PERF-02 | Phase 22 | Pending |
 | PERF-03 | Phase 22 | Pending |

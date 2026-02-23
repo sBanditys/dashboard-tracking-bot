@@ -121,10 +121,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. A mutation submitted through the proxy layer succeeds when the backend has HMAC validation enabled
   2. The HMAC token is generated using `crypto.subtle` and `INTERNAL_API_SECRET` without any new npm dependencies
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 21-01: Implement HMAC-signed CSRF token generation in proxy.ts using crypto.subtle
+- [ ] 21-01-PLAN.md — HMAC token generation + JTI extraction + call site wiring in proxy.ts
 
 ### Phase 22: Performance Optimization
 **Goal**: Dashboard cold starts faster and navigation triggers fewer redundant API requests

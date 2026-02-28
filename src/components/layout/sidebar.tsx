@@ -11,9 +11,17 @@ interface SidebarProps {
   onNavigate?: () => void
 }
 
+const REFRESH_ALLOWED_USER_IDS = new Set(
+  (process.env.NEXT_PUBLIC_REFRESH_ALLOWED_USER_IDS ?? '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean)
+)
+
 export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname()
   const { user } = useUser()
+  const hasRefreshAccess = user?.id ? REFRESH_ALLOWED_USER_IDS.has(user.id) : false
 
   // Detect if we're on a guild page to show guild-specific nav
   const guildMatch = pathname.match(/\/guilds\/([^\/]+)/)
@@ -85,6 +93,23 @@ export function Sidebar({ onNavigate }: SidebarProps) {
               </Link>
             )
           })}
+
+          {/* Refresh tool — whitelisted users only */}
+          {hasRefreshAccess && (
+            <Link
+              href="/refresh"
+              onClick={onNavigate}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-colors',
+                pathname === '/refresh'
+                  ? 'bg-accent-purple text-white'
+                  : 'text-gray-300 hover:bg-surface/50 hover:text-white'
+              )}
+            >
+              <span className="text-lg">🔄</span>
+              Refresh
+            </Link>
+          )}
 
           {/* Guild-specific navigation */}
           {guildId && (

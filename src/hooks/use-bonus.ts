@@ -71,7 +71,7 @@ export function useBonusRounds(guildId: string, filter: RoundFilter) {
       if (!res.ok) throw new Error('Failed to load bonus rounds')
       return res.json() as Promise<BonusRoundsResponse>
     },
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes — round list
     enabled: !!guildId,
   })
 
@@ -145,7 +145,7 @@ export function useBonusRoundDetail(
       if (!res.ok) throw new Error('Failed to load bonus round')
       return res.json()
     },
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes — round detail
     enabled: !!guildId && !!roundId && enabled,
   })
 }
@@ -168,7 +168,7 @@ export function useBonusResults(
       if (!res.ok) throw new Error('Failed to load bonus results')
       return res.json()
     },
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes — results
     enabled: !!guildId && !!roundId && enabled,
   })
 }
@@ -188,7 +188,7 @@ export function useBonusLeaderboard(guildId: string, weeks: number) {
       if (!res.ok) throw new Error('Failed to load bonus leaderboard')
       return res.json()
     },
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes — leaderboard
     enabled: !!guildId,
   })
 }

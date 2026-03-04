@@ -122,7 +122,7 @@ export function useExportHistory(guildId: string, page: number = 1, limit: numbe
             }
             return response.json()
         },
-        staleTime: 30 * 1000, // 30 seconds
+        staleTime: 2 * 60 * 1000, // 2 minutes — export history
         enabled: !!guildId,
     })
 }

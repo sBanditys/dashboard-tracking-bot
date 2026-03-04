@@ -23,7 +23,7 @@ export function useAuditLog(guildId: string, filters: AuditLogFilters = {}) {
       }
       return response.json()
     },
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes — audit entries don't change in real time
     enabled: !!guildId,
   })
 }

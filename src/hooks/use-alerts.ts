@@ -43,7 +43,7 @@ export function useAlertThresholds(guildId: string, filters: ThresholdFilters = 
             }
             return lastPage.pagination.page + 1
         },
-        staleTime: 30 * 1000,
+        staleTime: 2 * 60 * 1000, // 2 minutes — alert thresholds
         refetchOnWindowFocus: true,
         enabled: !!guildId,
     })

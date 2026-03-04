@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Security Audit & Optimization
 status: completed
-stopped_at: Phase 22 context gathered
-last_updated: "2026-03-04T14:25:26.055Z"
+stopped_at: Completed 22-01-PLAN.md
+last_updated: "2026-03-04T15:22:30.354Z"
 last_activity: 2026-02-23 — Phase 21 Plan 01 complete (generateHmacCsrfToken, extractJtiFromAuthToken, CSRF_HMAC_SECRET constant; CSRF call site wired to HMAC generation)
 progress:
   total_phases: 7
   completed_phases: 5
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 12
+  completed_plans: 11
   percent: 23
 ---
 
@@ -81,6 +81,7 @@ Progress: [██░░░░░░░░] 23% (v1.2) — 77/83 total plans comp
 | Phase 20 P01 | 4m 1s | 2 tasks | 7 files |
 | Phase 20 P02 | 2m 14s | 2 tasks | 5 files |
 | Phase 21 P01 | 1m 3s | 2 tasks | 1 file |
+| Phase 22 P01 | 61s | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -119,6 +120,7 @@ Recent decisions affecting v1.2 work:
 - [Phase 21]: Per-request crypto.subtle.importKey — no module-scope CryptoKey caching (avoids secret rotation issues)
 - [Phase 21]: Double-submit cookie check preserved alongside HMAC — belt-and-suspenders, middleware fast-fails tampered requests
 - [Phase 21]: Silent fallback to plain 64-char hex token when jti or CSRF_HMAC_SECRET absent — graceful degradation for local dev
+- [Phase 22]: Hooks with refetchInterval (use-guilds status, use-sessions) retain 30s staleTime — polling freshness intentional
 
 ### Pending Todos
 
@@ -131,9 +133,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-04T14:25:26.052Z
-Stopped at: Phase 22 context gathered
-Resume file: .planning/phases/22-performance-optimization/22-CONTEXT.md
+Last session: 2026-03-04T15:22:30.352Z
+Stopped at: Completed 22-01-PLAN.md
+Resume file: None
 
 ---
 *Last updated: 2026-02-23 (Phase 21 Plan 01 complete — HMAC-signed CSRF tokens via crypto.subtle in proxy.ts; generateHmacCsrfToken, extractJtiFromAuthToken, CSRF_HMAC_SECRET with fallback chain)*

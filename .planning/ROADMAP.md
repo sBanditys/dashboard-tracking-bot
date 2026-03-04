@@ -40,7 +40,7 @@ Full details: `milestones/v1.1-ROADMAP.md`
 
 </details>
 
-### 🚧 v1.2 Security Audit & Optimization (In Progress)
+### v1.2 Security Audit & Optimization (In Progress)
 
 **Milestone Goal:** Align dashboard with backend v2.6 changes, harden security posture, optimize performance, and produce a comprehensive security audit report. No new user-facing features — hardening and alignment only.
 
@@ -149,10 +149,10 @@ Plans:
   1. The audit report exists at a known path and covers OWASP Top 10, CWE classification, and Node.js/Next.js performance findings
   2. Every finding in the report has a risk score and a documented fix plan or accepted-risk justification
   3. The report reflects the post-hardening state (Phases 17-22 complete) — not the pre-v1.2 state
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 23-01: Generate comprehensive security and performance audit report
+- [ ] 23-01-PLAN.md — Evidence gathering + comprehensive OWASP/CWE/performance audit report
 
 ## Progress
 
@@ -184,4 +184,4 @@ Plans:
 
 ---
 *Created: 2026-01-24*
-*Last updated: 2026-03-04 after Phase 22 gap closure planning*
+*Last updated: 2026-03-04 after Phase 23 planning*

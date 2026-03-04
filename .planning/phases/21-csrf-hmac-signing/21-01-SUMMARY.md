@@ -73,7 +73,7 @@ Each task was committed atomically:
 1. **Task 1: Add HMAC token generation and JTI extraction to proxy.ts** - `1ee5a0c` (feat)
 2. **Task 2: Wire HMAC token generation into the CSRF cookie call site** - `36f1757` (feat)
 
-**Plan metadata:** _(pending docs commit)_
+**Plan metadata:** `5cd5eef` (docs: complete plan)
 
 ## Files Created/Modified
 - `src/proxy.ts` - Added CSRF_HMAC_SECRET constant, extractJtiFromAuthToken, generateHmacCsrfToken; wired HMAC generation at CSRF cookie call site

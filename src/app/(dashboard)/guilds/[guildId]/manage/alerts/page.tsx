@@ -17,8 +17,18 @@ import { ThresholdCardSkeleton } from '@/components/alerts/threshold-card-skelet
 import { ThresholdFilters } from '@/components/alerts/threshold-filters'
 import { ThresholdCreateModal } from '@/components/alerts/threshold-create-modal'
 import { ThresholdBulkBar } from '@/components/alerts/threshold-bulk-bar'
-import { EmailConfigSection } from '@/components/alerts/email-config-section'
 import { AlertSettingsPanel } from '@/components/alerts/alert-settings-panel'
+import dynamic from 'next/dynamic'
+
+const EmailConfigSection = dynamic(
+  () => import('@/components/alerts/email-config-section').then((mod) => mod.EmailConfigSection),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-32 animate-pulse bg-surface rounded-sm" />
+    ),
+  }
+)
 import { TypeToConfirmModal } from '@/components/ui/type-to-confirm-modal'
 import { EmptyState } from '@/components/empty-state'
 import { cn } from '@/lib/utils'

@@ -2,11 +2,29 @@
 
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { cn } from '@/lib/utils'
 import { useUser } from '@/hooks/use-user'
 import { RoundsTab } from '@/components/bonus/rounds-tab'
-import { LeaderboardTab } from '@/components/bonus/leaderboard-tab'
-import { CreateRoundModal } from '@/components/bonus/create-round-modal'
+
+const LeaderboardTab = dynamic(
+  () => import('@/components/bonus/leaderboard-tab').then((mod) => mod.LeaderboardTab),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-16 animate-pulse bg-surface rounded-sm" />
+        ))}
+      </div>
+    ),
+  }
+)
+
+const CreateRoundModal = dynamic(
+  () => import('@/components/bonus/create-round-modal').then((mod) => mod.CreateRoundModal),
+  { ssr: false, loading: () => null }
+)
 
 type TopTab = 'rounds' | 'leaderboard'
 

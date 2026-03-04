@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Security Audit & Optimization
 status: completed
-stopped_at: Phase 23 context gathered
-last_updated: "2026-03-04T18:17:52.262Z"
+stopped_at: Completed 23-security-audit-report 23-01-PLAN.md
+last_updated: "2026-03-04T22:00:45.427Z"
 last_activity: 2026-02-23 — Phase 21 Plan 01 complete (generateHmacCsrfToken, extractJtiFromAuthToken, CSRF_HMAC_SECRET constant; CSRF call site wired to HMAC generation)
 progress:
   total_phases: 7
-  completed_phases: 6
-  total_plans: 13
-  completed_plans: 13
+  completed_phases: 7
+  total_plans: 14
+  completed_plans: 14
   percent: 23
 ---
 
@@ -84,6 +84,7 @@ Progress: [██░░░░░░░░] 23% (v1.2) — 77/83 total plans comp
 | Phase 22 P01 | 61s | 2 tasks | 5 files |
 | Phase 22 P02 | 53 | 1 tasks | 2 files |
 | Phase 22-performance-optimization P03 | 4min | 1 tasks | 0 files |
+| Phase 23-security-audit-report P01 | 25min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,10 @@ Recent decisions affecting v1.2 work:
 - [Phase 22]: RoundsTab kept as static import — default tab, must render immediately on page load; only non-default components dynamically imported
 - [Phase 22]: CreateRoundModal uses loading: () => null — modal hidden until user action, no skeleton needed
 - [Phase 22-performance-optimization]: Bundle analysis requires --webpack flag in Next.js 16 because @next/bundle-analyzer wraps webpack config only; Turbopack builds produce no report
+- [Phase 23-security-audit-report]: callbackUrl open redirect (A01-02): router.replace(callbackUrl) in callback/page.tsx has no same-origin validation — Medium P2 finding
+- [Phase 23-security-audit-report]: Logout token revocation confirmed PASS: logout/route.ts calls backend /api/v1/auth/logout with Bearer + refresh_token body
+- [Phase 23-security-audit-report]: Excel formula injection: PASS — isHttpUrl() guard + escapeFormulaString() in posts-excel-export.ts prevent injection
+- [Phase 23-security-audit-report]: Backend npm audit: 26 vulns (1 critical undici, 23 high AWS SDK chain) — P1 for backend team, does not block dashboard v1.2
 
 ### Pending Todos
 
@@ -138,9 +143,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-04T18:17:52.260Z
-Stopped at: Phase 23 context gathered
-Resume file: .planning/phases/23-security-audit-report/23-CONTEXT.md
+Last session: 2026-03-04T22:00:45.425Z
+Stopped at: Completed 23-security-audit-report 23-01-PLAN.md
+Resume file: None
 
 ---
 *Last updated: 2026-02-23 (Phase 21 Plan 01 complete — HMAC-signed CSRF tokens via crypto.subtle in proxy.ts; generateHmacCsrfToken, extractJtiFromAuthToken, CSRF_HMAC_SECRET with fallback chain)*

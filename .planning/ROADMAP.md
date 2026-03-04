@@ -49,7 +49,7 @@ Full details: `milestones/v1.1-ROADMAP.md`
 - [x] **Phase 19: Auth Hardening & Resilience** - SSR cookie forwarding, 503 retry handling, and rate limit isolation (completed 2026-02-23)
 - [x] **Phase 20: Cursor Pagination Migration** - Migrate accounts and posts hooks to cursor-based infinite scroll (completed 2026-02-23)
 - [x] **Phase 21: CSRF HMAC Signing** - Generate HMAC-signed CSRF tokens matching backend Phase 37 validation (completed 2026-02-23)
-- [x] **Phase 22: Performance Optimization** - Optimize bundle imports, React Query stale times, and cold start contributors (completed 2026-03-04)
+- [ ] **Phase 22: Performance Optimization** - Optimize bundle imports, React Query stale times, and cold start contributors (gap closure in progress)
 - [ ] **Phase 23: Security Audit Report** - Comprehensive OWASP/CWE audit report covering hardened codebase
 
 ## Phase Details
@@ -134,11 +134,12 @@ Plans:
   1. The Next.js dev server and production build import `lucide-react` as ~333 modules instead of ~1583
   2. Navigating between dashboard pages does not trigger a visible refetch waterfall on data that was recently loaded
   3. A bundle analysis report exists identifying the top cold-start contributors, with dynamic imports applied to the heaviest client components
-**Plans**: 2 plans
+**Plans**: 3 plans
 
 Plans:
-- [ ] 22-01-PLAN.md — Configure optimizePackageImports + normalize staleTime across React Query hooks
-- [ ] 22-02-PLAN.md — Apply dynamic imports to heaviest client components (CreateRoundModal, LeaderboardTab, EmailConfigSection)
+- [x] 22-01-PLAN.md — Configure optimizePackageImports + normalize staleTime across React Query hooks
+- [x] 22-02-PLAN.md — Apply dynamic imports to heaviest client components (CreateRoundModal, LeaderboardTab, EmailConfigSection)
+- [ ] 22-03-PLAN.md — Gap closure: run bundle analysis build and confirm dynamic import chunks
 
 ### Phase 23: Security Audit Report
 **Goal**: A documented audit report exists covering the full security and performance posture of the hardened codebase
@@ -178,9 +179,9 @@ Plans:
 | 19. Auth Hardening & Resilience | 3/3 | Complete    | 2026-02-23 | - |
 | 20. Cursor Pagination Migration | 2/2 | Complete    | 2026-02-23 | - |
 | 21. CSRF HMAC Signing | 1/1 | Complete    | 2026-03-04 | - |
-| 22. Performance Optimization | 2/2 | Complete   | 2026-03-04 | - |
+| 22. Performance Optimization | v1.2 | 2/3 | Gap closure | 2026-03-04 |
 | 23. Security Audit Report | v1.2 | 0/1 | Not started | - |
 
 ---
 *Created: 2026-01-24*
-*Last updated: 2026-03-04 after Phase 22 planning*
+*Last updated: 2026-03-04 after Phase 22 gap closure planning*

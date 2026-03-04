@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Security Audit & Optimization
 status: completed
-stopped_at: Completed 22-01-PLAN.md
-last_updated: "2026-03-04T15:22:30.354Z"
+stopped_at: Completed 22-02-PLAN.md
+last_updated: "2026-03-04T15:24:56.292Z"
 last_activity: 2026-02-23 — Phase 21 Plan 01 complete (generateHmacCsrfToken, extractJtiFromAuthToken, CSRF_HMAC_SECRET constant; CSRF call site wired to HMAC generation)
 progress:
   total_phases: 7
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 12
-  completed_plans: 11
+  completed_plans: 12
   percent: 23
 ---
 
@@ -82,6 +82,7 @@ Progress: [██░░░░░░░░] 23% (v1.2) — 77/83 total plans comp
 | Phase 20 P02 | 2m 14s | 2 tasks | 5 files |
 | Phase 21 P01 | 1m 3s | 2 tasks | 1 file |
 | Phase 22 P01 | 61s | 2 tasks | 5 files |
+| Phase 22 P02 | 53 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -121,6 +122,8 @@ Recent decisions affecting v1.2 work:
 - [Phase 21]: Double-submit cookie check preserved alongside HMAC — belt-and-suspenders, middleware fast-fails tampered requests
 - [Phase 21]: Silent fallback to plain 64-char hex token when jti or CSRF_HMAC_SECRET absent — graceful degradation for local dev
 - [Phase 22]: Hooks with refetchInterval (use-guilds status, use-sessions) retain 30s staleTime — polling freshness intentional
+- [Phase 22]: RoundsTab kept as static import — default tab, must render immediately on page load; only non-default components dynamically imported
+- [Phase 22]: CreateRoundModal uses loading: () => null — modal hidden until user action, no skeleton needed
 
 ### Pending Todos
 
@@ -133,8 +136,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-04T15:22:30.352Z
-Stopped at: Completed 22-01-PLAN.md
+Last session: 2026-03-04T15:24:56.289Z
+Stopped at: Completed 22-02-PLAN.md
 Resume file: None
 
 ---

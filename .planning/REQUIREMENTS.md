@@ -36,9 +36,9 @@ Requirements for v1.2 Security Audit & Optimization. Each maps to roadmap phases
 
 ### Performance
 
-- [ ] **PERF-01**: `optimizePackageImports` configured in next.config for `lucide-react` and `recharts` to reduce module count and improve cold start time
-- [ ] **PERF-02**: React Query `staleTime` normalized across all hooks — no `staleTime: 0` causing waterfall refetches on navigation
-- [ ] **PERF-03**: Bundle analysis run with `next experimental-analyze` to identify top cold-start contributors, with dynamic imports applied to heavy client components
+- [x] **PERF-01**: `optimizePackageImports` configured in next.config for `lucide-react` and `recharts` to reduce module count and improve cold start time
+- [x] **PERF-02**: React Query `staleTime` normalized across all hooks — no `staleTime: 0` causing waterfall refetches on navigation
+- [x] **PERF-03**: Bundle analysis run with `next experimental-analyze` to identify top cold-start contributors, with dynamic imports applied to heavy client components
 
 ### Security Audit
 
@@ -91,9 +91,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PAGE-01 | Phase 20 | Complete |
 | PAGE-02 | Phase 20 | Complete |
 | PAGE-03 | Phase 20 | Complete |
-| PERF-01 | Phase 22 | Pending |
-| PERF-02 | Phase 22 | Pending |
-| PERF-03 | Phase 22 | Pending |
+| PERF-01 | Phase 22 | Complete |
+| PERF-02 | Phase 22 | Complete |
+| PERF-03 | Phase 22 | Complete |
 | AUDIT-01 | Phase 23 | Pending |
 
 **Coverage:**

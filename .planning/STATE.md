@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Security Audit & Optimization
 status: completed
-stopped_at: Completed 22-02-PLAN.md
-last_updated: "2026-03-04T15:24:56.292Z"
+stopped_at: Completed 22-03-PLAN.md
+last_updated: "2026-03-04T17:12:45.949Z"
 last_activity: 2026-02-23 — Phase 21 Plan 01 complete (generateHmacCsrfToken, extractJtiFromAuthToken, CSRF_HMAC_SECRET constant; CSRF call site wired to HMAC generation)
 progress:
   total_phases: 7
   completed_phases: 6
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 13
+  completed_plans: 13
   percent: 23
 ---
 
@@ -83,6 +83,7 @@ Progress: [██░░░░░░░░] 23% (v1.2) — 77/83 total plans comp
 | Phase 21 P01 | 1m 3s | 2 tasks | 1 file |
 | Phase 22 P01 | 61s | 2 tasks | 5 files |
 | Phase 22 P02 | 53 | 1 tasks | 2 files |
+| Phase 22-performance-optimization P03 | 4min | 1 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -124,6 +125,7 @@ Recent decisions affecting v1.2 work:
 - [Phase 22]: Hooks with refetchInterval (use-guilds status, use-sessions) retain 30s staleTime — polling freshness intentional
 - [Phase 22]: RoundsTab kept as static import — default tab, must render immediately on page load; only non-default components dynamically imported
 - [Phase 22]: CreateRoundModal uses loading: () => null — modal hidden until user action, no skeleton needed
+- [Phase 22-performance-optimization]: Bundle analysis requires --webpack flag in Next.js 16 because @next/bundle-analyzer wraps webpack config only; Turbopack builds produce no report
 
 ### Pending Todos
 
@@ -136,8 +138,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-04T15:24:56.289Z
-Stopped at: Completed 22-02-PLAN.md
+Last session: 2026-03-04T17:12:45.947Z
+Stopped at: Completed 22-03-PLAN.md
 Resume file: None
 
 ---

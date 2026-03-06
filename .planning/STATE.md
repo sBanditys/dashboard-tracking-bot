@@ -2,41 +2,39 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Security Audit & Optimization
-status: completed
-stopped_at: Completed 23-security-audit-report 23-01-PLAN.md
-last_updated: "2026-03-04T22:03:32.283Z"
-last_activity: 2026-02-23 — Phase 21 Plan 01 complete (generateHmacCsrfToken, extractJtiFromAuthToken, CSRF_HMAC_SECRET constant; CSRF call site wired to HMAC generation)
+status: shipped
+stopped_at: Milestone v1.2 archived
+last_updated: "2026-03-06T12:00:00.000Z"
+last_activity: 2026-03-06 — v1.2 milestone archived and tagged
 progress:
   total_phases: 7
   completed_phases: 7
   total_plans: 14
   completed_plans: 14
-  percent: 23
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-22)
+See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface — independent of bot uptime.
-**Current focus:** v1.2 Security Audit & Optimization — Phase 21 CSRF HMAC Signing
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 21 of 23 (CSRF HMAC Signing) — IN PROGRESS
-Plan: 1 of 1 in current phase — COMPLETE
-Status: Phase 21 Plan 01 complete — HMAC-signed CSRF tokens via crypto.subtle in proxy.ts; TypeScript clean
-Last activity: 2026-02-23 — Phase 21 Plan 01 complete (generateHmacCsrfToken, extractJtiFromAuthToken, CSRF_HMAC_SECRET constant; CSRF call site wired to HMAC generation)
+Milestone v1.2 shipped. No active milestone.
+Next step: `/gsd:new-milestone` to start v1.3.
 
-Progress: [██░░░░░░░░] 23% (v1.2) — 77/83 total plans complete across all milestones
+Progress: [██████████] 100% (v1.2) — 83/83 total plans complete across all milestones
 
 ## Milestones
 
 - ✅ v1.0 MVP — 8 phases, 47 plans (shipped 2026-02-16)
 - ✅ v1.1 Security Hardening — 8 phases, 22 plans (shipped 2026-02-22)
-- 🚧 v1.2 Security Audit & Optimization — 7 phases, ~13 plans (in progress)
+- ✅ v1.2 Security Audit & Optimization — 7 phases, 14 plans (shipped 2026-03-06)
 
 ## Performance Metrics
 
@@ -45,7 +43,7 @@ Progress: [██░░░░░░░░] 23% (v1.2) — 77/83 total plans comp
 - Average duration: 2m 02s
 - Total execution time: ~89m 43s
 
-**v1.1 Velocity:**
+**v1.1 + v1.2 Velocity:**
 
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
@@ -71,66 +69,26 @@ Progress: [██░░░░░░░░] 23% (v1.2) — 77/83 total plans comp
 | 15-01 | 2m 37s | 2 | 5 |
 | 15-02 | 58m | 2 | 6 |
 | 16-01 | 1m | 2 | 2 |
-| Phase 17 P01 | 2m 21s | 2 tasks | 5 files |
-| Phase 17 P02 | 311s | 3 tasks | 17 files |
-| Phase 18 P01 | 116s | 2 tasks | 3 files |
-| Phase 18 P02 | 30s | 1 task | 1 file |
-| Phase 19 P01 | 37s | 1 task | 1 file |
-| Phase 19 P02 | 418s | 2 tasks | 11 files |
-| Phase 19 P03 | 51s | 2 tasks | 2 files |
-| Phase 20 P01 | 4m 1s | 2 tasks | 7 files |
-| Phase 20 P02 | 2m 14s | 2 tasks | 5 files |
-| Phase 21 P01 | 1m 3s | 2 tasks | 1 file |
-| Phase 22 P01 | 61s | 2 tasks | 5 files |
-| Phase 22 P02 | 53 | 1 tasks | 2 files |
-| Phase 22-performance-optimization P03 | 4min | 1 tasks | 0 files |
-| Phase 23-security-audit-report P01 | 25min | 2 tasks | 1 files |
+| 17-01 | 2m 21s | 2 | 5 |
+| 17-02 | 5m 11s | 3 | 17 |
+| 18-01 | 1m 56s | 2 | 3 |
+| 18-02 | 30s | 1 | 1 |
+| 19-01 | 37s | 1 | 1 |
+| 19-02 | 6m 58s | 2 | 11 |
+| 19-03 | 51s | 2 | 2 |
+| 20-01 | 4m 1s | 2 | 7 |
+| 20-02 | 2m 14s | 2 | 5 |
+| 21-01 | 1m 3s | 2 | 1 |
+| 22-01 | 1m 1s | 2 | 5 |
+| 22-02 | 53s | 1 | 2 |
+| 22-03 | 4m | 1 | 0 |
+| 23-01 | 25m | 2 | 1 |
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-
-Recent decisions affecting v1.2 work:
-- Phase 21 (CSRF HMAC): Must coordinate with backend Phase 37 dual-check deploy window — ship after backend has dual-check mode enabled
-- Phase 20 (Cursor pagination): Gated on backend Phase 39 shipping first — do not migrate hooks before backend is live
-- Phase 17 first: Error envelope must ship before any other change — all error paths depend on readable errors
-- [Phase 17]: Hard switch on CSRF cookie rename from _csrf_token to csrf_token — no fallback to old name
-- [Phase 17]: parseApiError reads .error field (not .message) — proxy SanitizedError always outputs { error: string, code? }
-- [Phase 17]: Proxy continues to output old envelope shape { error: string, code? } to clients — only consumes new shape from backend
-- [Phase 17]: parseApiError reads .error field from proxy SanitizedError shape — used consistently in all mutation hooks via const body = await response.json(); throw new Error(parseApiError(body, fallback))
-- [Phase 17]: Zod v4 .check() uses ctx.value/ctx.issues pattern (not simple predicate) — corrected from plan spec during execution
-- [Phase 17]: Toast auto-dismiss at 5000ms globally in providers.tsx toastOptions
-- [Phase 17]: Retry buttons use refetch() from React Query hook directly — not window.location.reload()
-- [Phase 18]: HEARTBEAT_TIMEOUT = 45s; HIDE_GRACE_MS = 15s (locked); HEARTBEAT_CHECK_INTERVAL = 5s
-- [Phase 18]: 'reconnecting' state set only on heartbeat-triggered reconnects, not initial connects
-- [Phase 18]: isClickable includes 'reconnecting' — force reconnect available during stall recovery
-- [Phase 18]: BotStatus healthy prop made optional — always renders on guild page even before SSE data
-- [Phase 18]: refetchInterval gates on connectionState === 'error' only — not on !isSSEConnected boolean; prevents polling during transient reconnects
-- [Phase 19]: backendFetch uses dynamic import try/catch for next/headers — defensive pattern even though file is server-only (imports crypto)
-- [Phase 19]: backendFetch is forward-only (no expiry check) — proxy.ts middleware proactively refreshes auth_token before SSR page requests land
-- [Phase 19]: !headers.has('Authorization') guard on auto-forwarding — backward-compatible with all existing routes that set Authorization explicitly
-- [Phase 19 P02]: Split globalRateLimitUntil into pollingRateLimitUntil + mutationRateLimitUntil — prevents polling 429 from blocking user mutations
-- [Phase 19 P02]: pollingRateLimitUntil persisted to sessionStorage; rate-limit-updated custom event dispatched on each write for reactive RateLimitBanner
-- [Phase 19 P02]: MUTATION_MAX_RETRIES=5 for 503 retries; didRetryRef pattern prevents 'Changes saved' toast on non-retry success paths
-- [Phase 19 P02]: ConnectionIssuesBanner gates on isError && hasData — distinguishes polling failures from initial load failures
-- [Phase 19]: Mutation 503 retry uses self-contained inner loop with mutationAttempt counter (1..5), independent of outer DEFAULT_MAX_RETRIES=3 bound
-- [Phase 19]: Early return narrowed from 'isError' to 'isError && !data' — polling failures fall through to ConnectionIssuesBanner inline render
-- [Phase 20]: resetQueries used for all infinite list mutations (accounts, posts) to prevent mixed-shape cache pages with stale cursors; invalidateQueries kept for non-infinite queries
-- [Phase 20]: No success toast for normal add/delete account operations — optimistic list update IS the feedback per locked decision
-- [Phase 21]: CSRF_HMAC_SECRET falls back to INTERNAL_API_SECRET — single env var covers both internal auth and CSRF HMAC
-- [Phase 21]: Per-request crypto.subtle.importKey — no module-scope CryptoKey caching (avoids secret rotation issues)
-- [Phase 21]: Double-submit cookie check preserved alongside HMAC — belt-and-suspenders, middleware fast-fails tampered requests
-- [Phase 21]: Silent fallback to plain 64-char hex token when jti or CSRF_HMAC_SECRET absent — graceful degradation for local dev
-- [Phase 22]: Hooks with refetchInterval (use-guilds status, use-sessions) retain 30s staleTime — polling freshness intentional
-- [Phase 22]: RoundsTab kept as static import — default tab, must render immediately on page load; only non-default components dynamically imported
-- [Phase 22]: CreateRoundModal uses loading: () => null — modal hidden until user action, no skeleton needed
-- [Phase 22-performance-optimization]: Bundle analysis requires --webpack flag in Next.js 16 because @next/bundle-analyzer wraps webpack config only; Turbopack builds produce no report
-- [Phase 23-security-audit-report]: callbackUrl open redirect (A01-02): router.replace(callbackUrl) in callback/page.tsx has no same-origin validation — Medium P2 finding
-- [Phase 23-security-audit-report]: Logout token revocation confirmed PASS: logout/route.ts calls backend /api/v1/auth/logout with Bearer + refresh_token body
-- [Phase 23-security-audit-report]: Excel formula injection: PASS — isHttpUrl() guard + escapeFormulaString() in posts-excel-export.ts prevent injection
-- [Phase 23-security-audit-report]: Backend npm audit: 26 vulns (1 critical undici, 23 high AWS SDK chain) — P1 for backend team, does not block dashboard v1.2
 
 ### Pending Todos
 
@@ -143,9 +101,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-04T22:00:45.425Z
-Stopped at: Completed 23-security-audit-report 23-01-PLAN.md
+Last session: 2026-03-06
+Stopped at: Milestone v1.2 archived
 Resume file: None
 
 ---
-*Last updated: 2026-02-23 (Phase 21 Plan 01 complete — HMAC-signed CSRF tokens via crypto.subtle in proxy.ts; generateHmacCsrfToken, extractJtiFromAuthToken, CSRF_HMAC_SECRET with fallback chain)*
+*Last updated: 2026-03-06 (v1.2 milestone shipped and archived)*

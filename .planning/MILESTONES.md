@@ -1,5 +1,34 @@
 # Milestones
 
+## v1.2 Security Audit & Optimization (Shipped: 2026-03-06)
+
+**Phases completed:** 7 phases, 14 plans
+**Timeline:** 11 days (2026-02-22 → 2026-03-04)
+**Codebase:** 27,231 LOC TypeScript, 98 files modified (+12,090 / -588)
+
+**Delivered:** Security hardening, backend v2.6 API alignment, performance optimization, and comprehensive security audit — no new user-facing features, purely hardening and alignment.
+
+**Key accomplishments:**
+1. Dual-envelope error parsing aligned with backend v2.6 error shape migration
+2. SSE lifecycle hardened with heartbeat timeout, generation counter, and tab-switch race prevention
+3. Auth resilience with SSR cookie forwarding, mutation 503 retry, and split rate limit buckets
+4. Cursor-based pagination migration with optimistic mutations and resetQueries
+5. HMAC-signed CSRF tokens via Web Crypto API matching backend Phase 37 validation
+6. Performance optimization with optimizePackageImports, staleTime normalization, and dynamic imports
+7. Comprehensive OWASP/CWE security audit report with risk scoring and fix plans
+
+**Known Tech Debt:**
+- `TODO(v1.3)`: Remove old envelope support in fetch-with-retry.ts and error-sanitizer.ts
+- validators.ts dead code (created for future use, never imported)
+- ConnectionIssuesBanner not wired to posts page
+- use-email-alerts.ts staleTime at 60s (not normalized to 2min)
+
+**Audit:** 19/19 requirements satisfied, 5/5 E2E flows verified, tech debt only
+**Git range:** `feat(17-01)` → `feat(23-01)`
+**Archive:** `milestones/v1.2-ROADMAP.md`, `milestones/v1.2-REQUIREMENTS.md`, `milestones/v1.2-MILESTONE-AUDIT.md`
+
+---
+
 ## v1.0 MVP (Shipped: 2026-02-16)
 
 **Phases completed:** 8 phases, 47 plans

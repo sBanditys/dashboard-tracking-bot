@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A web dashboard for Discord server admins to view, manage, and export their tracking bot data. Separate from the main bot repository, it connects to the existing API and stays available even when the Discord bot is down. Features real-time bot status, analytics with charts, data exports, bulk operations, bonus system management, alert thresholds, account import/export, session management, and a security-hardened dark mode UI with CSRF protection and CSP headers.
+A web dashboard for Discord server admins to view, manage, and export their tracking bot data. Separate from the main bot repository, it connects to the existing API and stays available even when the Discord bot is down. Features real-time bot status, analytics with charts, data exports, bulk operations, bonus system management, alert thresholds, account import/export, session management, and a security-hardened dark mode UI with CSRF HMAC signing, CSP headers, SSE lifecycle management, and cursor-based pagination.
 
 ## Core Value
 
@@ -60,14 +60,19 @@ Server admins can access their tracking data and bot status through a reliable w
 - ✓ Admin can upload CSV for import with validation preview — v1.1
 - ✓ Admin can confirm and execute import with progress indicator — v1.1
 
+- ✓ Dashboard error sanitizer handles both old and new backend error envelopes — v1.2
+- ✓ SSE connections auto-recover from stalls and tab-switch races — v1.2
+- ✓ SSR pages authenticate correctly via cookie forwarding — v1.2
+- ✓ Mutations retry on 503 with user-facing toast feedback — v1.2
+- ✓ Rate limit buckets split so polling 429s don't block user mutations — v1.2
+- ✓ Accounts and posts use cursor-based infinite scroll pagination — v1.2
+- ✓ CSRF tokens are HMAC-signed matching backend validation — v1.2
+- ✓ Bundle optimized with optimizePackageImports and dynamic imports — v1.2
+- ✓ Comprehensive OWASP/CWE security audit report produced — v1.2
+
 ### Active
 
-<!-- Current scope: v1.2 Security Audit & Optimization -->
-
-- [ ] Align dashboard with backend v2.6 API changes (cursor pagination, error envelope, SSR cookie forwarding)
-- [ ] Security hardening (CSRF HMAC alignment, rate limit handling, 503 resilience)
-- [ ] Performance optimization (SSE lifecycle, React Query efficiency, bundle size, cold starts)
-- [ ] Comprehensive security & performance audit of both codebases
+(None — planning next milestone)
 
 ### Out of Scope
 
@@ -80,32 +85,22 @@ Server admins can access their tracking data and bot status through a reliable w
 - AI-powered summarization — High cost, unreliable; users want raw data
 - Breaking up monolithic backend files — Backend refactoring scope, not dashboard concern
 - Replacing 899 `any` types in backend — Backend tech debt, separate effort
-
-## Current Milestone: v1.2 Security Audit & Optimization
-
-**Goal:** Align dashboard with backend v2.6 changes, harden security posture, optimize performance, and produce a comprehensive security audit report.
-
-**Target features:**
-- Cursor pagination migration (backend Phase 39 alignment)
-- SSR cookie forwarding pattern (QUAL-05/F-14)
-- CSRF HMAC alignment with backend Phase 37
-- Rate limit 503/429 resilience
-- Error envelope migration (backend Phase 35 `{ error: { code, message } }`)
-- SSE connection lifecycle hardening
-- React Query cache optimization
-- Comprehensive security & performance audit report
+- WebSocket migration — SSE is sufficient; WebSocket adds infrastructure complexity
+- Full Zod v4 rewrite — Only deprecated patterns audited; complete rewrite deferred
 
 ## Context
 
-Shipped v1.1 with 25,476 LOC TypeScript. v1.0 shipped 2026-02-14, v1.1 shipped 2026-02-22 (7-day cycle).
+Shipped v1.2 with 27,231 LOC TypeScript. v1.0 shipped 2026-02-14, v1.1 shipped 2026-02-22, v1.2 shipped 2026-03-06.
 Tech stack: Next.js 14 (App Router), Tailwind CSS, React Query, Recharts, Headless UI, Playwright.
-Total: 16 phases, 69 plans across 2 milestones.
+Total: 23 phases, 83 plans across 3 milestones.
 
-**Security posture:** CSRF double-submit cookies, CSP with nonce-based script-src, error sanitization across 36+ proxy routes, verified email enforcement, parameterized SQL queries.
+**Security posture:** CSRF HMAC-signed tokens (Web Crypto API), CSP with nonce-based script-src, dual-envelope error sanitization across 36+ proxy routes, verified email enforcement, parameterized SQL queries, SSR cookie forwarding, split rate limit buckets, SSE heartbeat timeout with generation counter.
+
+**Performance posture:** optimizePackageImports for lucide-react/recharts, normalized staleTime (2min non-polling), dynamic imports for heavy components (CreateRoundModal, LeaderboardTab, EmailConfigSection), refetchInterval gated on SSE error state only.
 
 **Parent Project:** Tracking_Data_Bot monorepo (API, Bot, Worker, Notifier + shared library)
 
-**Multi-tenancy Model:** Client ↔ Guild (1:1) → Brand → AccountGroup → ClientAccount. JWT contains guild permissions, all queries scoped by clientId.
+**Multi-tenancy Model:** Client <-> Guild (1:1) -> Brand -> AccountGroup -> ClientAccount. JWT contains guild permissions, all queries scoped by clientId.
 
 **Architecture:**
 ```
@@ -127,10 +122,14 @@ Total: 16 phases, 69 plans across 2 milestones.
               └──────────────┘
 ```
 
-**Known tech debt (v1.1):**
-- Empty-state "Create Round" button no-op in bonus rounds tab (admin can create via header)
+**Known tech debt (v1.2):**
+- `TODO(v1.3)`: Remove old envelope support in fetch-with-retry.ts and error-sanitizer.ts
+- validators.ts dead code (Zod schemas created for future use, never imported)
+- ConnectionIssuesBanner not wired to posts page
+- use-email-alerts.ts staleTime at 60s (not normalized to 2min)
+- Empty-state "Create Round" button no-op in bonus rounds tab
 - Import history empty state (no import history API endpoint yet)
-- Early phase SUMMARY files predate `requirements-completed` frontmatter convention
+- callbackUrl open redirect — no same-origin validation in callback/page.tsx (P2)
 
 ## Constraints
 
@@ -160,6 +159,12 @@ Total: 16 phases, 69 plans across 2 milestones.
 | Session mutations CSRF-exempt | Protected by auth_token cookie + SameSite=Lax instead | ✓ Good — accepted design tradeoff |
 | fetchWithRetry for all mutations | Single point for CSRF injection, auth retry, and error handling | ✓ Good — caught import confirm bypass |
 | Playwright for E2E security tests | Verifies middleware behavior (CSRF, CSP, auth redirects) at HTTP level | ✓ Good — caught middleware regression |
+| Dual-envelope error parsing | Backward-compatible with old and new backend error shapes | ✓ Good — zero breaking changes during migration |
+| HMAC-signed CSRF via Web Crypto | No npm dependencies, matches backend Phase 37 validation | ✓ Good — crypto.subtle is built-in |
+| Split rate limit buckets | Polling 429s don't block user mutations | ✓ Good — UX preserved during rate limiting |
+| SSE heartbeat + generation counter | Prevents stalled connections and dual EventSource races | ✓ Good — automatic recovery without reload |
+| Cursor pagination with resetQueries | Prevents mixed-shape cache pages after mutations | ✓ Good — clean infinite scroll experience |
+| Dynamic imports for heavy components | Reduces initial bundle and cold start time | ✓ Good — CreateRoundModal, LeaderboardTab, EmailConfigSection |
 
 ---
-*Last updated: 2026-02-22 after v1.2 milestone started*
+*Last updated: 2026-03-06 after v1.2 milestone*

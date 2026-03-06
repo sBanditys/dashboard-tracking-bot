@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Security Audit & Optimization
-status: shipped
-stopped_at: Milestone v1.2 archived
-last_updated: "2026-03-06T12:00:00.000Z"
-last_activity: 2026-03-06 — v1.2 milestone archived and tagged
+milestone: v1.3
+milestone_name: Campaign System & Tech Debt
+status: defining_requirements
+stopped_at: Milestone v1.3 started — defining requirements
+last_updated: "2026-03-06T13:00:00.000Z"
+last_activity: 2026-03-06 — Milestone v1.3 started
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 14
-  completed_plans: 14
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,20 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface — independent of bot uptime.
-**Current focus:** Planning next milestone
+**Current focus:** v1.3 Campaign System & Tech Debt — Defining requirements
 
 ## Current Position
 
-Milestone v1.2 shipped. No active milestone.
-Next step: `/gsd:new-milestone` to start v1.3.
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-06 — Milestone v1.3 started
 
-Progress: [██████████] 100% (v1.2) — 83/83 total plans complete across all milestones
+Progress: [░░░░░░░░░░] 0% (v1.3) — 83 total plans complete across all milestones
 
 ## Milestones
 
 - ✅ v1.0 MVP — 8 phases, 47 plans (shipped 2026-02-16)
 - ✅ v1.1 Security Hardening — 8 phases, 22 plans (shipped 2026-02-22)
 - ✅ v1.2 Security Audit & Optimization — 7 phases, 14 plans (shipped 2026-03-06)
+- 🚧 v1.3 Campaign System & Tech Debt — defining requirements
 
 ## Performance Metrics
 

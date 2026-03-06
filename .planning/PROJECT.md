@@ -72,7 +72,16 @@ Server admins can access their tracking data and bot status through a reliable w
 
 ### Active
 
-(None — planning next milestone)
+<!-- Current scope: v1.3 Campaign System & Tech Debt -->
+
+- [ ] Full campaign management UI (list, detail, create, edit, delete with status guards)
+- [ ] Campaign analytics dashboard (participant earnings, post counts)
+- [ ] Campaign payout management (mark-paid, bulk mark-paid, payout history)
+- [ ] Campaign data export (CSV/XLSX with async progress)
+- [ ] Tech debt: Remove old error envelope support (fetch-with-retry.ts, error-sanitizer.ts)
+- [ ] Tech debt: Fix callbackUrl open redirect in callback/page.tsx
+- [ ] Tech debt: Wire ConnectionIssuesBanner to posts page
+- [ ] Tech debt: Remove validators.ts dead code
 
 ### Out of Scope
 
@@ -87,6 +96,19 @@ Server admins can access their tracking data and bot status through a reliable w
 - Replacing 899 `any` types in backend — Backend tech debt, separate effort
 - WebSocket migration — SSE is sufficient; WebSocket adds infrastructure complexity
 - Full Zod v4 rewrite — Only deprecated patterns audited; complete rewrite deferred
+
+## Current Milestone: v1.3 Campaign System & Tech Debt
+
+**Goal:** Build the complete campaign management frontend consuming backend v2.7 campaign REST API (10 endpoints), and close all carried-forward tech debt from v1.2.
+
+**Target features:**
+- Campaign list with cursor pagination and status filtering
+- Campaign detail with analytics (participant earnings, post counts)
+- Campaign create/edit forms with platform rate configuration
+- Campaign status lifecycle management (Draft/Active/Paused/SubmissionsClosed/Completed)
+- Payout management (mark-paid, bulk mark-paid, payout history audit trail)
+- Campaign export (CSV/XLSX with async SSE progress)
+- Tech debt cleanup (old envelope removal, open redirect fix, ConnectionIssuesBanner, dead code)
 
 ## Context
 
@@ -167,4 +189,4 @@ Total: 23 phases, 83 plans across 3 milestones.
 | Dynamic imports for heavy components | Reduces initial bundle and cold start time | ✓ Good — CreateRoundModal, LeaderboardTab, EmailConfigSection |
 
 ---
-*Last updated: 2026-03-06 after v1.2 milestone*
+*Last updated: 2026-03-06 after v1.3 milestone started*

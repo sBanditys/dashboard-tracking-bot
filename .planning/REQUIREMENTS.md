@@ -1,74 +1,85 @@
 # Requirements: Tracking Dashboard
 
-**Defined:** 2026-02-22
-**Core Value:** Server admins can access their tracking data and bot status through a reliable web interface — independent of bot uptime.
+**Defined:** 2026-03-08
+**Core Value:** Server admins can access their tracking data and bot status through a reliable web interface -- independent of bot uptime.
 
-## v1.2 Requirements
+## v1.3 Requirements
 
-Requirements for v1.2 Security Audit & Optimization. Each maps to roadmap phases.
+Requirements for v1.3 Campaign System & Tech Debt. Each maps to roadmap phases.
 
-### Error Handling & API Alignment
+### Campaign CRUD
 
-- [x] **ERR-01**: Dashboard error sanitizer detects both old `{ error: string }` and new `{ error: { code, message } }` envelope shapes from backend, extracting error code and message correctly from either
-- [x] **ERR-02**: `fetchWithRetry` `unverified_email` code lookup works with both old (`body?.code`) and new (`body?.error?.code`) envelope shapes without breaking email-verification redirect
-- [x] **ERR-03**: CSRF cookie name aligned from `_csrf_token` to `csrf_token` in proxy.ts and fetch-with-retry.ts to match backend convention
-- [x] **ERR-04**: Zod v4 patterns audited — deprecated v3 methods (`z.string().email()`, `z.string().uuid()`, `error.errors`) replaced with v4 equivalents
+- [ ] **CAMP-01**: User can view paginated campaign list with cursor-based infinite scroll
+- [ ] **CAMP-02**: User can filter campaigns by status (Draft/Active/Paused/SubmissionsClosed/Completed)
+- [ ] **CAMP-03**: User can view campaign detail with summary counters (earned, participants, posts, budget remaining)
+- [ ] **CAMP-04**: User can see color-coded status badges on list and detail views
+- [ ] **CAMP-05**: Admin can create a campaign with name, budget, per-user cap, and platform rates
+- [ ] **CAMP-06**: Admin can edit campaign configuration (14 optional fields with 409 conflict handling)
+- [ ] **CAMP-07**: Admin can delete campaign (Draft/Completed only, with confirmation dialog)
+- [ ] **CAMP-08**: User can see platform rate cards with icons on campaign detail
+- [ ] **CAMP-09**: User can see budget utilization progress bar on campaign detail
 
-### Authentication & Security
+### Campaign Analytics
 
-- [x] **AUTH-01**: Proxy layer generates HMAC-signed CSRF tokens using `crypto.subtle` and `INTERNAL_API_SECRET` for server-to-server mutations, matching backend Phase 37 HMAC validation
-- [x] **AUTH-02**: SSR route handlers forward `auth_token` cookie as `Authorization: Bearer` header when calling `backendFetch`, enabling authenticated server-rendered pages
-- [x] **AUTH-03**: `fetchWithRetry` handles 503 responses with user-facing retry toast for mutations and silent backoff for reads, instead of treating 503 as unrecoverable
-- [x] **AUTH-04**: Global rate limit cooldown (`globalRateLimitUntil`) separated so background polling 429s do not block user-initiated mutations
+- [ ] **ANAL-01**: User can view cursor-paginated participant earnings table with post counts
+- [ ] **ANAL-02**: User can search participants by userId in the analytics/payouts view
 
-### Real-Time & Connectivity
+### Campaign Payouts
 
-- [x] **SSE-01**: `useSSE` implements heartbeat timeout (45 seconds) that closes and reconnects stalled connections that stop sending events
-- [x] **SSE-02**: `useSSE` uses generation counter (`connectGenerationRef`) to prevent dual EventSource instances when tab visibility changes rapidly within reconnect cooldown window
-- [x] **SSE-03**: `useSSE` resets `retryCountRef` on tab visibility restore so exhausted retries during hidden state do not permanently kill the connection
-- [x] **SSE-04**: `refetchInterval` only fires when `connectionState === 'error'` (retries exhausted), not during transient reconnects, preventing polling/SSE race conditions
+- [ ] **PAY-01**: User can view offset-paginated payout status list (paid/unpaid per participant)
+- [ ] **PAY-02**: Admin can mark a single participant as paid with confirmation dialog
+- [ ] **PAY-03**: Admin can bulk mark participants as paid (max 50, checkbox selection)
+- [ ] **PAY-04**: User can view offset-paginated payout history audit trail
+- [ ] **PAY-05**: Payout mutations use optimistic updates with rollback on error
 
-### Data & Pagination
+### Campaign Export
 
-- [x] **PAGE-01**: Accounts and posts hooks migrated from offset-based (`page`, `total_pages`) to cursor-based (`next_cursor`, `has_more`) pagination using `useInfiniteQuery` with `initialPageParam: null`
-- [x] **PAGE-02**: Pagination TypeScript types updated to support both offset and cursor shapes during backend transition window, with cursor as the primary path
-- [x] **PAGE-03**: Infinite scroll mutations use `queryClient.resetQueries` (not `invalidateQueries`) to prevent mixed-shape cache pages after data changes
+- [ ] **EXP-01**: Admin can trigger campaign export (CSV/XLSX) with scope selection (payment/full)
+- [ ] **EXP-02**: User can see export progress via SSE with download link on completion
 
-### Performance
+### Tech Debt
 
-- [x] **PERF-01**: `optimizePackageImports` configured in next.config for `lucide-react` and `recharts` to reduce module count and improve cold start time
-- [x] **PERF-02**: React Query `staleTime` normalized across all hooks — no `staleTime: 0` causing waterfall refetches on navigation
-- [x] **PERF-03**: Bundle analysis run with `next experimental-analyze` to identify top cold-start contributors, with dynamic imports applied to heavy client components
+- [ ] **DEBT-01**: Old error envelope support removed from fetch-with-retry.ts and error-sanitizer.ts
+- [ ] **DEBT-02**: callbackUrl open redirect fixed with same-origin validation in callback/page.tsx
+- [ ] **DEBT-03**: ConnectionIssuesBanner wired to posts page
+- [ ] **DEBT-04**: validators.ts dead code removed
 
-### Security Audit
+## Future Requirements
 
-- [x] **AUDIT-01**: Comprehensive security and performance audit report generated covering OWASP Top 10, CWE classification, Node.js performance, Next.js compatibility, with risk scoring and fix plans per the audit specification
+Deferred to future milestones. Tracked but not in current roadmap.
 
-## v1.3+ Requirements
+### Campaign Status Lifecycle
 
-Deferred to future release. Tracked but not in current roadmap.
+- **STAT-01**: Admin can transition campaign status (Draft->Active, Active->Paused, etc.)
+- **STAT-02**: Status transition buttons reflect valid transitions per state machine
 
-### Future Optimization
+### Campaign Templates
 
-- **PERF-F01**: Server Components for initial page renders (RSC data fetching replacing client-side useQuery)
-- **PERF-F02**: Streaming SSR with Suspense boundaries for guild detail pages
-- **PERF-F03**: Service worker for offline dashboard shell
+- **TMPL-01**: Admin can create campaign from template
+- **TMPL-02**: Admin can save campaign as template
 
-### Future Security
+### Fraud Detection
 
-- **AUTH-F01**: Content Security Policy reporting endpoint for violation monitoring
-- **AUTH-F02**: Subresource Integrity (SRI) for third-party scripts
+- **FRAUD-01**: User can view fraud flags on campaign participants
 
 ## Out of Scope
 
+Explicitly excluded. Documented to prevent scope creep.
+
 | Feature | Reason |
 |---------|--------|
-| Backend code changes | Backend v2.6 is a separate milestone in the backend repo |
-| New dashboard features | v1.2 is hardening only — no new user-facing features |
-| NextAuth.js migration | Custom JWT auth is the correct pattern for API-consumer dashboard |
-| WebSocket migration | SSE is sufficient; WebSocket adds infrastructure complexity |
-| Full Zod v4 rewrite | Only audit deprecated patterns; complete rewrite deferred |
-| Remove offset pagination support | Transition window required; removal deferred to v1.3 |
+| Status transition UI (Activate/Pause/Complete) | Backend `updateCampaignSchema` does not include `status`; needs dedicated endpoint |
+| Campaign template management | Backend has no template CRUD endpoints for dashboard |
+| Fraud flag display | No dashboard API exposes fraud data |
+| Real-time earnings via SSE | No dedicated SSE stream; React Query with 2min staleTime sufficient |
+| Campaign image/logo upload | No upload endpoint; managed via bot commands |
+| Payment handle display | Backend explicitly nullifies encrypted handles for security |
+| Campaign scheduling UI (startAt/endAt) | Fields not in dashboard Zod schemas; auto-activation is bot-side |
+| Tags/hashtags editing | Fields not in dashboard update schema |
+| Campaign duplication | Needs backend cloning endpoint |
+| View anomaly threshold config | Not in dashboard update schema |
+| Per-post cap editing | Not in dashboard create/update schemas |
+| Grammar check / AI logo toggles | Bot-side features, not dashboard concerns |
 
 ## Traceability
 
@@ -76,31 +87,34 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ERR-01 | Phase 17 | Complete |
-| ERR-02 | Phase 17 | Complete |
-| ERR-03 | Phase 17 | Complete |
-| ERR-04 | Phase 17 | Complete |
-| AUTH-01 | Phase 21 | Complete |
-| AUTH-02 | Phase 19 | Complete |
-| AUTH-03 | Phase 19 | Complete |
-| AUTH-04 | Phase 19 | Complete |
-| SSE-01 | Phase 18 | Complete |
-| SSE-02 | Phase 18 | Complete |
-| SSE-03 | Phase 18 | Complete |
-| SSE-04 | Phase 18 | Complete |
-| PAGE-01 | Phase 20 | Complete |
-| PAGE-02 | Phase 20 | Complete |
-| PAGE-03 | Phase 20 | Complete |
-| PERF-01 | Phase 22 | Complete |
-| PERF-02 | Phase 22 | Complete |
-| PERF-03 | Phase 22 | Complete |
-| AUDIT-01 | Phase 23 | Complete |
+| CAMP-01 | — | Pending |
+| CAMP-02 | — | Pending |
+| CAMP-03 | — | Pending |
+| CAMP-04 | — | Pending |
+| CAMP-05 | — | Pending |
+| CAMP-06 | — | Pending |
+| CAMP-07 | — | Pending |
+| CAMP-08 | — | Pending |
+| CAMP-09 | — | Pending |
+| ANAL-01 | — | Pending |
+| ANAL-02 | — | Pending |
+| PAY-01 | — | Pending |
+| PAY-02 | — | Pending |
+| PAY-03 | — | Pending |
+| PAY-04 | — | Pending |
+| PAY-05 | — | Pending |
+| EXP-01 | — | Pending |
+| EXP-02 | — | Pending |
+| DEBT-01 | — | Pending |
+| DEBT-02 | — | Pending |
+| DEBT-03 | — | Pending |
+| DEBT-04 | — | Pending |
 
 **Coverage:**
-- v1.2 requirements: 19 total
-- Mapped to phases: 19
-- Unmapped: 0 ✓
+- v1.3 requirements: 22 total
+- Mapped to phases: 0
+- Unmapped: 22
 
 ---
-*Requirements defined: 2026-02-22*
-*Last updated: 2026-02-22 after v1.2 roadmap created — all 19 requirements mapped*
+*Requirements defined: 2026-03-08*
+*Last updated: 2026-03-08 after initial definition*

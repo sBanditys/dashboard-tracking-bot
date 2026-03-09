@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import { Trophy, Medal, Award, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useBonusLeaderboard, centsToDisplay } from '@/hooks/use-bonus'
+import { centsToDisplay } from '@/lib/format'
+import { useBonusLeaderboard } from '@/hooks/use-bonus'
 import type { BonusLeaderboardEntry } from '@/types/bonus'
 
 // ─────────────────────────────────────────────────────────────

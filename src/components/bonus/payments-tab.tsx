@@ -4,7 +4,8 @@ import { useState, useRef } from 'react'
 import { Info, ChevronUp, ChevronDown } from 'lucide-react'
 import { Dialog, DialogPanel, DialogTitle, Description } from '@headlessui/react'
 import { cn } from '@/lib/utils'
-import { centsToDisplay, useUpdatePayment, useBulkUpdatePayments, useUpdatePaymentNotes } from '@/hooks/use-bonus'
+import { centsToDisplay } from '@/lib/format'
+import { useUpdatePayment, useBulkUpdatePayments, useUpdatePaymentNotes } from '@/hooks/use-bonus'
 import type { BonusPayment } from '@/types/bonus'
 
 interface PaymentsTabProps {

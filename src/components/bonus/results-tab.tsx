@@ -2,7 +2,8 @@
 
 import { Info, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { centsToDisplay, useBonusResults } from '@/hooks/use-bonus'
+import { centsToDisplay } from '@/lib/format'
+import { useBonusResults } from '@/hooks/use-bonus'
 
 interface ResultsTabProps {
   roundId: string

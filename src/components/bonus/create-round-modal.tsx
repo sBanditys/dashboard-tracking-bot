@@ -8,7 +8,8 @@ import { CheckIcon, ChevronRightIcon, ChevronLeftIcon, AlertTriangleIcon, Loader
 import { cn } from '@/lib/utils'
 import { WeekPicker } from '@/components/bonus/week-picker'
 import { useBrands } from '@/hooks/use-tracking'
-import { useCreateBonusRound, centsToDisplay } from '@/hooks/use-bonus'
+import { centsToDisplay } from '@/lib/format'
+import { useCreateBonusRound } from '@/hooks/use-bonus'
 import type { AccountGroup } from '@/types/tracking'
 
 interface CreateRoundModalProps {

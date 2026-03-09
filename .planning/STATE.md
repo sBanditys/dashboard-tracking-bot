@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Campaign System & Tech Debt
 status: in-progress
-stopped_at: Completed 27-01-PLAN.md
-last_updated: "2026-03-09T22:07:00.000Z"
-last_activity: 2026-03-09 -- Phase 27 plan 01 complete (campaign create form + modal + admin guard)
+stopped_at: Completed 27-02-PLAN.md
+last_updated: "2026-03-09T23:15:00.000Z"
+last_activity: 2026-03-09 -- Phase 27 plan 02 complete (edit/delete campaign with admin guards)
 progress:
   total_phases: 6
   completed_phases: 3
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: 27 of 29 (Campaign Mutations)
-Plan: 1 of 3 in current phase
-Status: Plan 27-01 Complete
-Last activity: 2026-03-09 -- Phase 27 plan 01 complete (campaign create form + modal + admin guard)
+Plan: 2 of 2 in current phase
+Status: Phase 27 Complete
+Last activity: 2026-03-09 -- Phase 27 plan 02 complete (edit/delete campaign with admin guards)
 
-Progress: [██████████] 100% (v1.3 Phase 27) -- 90 total plans complete across all milestones
+Progress: [██████████] 100% (v1.3 Phase 27) -- 91 total plans complete across all milestones
 
 ## Milestones
 
@@ -42,7 +42,7 @@ Progress: [██████████] 100% (v1.3 Phase 27) -- 90 total plan
 ## Performance Metrics
 
 **Velocity (cumulative):**
-- Total plans completed: 90 (v1.0: 47, v1.1: 22, v1.2: 14, v1.3: 7)
+- Total plans completed: 91 (v1.0: 47, v1.1: 22, v1.2: 14, v1.3: 8)
 - Milestones shipped: 3
 
 | Phase | Plan | Duration | Tasks | Files |
@@ -54,6 +54,7 @@ Progress: [██████████] 100% (v1.3 Phase 27) -- 90 total plan
 | 26-01 | Campaign list page + 4 shared components | 2min | 2 | 6 |
 | 26-02 | Campaign detail page + 4 detail components | 2min | 2 | 5 |
 | 27-01 | Campaign create form + modal + admin guard | 3min | 2 | 3 |
+| 27-02 | Edit/delete campaign with admin guards | 3min | 2 | 2 |
 
 *Updated after each plan completion*
 
@@ -64,6 +65,7 @@ Progress: [██████████] 100% (v1.3 Phase 27) -- 90 total plan
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [27-02]: 409 ConflictError closes modal with toast+refresh action; Delete button hidden (not disabled) for non-deletable statuses
 - [27-01]: CampaignForm uses string state for dollar inputs with Math.round conversion on submit; edit mode diffs for minimal PATCH
 - [26-01]: Removed ConnectionIssuesBanner from error state (requires isError+hasData, renders null on initial load failure)
 - [25-01]: camelCase field naming in campaign types to match backend wire format (not snake_case like bonus/tracking)
@@ -90,9 +92,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T22:07:00.000Z
-Stopped at: Completed 27-01-PLAN.md
-Resume file: .planning/phases/27-campaign-mutations/27-01-SUMMARY.md
+Last session: 2026-03-09T23:15:00.000Z
+Stopped at: Completed 27-02-PLAN.md
+Resume file: .planning/phases/27-campaign-mutations/27-02-SUMMARY.md
 
 ---
-*Last updated: 2026-03-09 (27-01 complete)*
+*Last updated: 2026-03-09 (27-02 complete)*

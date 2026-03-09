@@ -2,8 +2,10 @@
 
 import { use, useState, useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
-import { Megaphone, RefreshCw } from 'lucide-react'
+import { Megaphone, Plus, RefreshCw } from 'lucide-react'
+import { useUser } from '@/hooks/use-user'
 import { useCampaignsInfinite } from '@/hooks/use-campaigns'
+import { CreateCampaignModal } from '@/components/campaigns/create-campaign-modal'
 import { GuildTabs } from '@/components/guild-tabs'
 import { CampaignCard } from '@/components/campaigns/campaign-card'
 import { CampaignCardSkeleton } from '@/components/campaigns/campaign-card-skeleton'
@@ -26,6 +28,11 @@ interface PageProps {
 export default function CampaignsPage({ params }: PageProps) {
   const { guildId } = use(params)
   const [status, setStatus] = useState<string>('')
+  const [createOpen, setCreateOpen] = useState(false)
+
+  const { user } = useUser()
+  const guild = user?.guilds?.find((g) => g.id === guildId)
+  const isAdmin = guild !== undefined && (Number(guild.permissions) & 0x8) !== 0
 
   const {
     data,
@@ -52,7 +59,19 @@ export default function CampaignsPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Campaigns</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-white">Campaigns</h1>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-accent-purple hover:bg-accent-purple/90 text-white transition-colors"
+          >
+            <Plus size={16} />
+            Create Campaign
+          </button>
+        )}
+      </div>
 
       <GuildTabs guildId={guildId} />
 
@@ -117,6 +136,12 @@ export default function CampaignsPage({ params }: PageProps) {
           )}
         </>
       )}
+
+      <CreateCampaignModal
+        guildId={guildId}
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+      />
     </div>
   )
 }

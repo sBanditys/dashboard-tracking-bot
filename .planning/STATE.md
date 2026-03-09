@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Campaign System & Tech Debt
 status: executing
-stopped_at: Phase 25 context gathered
-last_updated: "2026-03-09T16:54:21.368Z"
-last_activity: 2026-03-09 -- Phase 24 Plan 02 complete (dead code removal + shared utilities)
+stopped_at: Completed 25-01-PLAN.md
+last_updated: "2026-03-09T17:22:20Z"
+last_activity: 2026-03-09 -- Phase 25 Plan 01 complete (campaign types + proxy routes)
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  total_plans: 4
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface -- independent of bot uptime.
-**Current focus:** Phase 24 - Tech Debt & Shared Utilities
+**Current focus:** Phase 25 - Campaign Types, Proxy Routes & Hooks
 
 ## Current Position
 
-Phase: 24 of 29 (Tech Debt & Shared Utilities)
-Plan: 2 of 2 in current phase (Phase 24 complete)
+Phase: 25 of 29 (Campaign Types, Proxy Routes & Hooks)
+Plan: 1 of 2 in current phase
 Status: Executing
-Last activity: 2026-03-09 -- Phase 24 Plan 02 complete (dead code removal + shared utilities)
+Last activity: 2026-03-09 -- Phase 25 Plan 01 complete (campaign types + proxy routes)
 
-Progress: [██████████] 100% (v1.3 Phase 24) -- 85 total plans complete across all milestones
+Progress: [████████░░] 75% (v1.3 Phase 25) -- 86 total plans complete across all milestones
 
 ## Milestones
 
@@ -42,13 +42,14 @@ Progress: [██████████] 100% (v1.3 Phase 24) -- 85 total plan
 ## Performance Metrics
 
 **Velocity (cumulative):**
-- Total plans completed: 85 (v1.0: 47, v1.1: 22, v1.2: 14, v1.3: 2)
+- Total plans completed: 86 (v1.0: 47, v1.1: 22, v1.2: 14, v1.3: 3)
 - Milestones shipped: 3
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 24-01 | Error envelope cleanup + auth redirect | 2min | 2 | 3 |
 | 24-02 | Dead code removal + shared utilities | 2min | 2 | 9 |
+| 25-01 | Campaign types + proxy routes | 2min | 2 | 10 |
 
 *Updated after each plan completion*
 
@@ -59,6 +60,7 @@ Progress: [██████████] 100% (v1.3 Phase 24) -- 85 total plan
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [25-01]: camelCase field naming in campaign types to match backend wire format (not snake_case like bonus/tracking)
 - [24-02]: No re-export from use-bonus.ts -- clean break, all consumers import centsToDisplay from @/lib/format directly
 - [24-01]: Inlined isNewEnvelope type guard into extractBackendError (single use, clearer inline)
 - [24-01]: Silent redirect to / on invalid callbackUrl (no toast per user decision)
@@ -79,9 +81,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T16:54:21.365Z
-Stopped at: Phase 25 context gathered
-Resume file: .planning/phases/25-campaign-types-proxy-routes-hooks/25-CONTEXT.md
+Last session: 2026-03-09T17:22:20Z
+Stopped at: Completed 25-01-PLAN.md
+Resume file: .planning/phases/25-campaign-types-proxy-routes-hooks/25-01-SUMMARY.md
 
 ---
-*Last updated: 2026-03-09 (24-02 complete, Phase 24 done)*
+*Last updated: 2026-03-09 (25-01 complete)*

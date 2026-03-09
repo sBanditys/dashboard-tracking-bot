@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Campaign System & Tech Debt
-status: completed
-stopped_at: Phase 26 context gathered
-last_updated: "2026-03-09T20:26:42.889Z"
-last_activity: 2026-03-09 -- Phase 25 complete (campaign hooks with 12 hooks + query key factory)
+status: in-progress
+stopped_at: Completed 26-01-PLAN.md
+last_updated: "2026-03-09T20:52:00.000Z"
+last_activity: 2026-03-09 -- Phase 26 plan 01 complete (campaign list page with infinite scroll + 4 components)
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 6
+  completed_plans: 5
   percent: 100
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface -- independent of bot uptime.
-**Current focus:** Phase 25 - Campaign Types, Proxy Routes & Hooks
+**Current focus:** Phase 26 - Campaign List & Detail
 
 ## Current Position
 
-Phase: 25 of 29 (Campaign Types, Proxy Routes & Hooks) -- COMPLETE
-Plan: 2 of 2 in current phase
-Status: Phase Complete
-Last activity: 2026-03-09 -- Phase 25 complete (campaign hooks with 12 hooks + query key factory)
+Phase: 26 of 29 (Campaign List & Detail)
+Plan: 1 of 2 in current phase
+Status: Plan 01 Complete
+Last activity: 2026-03-09 -- Phase 26 plan 01 complete (campaign list page with infinite scroll + 4 components)
 
-Progress: [██████████] 100% (v1.3 Phase 25) -- 87 total plans complete across all milestones
+Progress: [████████░░] 83% (v1.3 Phase 26) -- 88 total plans complete across all milestones
 
 ## Milestones
 
@@ -42,7 +42,7 @@ Progress: [██████████] 100% (v1.3 Phase 25) -- 87 total plan
 ## Performance Metrics
 
 **Velocity (cumulative):**
-- Total plans completed: 87 (v1.0: 47, v1.1: 22, v1.2: 14, v1.3: 4)
+- Total plans completed: 88 (v1.0: 47, v1.1: 22, v1.2: 14, v1.3: 5)
 - Milestones shipped: 3
 
 | Phase | Plan | Duration | Tasks | Files |
@@ -51,6 +51,7 @@ Progress: [██████████] 100% (v1.3 Phase 25) -- 87 total plan
 | 24-02 | Dead code removal + shared utilities | 2min | 2 | 9 |
 | 25-01 | Campaign types + proxy routes | 2min | 2 | 10 |
 | 25-02 | Campaign hooks (12 hooks + key factory) | 2min | 1 | 1 |
+| 26-01 | Campaign list page + 4 shared components | 2min | 2 | 6 |
 
 *Updated after each plan completion*
 
@@ -61,6 +62,7 @@ Progress: [██████████] 100% (v1.3 Phase 25) -- 87 total plan
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [26-01]: Removed ConnectionIssuesBanner from error state (requires isError+hasData, renders null on initial load failure)
 - [25-01]: camelCase field naming in campaign types to match backend wire format (not snake_case like bonus/tracking)
 - [24-02]: No re-export from use-bonus.ts -- clean break, all consumers import centsToDisplay from @/lib/format directly
 - [24-01]: Inlined isNewEnvelope type guard into extractBackendError (single use, clearer inline)
@@ -84,9 +86,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T20:26:42.887Z
-Stopped at: Phase 26 context gathered
-Resume file: .planning/phases/26-campaign-list-detail/26-CONTEXT.md
+Last session: 2026-03-09T20:52:00.000Z
+Stopped at: Completed 26-01-PLAN.md
+Resume file: .planning/phases/26-campaign-list-detail/26-01-SUMMARY.md
 
 ---
-*Last updated: 2026-03-09 (25-02 complete)*
+*Last updated: 2026-03-09 (26-01 complete)*

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Campaign System & Tech Debt
 status: executing
-stopped_at: Completed 25-01-PLAN.md
-last_updated: "2026-03-09T17:22:20Z"
-last_activity: 2026-03-09 -- Phase 25 Plan 01 complete (campaign types + proxy routes)
+stopped_at: Completed 25-02-PLAN.md
+last_updated: "2026-03-09T17:42:16.316Z"
+last_activity: 2026-03-09 -- Phase 25 complete (campaign hooks with 12 hooks + query key factory)
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
-  percent: 75
+  completed_plans: 4
+  percent: 100
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 
 ## Current Position
 
-Phase: 25 of 29 (Campaign Types, Proxy Routes & Hooks)
-Plan: 1 of 2 in current phase
-Status: Executing
-Last activity: 2026-03-09 -- Phase 25 Plan 01 complete (campaign types + proxy routes)
+Phase: 25 of 29 (Campaign Types, Proxy Routes & Hooks) -- COMPLETE
+Plan: 2 of 2 in current phase
+Status: Phase Complete
+Last activity: 2026-03-09 -- Phase 25 complete (campaign hooks with 12 hooks + query key factory)
 
-Progress: [████████░░] 75% (v1.3 Phase 25) -- 86 total plans complete across all milestones
+Progress: [██████████] 100% (v1.3 Phase 25) -- 87 total plans complete across all milestones
 
 ## Milestones
 
@@ -42,7 +42,7 @@ Progress: [████████░░] 75% (v1.3 Phase 25) -- 86 total plans
 ## Performance Metrics
 
 **Velocity (cumulative):**
-- Total plans completed: 86 (v1.0: 47, v1.1: 22, v1.2: 14, v1.3: 3)
+- Total plans completed: 87 (v1.0: 47, v1.1: 22, v1.2: 14, v1.3: 4)
 - Milestones shipped: 3
 
 | Phase | Plan | Duration | Tasks | Files |
@@ -50,6 +50,7 @@ Progress: [████████░░] 75% (v1.3 Phase 25) -- 86 total plans
 | 24-01 | Error envelope cleanup + auth redirect | 2min | 2 | 3 |
 | 24-02 | Dead code removal + shared utilities | 2min | 2 | 9 |
 | 25-01 | Campaign types + proxy routes | 2min | 2 | 10 |
+| 25-02 | Campaign hooks (12 hooks + key factory) | 2min | 1 | 1 |
 
 *Updated after each plan completion*
 
@@ -68,6 +69,8 @@ Recent decisions affecting current work:
 - [v1.3 roadmap]: Extract centsToDisplay to shared src/lib/format.ts before campaign payout work (Pitfall 9)
 - [v1.3 roadmap]: Campaign status transition UI explicitly out of scope (backend lacks status in updateCampaignSchema)
 - [v1.3 roadmap]: Mixed pagination: campaigns/analytics use cursor, payouts/history use offset -- do not unify
+- [Phase 25]: Optimistic updates only for single mark-paid (not bulk) per user decision
+- [Phase 25]: ConflictError on 409 not toasted -- consuming component handles via instanceof check
 
 ### Pending Todos
 
@@ -81,9 +84,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T17:22:20Z
-Stopped at: Completed 25-01-PLAN.md
-Resume file: .planning/phases/25-campaign-types-proxy-routes-hooks/25-01-SUMMARY.md
+Last session: 2026-03-09T17:42:16.314Z
+Stopped at: Completed 25-02-PLAN.md
+Resume file: None
 
 ---
-*Last updated: 2026-03-09 (25-01 complete)*
+*Last updated: 2026-03-09 (25-02 complete)*

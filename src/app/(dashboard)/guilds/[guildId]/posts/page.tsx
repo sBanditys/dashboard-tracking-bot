@@ -26,6 +26,7 @@ import { ExportDropdown } from '@/components/export/export-dropdown'
 import { TypeToConfirmModal } from '@/components/ui/type-to-confirm-modal'
 import { BulkResultsToast } from '@/components/bulk/bulk-results-toast'
 import { EmptyState, NoResults } from '@/components/empty-state'
+import { ConnectionIssuesBanner } from '@/components/connection-issues-banner'
 import { ScrollToTop } from '@/components/scroll-to-top'
 import { ScrollToBottom } from '@/components/scroll-to-bottom'
 import { downloadCsv } from '@/lib/csv-download'
@@ -258,6 +259,8 @@ export default function PostsPage({ params }: PageProps) {
             </header>
 
             <GuildTabs guildId={guildId} />
+
+            <ConnectionIssuesBanner isError={isError} hasData={!!data} />
 
             <FilterBar>
                 <SearchInput

@@ -93,7 +93,10 @@ Plans:
   2. Campaign TypeScript types cover all backend response shapes (list, detail, analytics, payouts, payout history, export)
   3. A `campaignKeys` query key factory exists with narrow invalidation scopes (no cross-contamination with bonus or tracking caches)
   4. Cursor-based hooks (campaign list, analytics) and offset-based hooks (payouts, history) both return data when called against real backend endpoints
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 25-01-PLAN.md — Campaign types, Zod schemas, and 9 proxy route files
+- [ ] 25-02-PLAN.md — Campaign hooks file with query key factory and 12 hooks
 
 ### Phase 26: Campaign List & Detail
 **Goal**: Users can browse and inspect campaigns with full read-only visibility into status, budget, rates, and participant counts
@@ -170,7 +173,7 @@ Phases execute in numeric order: 24 → 25 → 26 → 27 → 28 → 29
 | 22. Performance Optimization | v1.2 | 3/3 | Complete | 2026-03-04 |
 | 23. Security Audit Report | v1.2 | 1/1 | Complete | 2026-03-04 |
 | 24. Tech Debt & Shared Utilities | 2/2 | Complete    | 2026-03-09 | - |
-| 25. Campaign Types, Proxy Routes & Hooks | v1.3 | 0/0 | Not started | - |
+| 25. Campaign Types, Proxy Routes & Hooks | v1.3 | 0/2 | Not started | - |
 | 26. Campaign List & Detail | v1.3 | 0/0 | Not started | - |
 | 27. Campaign Mutations | v1.3 | 0/0 | Not started | - |
 | 28. Analytics & Payouts | v1.3 | 0/0 | Not started | - |
@@ -178,4 +181,4 @@ Phases execute in numeric order: 24 → 25 → 26 → 27 → 28 → 29
 
 ---
 *Created: 2026-01-24*
-*Last updated: 2026-03-09 after Phase 24 planning*
+*Last updated: 2026-03-09 after Phase 25 planning*

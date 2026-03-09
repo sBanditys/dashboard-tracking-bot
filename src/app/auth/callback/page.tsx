@@ -125,9 +125,13 @@ function AuthCallbackContent() {
           ? sessionStorage.getItem('auth_callback_url')
           : null
 
-        if (callbackUrl) {
+        if (callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')) {
           sessionStorage.removeItem('auth_callback_url')
           router.replace(callbackUrl)
+        } else if (callbackUrl) {
+          // Invalid callback URL (potential open redirect), clean up and go home
+          sessionStorage.removeItem('auth_callback_url')
+          router.replace('/')
         } else {
           router.replace('/')
         }

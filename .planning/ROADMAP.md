@@ -62,7 +62,7 @@ Full details: `milestones/v1.2-ROADMAP.md`
 
 - [x] **Phase 24: Tech Debt & Shared Utilities** - Close v1.2 tech debt and extract shared utilities needed by campaign work (completed 2026-03-09)
 - [x] **Phase 25: Campaign Types, Proxy Routes & Hooks** - Data layer foundation: TypeScript types, 12 proxy routes, React Query hooks (completed 2026-03-09)
-- [ ] **Phase 26: Campaign List & Detail** - Read-only campaign UI with cursor pagination, status filtering, and detail view
+- [x] **Phase 26: Campaign List & Detail** - Read-only campaign UI with cursor pagination, status filtering, and detail view (completed 2026-03-09)
 - [ ] **Phase 27: Campaign Mutations** - Create, edit, and delete campaign forms with validation and status guards
 - [ ] **Phase 28: Analytics & Payouts** - Participant earnings table, payout management with mark-paid and bulk operations
 - [ ] **Phase 29: Campaign Export** - Campaign data export with format/scope selection and SSE progress tracking
@@ -177,7 +177,7 @@ Phases execute in numeric order: 24 → 25 → 26 → 27 → 28 → 29
 | 23. Security Audit Report | v1.2 | 1/1 | Complete | 2026-03-04 |
 | 24. Tech Debt & Shared Utilities | 2/2 | Complete    | 2026-03-09 | - |
 | 25. Campaign Types, Proxy Routes & Hooks | 2/2 | Complete    | 2026-03-09 | - |
-| 26. Campaign List & Detail | 1/2 | In Progress|  | - |
+| 26. Campaign List & Detail | 2/2 | Complete   | 2026-03-09 | - |
 | 27. Campaign Mutations | v1.3 | 0/0 | Not started | - |
 | 28. Analytics & Payouts | v1.3 | 0/0 | Not started | - |
 | 29. Campaign Export | v1.3 | 0/0 | Not started | - |

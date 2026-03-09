@@ -1,322 +1,317 @@
-# Pitfalls Research
+# Domain Pitfalls
 
-**Domain:** Next.js 14 Dashboard — v1.2 Security Audit & Optimization
-**Researched:** 2026-02-22
-**Confidence:** HIGH (codebase inspected, WebSearch verified patterns, OWASP cross-referenced)
-
----
+**Domain:** Campaign management UI, payout workflows, analytics, and data export added to existing SaaS dashboard
+**Researched:** 2026-03-06
+**Confidence:** HIGH (based on direct codebase analysis of 27,231 LOC existing patterns)
 
 ## Critical Pitfalls
 
-Mistakes that cause security regression, data exposure, or require rewrites.
+Mistakes that cause rewrites, data corruption, or major UX regressions.
 
 ---
 
-### Pitfall 1: CSRF Breaks During HMAC Alignment Window
+### Pitfall 1: Query Key Collision Between Campaign and Bonus Caches
 
-**What goes wrong:**
-The backend (Phase 37) switches from plain double-submit cookie comparison to HMAC-signed token validation. The dashboard still sends the plain `_csrf_token` value in `X-CSRF-Token`. During the window when the backend accepts HMAC only, every dashboard mutation fails with 403 — but the dashboard interprets this as a bad CSRF token and silently retries (see `fetch-with-retry.ts` line 256), burning the one CSRF retry, then surfaces "Session error, please refresh the page." Mutations are dead until deploy is coordinated.
+**What goes wrong:** Campaign payouts and bonus payments share conceptual similarity (mark-paid, bulk mark-paid, payment status). If campaign query keys overlap with bonus query keys, mutations in one system invalidate or corrupt the other system's cache. For example, a broad `invalidateQueries({ queryKey: ['guild', guildId] })` after a campaign payout would also blow away all bonus round detail, leaderboard, and results caches.
 
-**Why it happens:**
-The dashboard's `getCsrfToken()` reads `document.cookie` for `_csrf_token` and sends it verbatim. The proxy (`proxy.ts` line 203) sets a new `crypto.randomUUID()` on every request — a plain string. When the backend starts computing `HMAC(secret, sessionId + timestamp)` and comparing against that, the plain UUID never matches. There is no versioned handshake; the first post-backend-deploy request fails.
+**Why it happens:** The existing bonus system uses a `bonusKeys` factory with `['guild', guildId, 'bonus', ...]` prefix. The existing `useAddAccount` hook uses `queryClient.invalidateQueries({ queryKey: ['guild', guildId] })` in its `onSuccess` -- a broad pattern that sweeps across all guild queries. If campaign mutations copy this broad pattern, every campaign mutation will invalidate bonus, analytics, tracking, and export caches. Conversely, if bonus mutations sweep broadly, they will reset campaign state.
 
-**How to avoid:**
-Align in this exact order:
-1. Backend Phase 37 deploys with HMAC validation but also accepts the plain token for a 24-48 hour grace period (backward-compatible dual-check).
-2. Dashboard updates `proxy.ts` `setCsrfCookie()` to write an HMAC-signed token using the same INTERNAL_API_SECRET already in `process.env`.
-3. Dashboard deploys.
-4. Backend removes plain-token fallback in a follow-up deploy.
+**Consequences:** Users see stale data in bonus tabs after campaign mutations. Infinite scroll lists reset unexpectedly. Optimistic updates in bonus payments get reverted by campaign invalidation sweeps.
 
-Never flip the backend to HMAC-only before the dashboard ships the matching generator. Use INTERNAL_API_SECRET (already forwarded in `backendFetch`) to compute the HMAC so no new secret is needed.
+**Prevention:**
+- Create a `campaignKeys` factory mirroring the `bonusKeys` pattern (see `use-bonus.ts` lines 22-31)
+- All campaign mutations must use narrow invalidation: `['guild', guildId, 'campaigns', ...]` not `['guild', guildId]`
+- Exception: only use `['guild', guildId]` (broad) when a mutation changes guild-level counters (e.g., active campaign count displayed on overview page)
+- Audit all existing mutation `onSettled`/`onSuccess` handlers to ensure they do not accidentally sweep campaign caches when campaigns are added
 
-**Warning signs:**
-- All non-auth mutation routes returning 403 after a backend deploy.
-- `fetchWithRetry` logs: "CSRF retry" on every POST/PATCH/DELETE.
-- No 401s (auth is fine) but mutations broken.
+**Detection:** After implementing campaign mutations, test: create a campaign payout, then immediately check if bonus round detail is still cached (not refetching). If the bonus tab re-fetches, query key collision exists.
 
-**Phase to address:** CSRF HMAC alignment phase — must be first deployed task with backward-compatibility window. Backend deploys before dashboard with grace period.
+**Phase to address:** Campaign hooks implementation (the very first campaign hook file)
 
 ---
 
-### Pitfall 2: Cursor Pagination Breaks Existing React Query Cache Keys
+### Pitfall 2: Status Lifecycle Not Modeled as a State Machine
 
-**What goes wrong:**
-The current `useAccountsInfinite` and `usePostsInfinite` use `page` numbers as `pageParam` and `pageParam` is `1` on first load. After migrating to cursor pagination, the backend returns `{ nextCursor: "opaque_string" }` instead of `{ pagination: { page, total_pages } }`. The existing `getNextPageParam` reads `lastPage.pagination.page >= lastPage.pagination.total_pages` — which will be `undefined >= undefined = false`, meaning infinite scroll never stops. New pages are fetched indefinitely until the backend returns empty items.
+**What goes wrong:** The campaign status lifecycle (Draft -> Active -> Paused -> SubmissionsClosed -> Completed) has valid transitions enforced by the backend. If the frontend renders all status action buttons regardless of current state, users see confusing 400/422 errors when clicking "Complete" on a Draft campaign. Worse, if optimistic updates assume the transition succeeds, the UI shows a completed campaign that is actually still a draft until server correction.
 
-Additionally, React Query's existing cache under keys like `['guild', guildId, 'accounts', 'infinite', ...]` now holds mixed data: old offset-pagination shaped pages merged with new cursor-shaped pages after partial migration. Stale cache entries can surface to users until `gcTime` expires (5 minutes by default).
+**Why it happens:** The bonus system has a simpler lifecycle (unevaluated -> evaluated) with a single action button. Developers copy this "one action" pattern without modeling the 5-state machine. Frontend-only validation gets out of sync with backend rules when new transitions are added.
 
-**Why it happens:**
-The `Pagination` type in `src/types/tracking.ts` has `page`, `limit`, `total`, `total_pages` — none of which exist in a cursor response. The switch is a shape change, not an additive change, so TypeScript will not warn if the type is updated but `getNextPageParam` is not.
+**Consequences:** 400 errors on invalid transitions confuse users. Optimistic updates on invalid transitions show wrong status until server correction. Users lose trust in the UI.
 
-**How to avoid:**
-1. Create a new type `CursorPagination { nextCursor: string | null; hasNextPage: boolean }` alongside the old `Pagination` type.
-2. Update `getNextPageParam` to: `(lastPage) => lastPage.pagination.nextCursor ?? undefined`.
-3. On deploy, call `queryClient.removeQueries({ queryKey: ['guild', guildId, 'accounts', 'infinite'] })` to evict stale offset-shaped cache entries. Do this in a version-bump effect or by bumping the cache key to include a `v2` sentinel: `['guild', guildId, 'accounts', 'infinite', 'v2', ...]`.
-4. The backend must maintain the old offset response shape for the `/accounts` and `/posts` endpoints for at least one deploy cycle (behind a feature flag or API version header), or deploy dashboard and backend simultaneously in a coordinated window.
+**Prevention:**
+- Define a `VALID_TRANSITIONS` map in the campaign types file:
+  ```typescript
+  const VALID_TRANSITIONS: Record<CampaignStatus, CampaignStatus[]> = {
+    Draft: ['Active'],
+    Active: ['Paused', 'SubmissionsClosed'],
+    Paused: ['Active', 'SubmissionsClosed'],
+    SubmissionsClosed: ['Completed'],
+    Completed: [],
+  }
+  ```
+- UI buttons are derived from `VALID_TRANSITIONS[campaign.status]` -- only valid next states render as actions
+- Do NOT use optimistic updates for status transitions -- wait for server confirmation, then invalidate
+- Show a loading indicator on the status badge during transition
 
-**Warning signs:**
-- Infinite scroll fetches but never stops loading (spinner stays visible).
-- React Query DevTools shows `hasNextPage: true` even on last page.
-- Console errors: `Cannot read properties of undefined (reading 'page')`.
+**Detection:** Enumerate all 5x5 = 25 state pairs. The frontend should make exactly 6 valid transitions possible and 19 impossible (plus 5 self-transitions that are no-ops).
 
-**Phase to address:** Cursor pagination migration phase. Backend must deploy first with both shapes supported, then dashboard updates types and hooks.
-
----
-
-### Pitfall 3: SSR Cookie Forwarding Sends Wrong Cookie Name to Backend
-
-**What goes wrong:**
-The dashboard uses `auth_token` and `refresh_token` as cookie names client-side (set by proxy.ts), but the backend's `requireDashboardAuth` middleware may read `dashboard_at` or `dashboard_rt` (configurable via env vars, as shown in proxy.ts lines 10-11). When SSR routes are added that call the backend server-side, they forward `cookie: auth_token=...` but the backend only finds `dashboard_at` or `dashboard_rt`, causing 401 on SSR-rendered pages even for authenticated users.
-
-**Why it happens:**
-The dashboard uses its own cookie namespace (`auth_token`) in the Next.js cookie store, and converts to the backend's namespace (`dashboard_at`) only in the `backendFetch` Authorization header. If SSR starts forwarding raw cookies to the backend instead of extracting and re-sending as Bearer tokens, the name mismatch causes auth failure. The `dashboard-session-cookies.ts` parsing logic handles the backend's `Set-Cookie` response shape, but does not map the dashboard's cookie names back to the backend's expected names.
-
-**How to avoid:**
-SSR-to-backend calls must always use `Authorization: Bearer {token}` — never raw cookie forwarding. The `backendFetch` wrapper already does this correctly for API routes. Do not bypass `backendFetch` in Server Components or use `cookie: request.headers.get('cookie')` forwarding patterns. If SSR cookie forwarding is added per QUAL-05/F-14, write a dedicated `ssrBackendFetch(cookies)` helper that extracts `auth_token` from the cookie store and sends it as a Bearer header, not as a forwarded cookie string.
-
-**Warning signs:**
-- SSR-rendered pages show 401 for authenticated users.
-- Backend logs show requests without Authorization header from dashboard IP.
-- Works on client-side navigation but breaks on full page refresh.
-
-**Phase to address:** SSR cookie forwarding phase — must write `ssrBackendFetch` helper with explicit Bearer header injection, not raw cookie forwarding.
+**Phase to address:** Campaign types definition + campaign detail UI
 
 ---
 
-### Pitfall 4: Error Envelope Migration Creates Silent Data Corruption in Error Sanitizer
+### Pitfall 3: Campaign Export Not Updating Shared Export Quota Cache
 
-**What goes wrong:**
-The backend Phase 35 changes error responses from `{ error: "string", code: "string" }` to `{ error: { code: "string", message: "string" } }`. The `error-sanitizer.ts` currently parses `parsed.message || parsed.error || ''` where `parsed.error` is expected to be a string. After the backend change, `parsed.error` is an object `{ code, message }`. The `isMessageSafe()` check receives `[object Object]` as the message — which is 15 characters, passes the length check, has no unsafe patterns, and gets forwarded to the client as the error text. Users see "[object Object]" in toast messages instead of a real error.
+**What goes wrong:** The existing export system (`use-exports.ts`) has a quota mechanism. `useCreateExport` returns `{ record, quota }` and immediately updates quota in all cached export history queries via `queryClient.setQueriesData` (lines 84-89). Campaign exports share the same guild-level quota on the backend. If campaign exports use a separate code path that does not update the shared quota cache, the UI shows stale quota counts -- the user thinks they have 3 exports remaining when they actually have 1.
 
-Additionally, the `FRIENDLY_MESSAGES` lookup uses `parsed.code`, but after the envelope change, `code` is nested inside `parsed.error.code` — the lookup always misses, so known error codes (`GUILD_NOT_FOUND`, `unverified_email`) fall through to generic contextual messages. The `unverified_email` redirect in `fetchWithRetry` (line 293) stops working because `body?.code` is no longer at the top level.
+**Why it happens:** Developers build campaign export as a standalone feature without realizing the quota is guild-wide. A new `useCreateCampaignExport` that does not call `setQueriesData` on the same `['guild', guildId, 'exports']` key will leave quota out of sync.
 
-**Why it happens:**
-The `sanitizeError()` function has implicit assumptions about the backend's error shape. There is no runtime shape validation (no Zod schema) on the incoming backend error body. A shape change is entirely opaque until runtime.
+**Consequences:** Users exceed their export quota and get unexpected 429 errors. The quota display in the export history tab shows incorrect remaining count. Failed exports do not refresh the quota display.
 
-**How to avoid:**
-1. Add a Zod schema for the backend error envelope that accepts both shapes during migration:
-   ```typescript
-   const BackendErrorSchema = z.union([
-     z.object({ error: z.string(), code: z.string().optional() }),          // legacy
-     z.object({ error: z.object({ code: z.string(), message: z.string() }) }) // v2
-   ])
-   ```
-2. Normalize to a common shape in `sanitizeError()` before any message extraction.
-3. The `unverified_email` code lookup in `fetchWithRetry` must handle both `body?.code` and `body?.error?.code`.
-4. Deploy backend with backward-compatible responses (send both shapes for one cycle) before migrating the sanitizer.
+**Prevention:**
+- If the backend campaign export endpoint returns the same `{ export, quota }` shape, reuse the existing `useCreateExport` hook by parameterizing the endpoint URL
+- If the campaign export is a separate backend endpoint, ensure its mutation's `onSuccess` updates the same `['guild', guildId, 'exports']` cache with fresh quota data
+- Reuse the `useExportProgress` SSE pattern directly for campaign export progress -- do not create a separate SSE hook
+- The proxy route for campaign export must be created and must call `sanitizeError()` with contextual message like "export campaign data"
 
-**Warning signs:**
-- Users see "[object Object]" in error toasts.
-- `unverified_email` redirect stops firing — users with unverified email see generic 403 instead of redirect.
-- Known error codes stop triggering friendly messages.
+**Detection:** After implementing campaign export: create a regular export, then a campaign export. Does the quota counter in the export history tab decrement for both?
 
-**Phase to address:** Error envelope migration phase — sanitizer must be updated before or simultaneously with backend deploy, with dual-shape handling.
+**Phase to address:** Campaign export implementation
 
 ---
 
-### Pitfall 5: Rate Limit Global Cooldown Blocks SSR-Initiated Requests Across Tabs
+### Pitfall 4: Race Condition Between Individual and Bulk Payout Mutations
 
-**What goes wrong:**
-`fetchWithRetry` maintains `globalRateLimitUntil` as a module-level variable. When the backend returns 429 on one request, all subsequent requests in the same browser tab session are blocked until the cooldown expires. This is by design for client-side tabs — but it has an unintended consequence: if a 429 is triggered by a background React Query refetch (e.g., bot status polling), the cooldown blocks the user from performing any foreground mutation (adding an account, saving settings) for up to 15 minutes. The user sees generic "Too many requests" on unrelated actions.
+**What goes wrong:** The bonus system solved this exact problem for individual vs. bulk payment updates (see `useUpdatePayment` with optimistic updates at lines 273-308 and `useBulkUpdatePayments` at lines 352-395). If campaign payouts copy only one pattern without the other, concurrent individual and bulk payout mutations will overwrite each other's cache state.
 
-When the backend migrates its rate limiter to Valkey, new rate limit windows, bucket sizes, and Retry-After values may change. If Valkey's rate limiter returns a different `Retry-After` format (e.g., milliseconds instead of seconds), `parseRetryAfter()` may misinterpret the value and set a 1000x longer cooldown.
+**Why it happens:** Developer implements individual payout with optimistic update (flipping paid status in cache), then implements bulk payout as a simple mutation. User clicks "Mark Paid" on one participant, then immediately clicks "Mark All Paid." The individual optimistic update gets overwritten by the bulk mutation's `onSettled` invalidation, or vice versa.
 
-**Why it happens:**
-The global cooldown is intentional to prevent thundering herd, but it does not discriminate between endpoint types. A 429 on a read endpoint (bot status stream) poisons the write path for all mutations. The `skipGlobalCooldown` option exists but is not used on read-only queries.
+**Consequences:** Payment status flickers. Optimistic UI shows paid, then unpaid, then paid again. User marks same payment twice because UI is inconsistent.
 
-**How to avoid:**
-1. Audit all `useQuery` hooks that use `fetchWithRetry` for read-only polling (bot status, export progress) — add `config: { skipGlobalCooldown: true }` so their 429s don't block mutations.
-2. Add a test for the `parseRetryAfter()` function with the specific format the Valkey-backed rate limiter will emit. Verify this before the backend rate limiter migration deploys.
-3. Handle 503 (backend rate limiter unavailable) separately from 429 (rate limited) — 503 should trigger the existing server error retry logic, not a rate limit cooldown.
+**Prevention:**
+- Individual campaign payout mutations must use the full optimistic update pattern from `useUpdatePayment`: `onMutate` (cancel queries, snapshot, optimistic set), `onError` (rollback), `onSettled` (invalidate)
+- Bulk payout mutations must NOT use optimistic updates (outcome is too complex to predict) -- use `onSuccess` invalidation only, matching `useBulkUpdatePayments` pattern
+- Both must cancel in-flight queries for the same campaign detail key before mutating
+- Both must share the same query key for the campaign detail so `onSettled` invalidation from either mutation forces server truth
 
-**Warning signs:**
-- User reports: "I can't save anything after refreshing a lot."
-- All mutations failing with RateLimitError even on fresh session.
-- `globalRateLimitUntil` in module scope persists far longer than expected.
+**Detection:** Rapidly click individual "Mark Paid" then "Mark All Paid" within 500ms. The UI should never show inconsistent state after both mutations settle.
 
-**Phase to address:** Rate limit 503/429 resilience phase — audit `skipGlobalCooldown` usage across all read hooks, validate Retry-After format against Valkey output before migration.
+**Phase to address:** Campaign payout hooks
 
 ---
 
-### Pitfall 6: SSE Proxy Route Loses Client Disconnect Signal on Vercel
+### Pitfall 5: Missing Error Sanitization on Campaign Proxy Routes
 
-**What goes wrong:**
-The SSE proxy in `status/stream/route.ts` passes `signal: request.signal` to `backendFetch`. When the client disconnects (tab close, navigation), the AbortError propagates from the backend fetch, the route catches it, and returns 499. However, on Vercel's Node.js runtime, `request.signal` may not fire reliably when the client closes the connection mid-stream if the route is inside a Streaming Response pipeline. The backend SSE connection can remain open orphaned for the full Vercel function timeout (up to 60s on Pro, 10s on Hobby), keeping the backend connection alive and counting against the backend's connection pool.
+**What goes wrong:** Every backend endpoint accessed by the dashboard goes through a Next.js API route that acts as a proxy. Each proxy route calls `sanitizeError()` on non-OK responses and `internalError()` in catch blocks (see `bonus/rounds/route.ts` for the pattern). There are 10 campaign backend endpoints. If any campaign proxy route skips error sanitization, raw backend errors -- including Prisma stack traces, database column names, internal error codes -- leak to the client.
 
-Additionally, the `useSSE` hook does `es.close()` on visibility change (tab hidden), but if the tab-hidden event fires while a reconnect timeout is scheduled, the scheduled timeout will call `connect()` after close. The `retryTimeoutRef` is cleared when the tab hides, but if the tab is shown again within `reconnectCooldown` (5000ms), a second `connect()` call can race with the cooldown-deferred connect, creating two simultaneous EventSource instances pointing to the same URL.
+**Why it happens:** Creating 10 proxy routes is tedious. Developer copies the `backendFetch` call but forgets `sanitizeError()` in one route, or uses the wrong context string, or misses the catch block. Or developer creates a single catch-all proxy and loses per-route error context.
 
-**Why it happens:**
-`EventSource` does not provide a close confirmation — there is no way to know from the client that the server received the close. The visibility change handler resets state but does not guard against pending timers that were set just before the hide event. Two EventSource instances on the same URL creates two streams, each receiving the same messages and calling `onMessage` twice.
+**Consequences:** Security violation -- internal error details exposed to client (violates the v1.2 security audit). Error messages are unhelpful ("PrismaClientKnownRequestError" instead of "Failed to load campaigns").
 
-**How to avoid:**
-1. In `useSSE`, add a `isClosedRef` guard: set it to `true` in the visibility-hidden handler, check it at the top of `connect()` before creating a new EventSource.
-2. Add a generation counter (`connectGenerationRef`) — increment on each `connect()` call, and in `es.onerror` / `es.onmessage`, check that the current generation matches before processing.
-3. On the server route, ensure the backend fetch signal is forwarded correctly. If `request.signal` is unreliable in streaming mode, add a server-side keepalive heartbeat timeout (e.g., 45s) that closes the backend stream if no heartbeat is received.
+**Prevention:**
+- Create a checklist of all 10 campaign proxy routes before implementation. Each must have:
+  1. `sanitizeError(response.status, data, '[context]')` for non-OK backend responses
+  2. `internalError('[context]')` in the catch block
+  3. `Cache-Control: no-store` header on GET responses
+  4. Correct HTTP method handlers (GET, POST, PATCH, DELETE as needed)
+- Context strings must be descriptive: "load campaigns", "create campaign", "update campaign status", "mark campaign payout paid", "export campaign data", etc.
+- Add new backend error codes to `FRIENDLY_MESSAGES` in `error-sanitizer.ts` if the campaign backend introduces any (e.g., `CAMPAIGN_NOT_FOUND`, `INVALID_STATUS_TRANSITION`)
 
-**Warning signs:**
-- Backend logs show SSE connections staying open after client disconnects.
-- React console: SSE message handlers called twice per event.
-- Vercel function duration logs showing long-lived connections that should have closed.
+**Detection:** Hit each campaign proxy route with an invalid guildId. The response should contain a sanitized error like "Campaign not found", never a raw Prisma error or stack trace.
 
-**Phase to address:** SSE lifecycle hardening phase. The dual-instance race is the immediate risk; server-side orphan connections are a cost and stability risk.
-
----
-
-### Pitfall 7: React Query Infinite Query Partial Cache After Cursor Migration
-
-**What goes wrong:**
-After the cursor pagination migration, `useInfiniteQuery` stores all fetched pages in memory. If a user loads 10 pages of accounts (500 items at 50/page) and then a mutation invalidates `['guild', guildId, 'accounts', 'infinite']`, React Query refetches all 10 pages sequentially via its built-in `refetchPage` mechanism. With 36+ proxy routes each adding latency, this triggers 10 sequential backend fetches, each with its own JWT validation round-trip. The UI shows a loading spinner for potentially 10-20 seconds while refetching.
-
-Additionally, `staleTime: 2 * 60 * 1000` on infinite queries means that adding a new account (which calls `queryClient.invalidateQueries` on `['guild', guildId, 'accounts']`) does not invalidate the infinite variant (`['guild', guildId, 'accounts', 'infinite', ...]`) because the key prefix only partially matches and `invalidateQueries` default is `exact: false` — but the infinite key's first 3 segments match the non-infinite key, so invalidation actually does cascade. Verify this is intentional.
-
-**Why it happens:**
-React Query's `useInfiniteQuery` refetch behavior fetches all currently-loaded pages on invalidation, not just the first page. This is by design but surprises developers who assume it will only refresh the visible viewport.
-
-**How to avoid:**
-1. On mutations that affect paginated lists, use `queryClient.resetQueries` instead of `invalidateQueries` for the infinite query key. `resetQueries` resets to page 1 only, avoiding N-page sequential refetch.
-2. Alternatively, use `refetchPage: (page, index) => index === 0` to only refetch the first page on invalidation.
-3. Set a higher `staleTime` (5 minutes) for infinite account/post lists — these don't change frequently. Use shorter `staleTime` only for queries that change in real time.
-
-**Warning signs:**
-- After deleting an account, the accounts list shows a long spinner.
-- Network tab shows N sequential requests to `/api/guilds/{id}/accounts` after a mutation.
-- React Query DevTools shows `isFetching: true` on multiple pages of the same query.
-
-**Phase to address:** React Query optimization phase. Default invalidation behavior is surprising and expensive at scale.
+**Phase to address:** Proxy routes (must be implemented before campaign hooks)
 
 ---
 
-## Technical Debt Patterns
-
-Shortcuts that seem reasonable but create long-term problems.
-
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Forwarding full query string from client to backend without validation | Simple proxy — no parsing needed | Any query param injection passes through; backend must validate all params | Only acceptable with server-side param allowlist |
-| `crypto.randomUUID()` as plain CSRF token | Stateless, no server storage needed | Broken by HMAC migration — UUID token passes a string check but not an HMAC check | Never after HMAC migration |
-| `globalRateLimitUntil` module-level variable | Prevents thundering herd across all requests | Blocks unrelated mutations when read queries are rate limited | Never — refactor to per-endpoint cooldowns or add `skipGlobalCooldown` to all reads |
-| `parseRetryAfter()` parsing both seconds and HTTP date | Handles both backend formats | Breaks silently if backend emits milliseconds instead of seconds | Never — add explicit format documentation and test |
-| Error sanitizer fallback to contextual generic message | Good UX for unexpected errors | Masks new error codes the backend adds; code review doesn't catch new codes | Only with a backend-error-code registry/test |
+## Moderate Pitfalls
 
 ---
 
-## Integration Gotchas
+### Pitfall 6: GuildTabs Overflow When Adding Campaigns Tab
 
-Common mistakes when connecting dashboard to backend.
+**What goes wrong:** The `GuildTabs` component renders 5 horizontal tabs: Overview, Brands, Accounts, Posts, Analytics. Adding a "Campaigns" tab makes 6. On mobile viewports (< 640px), 6 tabs overflow horizontally. The component uses `flex gap-4 -mb-px` with no `overflow-x-auto`, so the rightmost tab(s) get clipped or wrap to a second line, breaking the visual design.
 
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| CSRF HMAC alignment | Deploy backend HMAC-only, then dashboard | Deploy backend with dual-check (HMAC + plain), then dashboard HMAC, then remove plain |
-| Cursor pagination | Update `getNextPageParam` only in one hook | Update `Pagination` type, ALL hooks, AND cache key eviction atomically |
-| Error envelope v2 | Update `sanitizeError` for new shape only | Handle both shapes; update `fetchWithRetry`'s `body?.code` lookup too |
-| SSE stream proxy | Trust `request.signal` to abort backend | Add server-side heartbeat timeout as a secondary abort mechanism |
-| Rate limiter Valkey migration | Assume `Retry-After` format is unchanged | Write unit test with actual Valkey response headers before migration |
-| Backend cookie names vs dashboard cookie names | Forward raw cookie string to backend | Always extract `auth_token` and send as `Authorization: Bearer` header |
+**Prevention:**
+- Add `overflow-x-auto` to the nav container in `guild-tabs.tsx` when adding the campaigns tab
+- Optionally add `scrollbar-hide` (Tailwind plugin) for cleaner mobile appearance
+- Test at 375px viewport width (iPhone SE) with all 6 tabs visible
+- Consider the tab order: Campaigns is a top-level feature, so place it after Analytics or before Posts based on usage frequency
 
----
-
-## Performance Traps
-
-Patterns that work at small scale but fail as usage grows.
-
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| Infinite query refetching all pages on mutation | 10-20s spinner after any write operation | Use `resetQueries` or `refetchPage: index === 0` on mutation invalidation | After ~5 pages loaded (250+ items) |
-| No `staleTime` differentiation by data volatility | Real-time data is stale, static data refetches unnecessarily | Set `staleTime: 0` for SSE-backed data, `staleTime: 5m` for slowly-changing lists | At 10+ concurrent users with frequent mutations |
-| SSE reconnecting on every visibility change without cooldown | Rapid tab switch creates connection storm to backend | Cooldown exists in `useSSE` but verify `lastConnectTimeRef` is not reset on close | After ~10 rapid tab switches |
-| Full `queryClient.invalidateQueries` with broad key (e.g., `['guild', guildId]`) | Every query for a guild refetches simultaneously after any mutation | Use scoped keys — invalidate only the specific resource that changed | When guild has 10+ active queries loaded |
-| Proxy routes parsing full response body for all error paths | High memory usage on large backend error responses | Parse only on non-2xx; stream 2xx responses directly | When backend returns large error bodies (unlikely but possible) |
+**Phase to address:** Campaign list UI (when the tab is first added to guild-tabs.tsx)
 
 ---
 
-## Security Mistakes
+### Pitfall 7: Using Wrong Pagination Pattern for Campaign List
 
-Domain-specific security issues beyond general web security.
+**What goes wrong:** The codebase has two cursor pagination patterns:
+1. **Accumulated state** (`useBonusRounds`): manual `useState` for accumulated items, `setCursor`, `loadMore` -- older pattern from v1.1
+2. **useInfiniteQuery** (`useAccountsInfinite`/`usePostsInfinite`): React Query's built-in infinite query with `getNextPageParam` -- newer pattern from v1.2 cursor migration
 
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| CSRF token matching logic without timing-safe compare | Timing attack to guess token byte-by-byte | Use `crypto.timingSafeEqual()` for HMAC comparison; plain UUID is fine with `===` since UUID length is fixed |
-| Forwarding raw cookies to backend without extracting Bearer token | Cookie name mismatch causes auth bypass edge cases; forwards all dashboard cookies including CSRF | Always convert `auth_token` cookie → `Authorization: Bearer` before backend call |
-| Nonce freshness: same nonce reused across middleware re-renders | Breaks CSP strict-dynamic for subsequent navigation | Each request generates its own nonce in `proxy.ts` — verify this holds under Vercel edge caching |
-| Forwarding `X-Forwarded-For` from client to backend unchanged | Client can spoof IP, bypassing IP-based rate limits | The proxy already extracts only the first XFF entry (client IP), not the full chain — verify this on Valkey migration |
-| Error sanitizer allowing safe-looking messages that leak context | Backend error message passes `isMessageSafe()` but contains business logic details | Review `LONG_RATE_LIMIT_THRESHOLD_MS` and similar internal constant values — they must not appear in messages |
-| SSE endpoint not validating `auth_token` on reconnect | After token expiry, stale EventSource continues receiving events | The SSE proxy validates `auth_token` on connect only; if token expires mid-stream, backend should close the stream and client should treat 401 on reconnect as session expiry |
+If campaigns use pattern 1 but the component expects pattern 2's `data.pages` structure (or vice versa), rendering breaks silently.
 
----
+**Prevention:**
+- Use `useInfiniteQuery` (pattern 2) for campaigns. It is the newer, preferred pattern. The accumulated state pattern in `useBonusRounds` was an earlier implementation before cursor migration
+- Match the backend response shape: `{ campaigns: [...], next_cursor: string | null, has_more: boolean }`
+- Include `retry: 2` and handle 400/422 cursor-invalid errors the same way `useAccountsInfinite` does (lines 67-69)
+- Include `maxPages: 10` to prevent memory bloat (matching `useAnalyticsActivity`)
+- Data persists across tab switches because React Query cache preserves loaded pages (unlike the accumulated state pattern which resets on unmount)
 
-## UX Pitfalls
-
-Common user experience mistakes during this migration.
-
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| Showing "Too many requests" toast when background query triggers rate limit | User thinks their action failed when it was a background poll | Use `skipGlobalCooldown: true` on all background polling; only block user-initiated actions |
-| Cursor pagination removes total count display ("Page 2 of 47") | Users lose orientation in large lists | Replace with "Load more" UX or "Showing N items" counter using the backend's `total` field if still provided alongside cursor |
-| Error envelope migration surfaces "[object Object]" during transition | Users see confusing error text on all failures | Ship sanitizer dual-shape support before backend deploys; zero user impact window |
-| Rate limit toast fires on page load (from cached rate limit state) | User sees "Too many requests" on fresh session | `globalRateLimitUntil` is module-level and persists across navigations but not page refreshes — acceptable; do not persist to sessionStorage |
-| SSE reconnecting shows "Disconnected" flash on tab refocus | Perceived reliability degradation | During the reconnect cooldown, show "Reconnecting..." not "Disconnected" — only show "Disconnected" after retry exhaustion |
+**Phase to address:** Campaign hooks implementation
 
 ---
 
-## "Looks Done But Isn't" Checklist
+### Pitfall 8: Wrong staleTime for Active vs. Completed Campaign Analytics
 
-Things that appear complete but are missing critical pieces.
+**What goes wrong:** The existing `useAnalytics` hook uses 5-minute `staleTime` because "analytics don't change rapidly." Campaign analytics (participant earnings, post counts) change more frequently during an active campaign. Using the same 5-minute staleTime means users do not see updated participant counts for 5 minutes after a new submission.
 
-- [ ] **CSRF HMAC alignment:** Proxy generates HMAC token — but verify the HMAC key is the same secret the backend uses to validate. If keys differ, 100% of mutations fail silently.
-- [ ] **Cursor pagination:** `getNextPageParam` updated — but verify `Pagination` type is updated, old cache entries are evicted, and infinite scroll stop condition is correct (`nextCursor === null` not `page >= total_pages`).
-- [ ] **Error envelope migration:** `sanitizeError()` handles new shape — but verify `fetchWithRetry`'s `unverified_email` redirect uses `body?.error?.code` not just `body?.code`.
-- [ ] **Rate limit resilience:** 429 handling reviewed — but verify 503 (rate limiter backend down) takes a different code path than 429 (rate limited), and that 503 triggers retry logic, not rate-limit cooldown.
-- [ ] **SSE hardening:** Cleanup on unmount exists — but verify no two EventSource instances for the same URL can exist simultaneously after rapid hide/show tab cycles.
-- [ ] **SSR cookie forwarding:** Server Component calls backend — but verify it uses `Authorization: Bearer` not raw cookie forwarding, and that the cookie name mapping is explicit.
-- [ ] **React Query optimization:** Stale times reviewed — but verify `resetQueries` (not `invalidateQueries`) is used for infinite queries after mutations.
+**Prevention:**
+- Campaign analytics for active campaigns should use 2-minute staleTime (matching the normalized 2min standard from v1.2 performance work)
+- Campaign analytics for completed campaigns can use 5-minute staleTime (data is frozen)
+- Implement conditional staleTime based on campaign status:
+  ```typescript
+  staleTime: campaign.status === 'Completed' ? 5 * 60 * 1000 : 2 * 60 * 1000
+  ```
+- Do NOT add `refetchInterval` polling for campaign analytics -- SSE is only for exports, campaigns do not have a dedicated SSE stream
 
----
-
-## Recovery Strategies
-
-When pitfalls occur despite prevention, how to recover.
-
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| CSRF broken after HMAC deploy | HIGH — all mutations blocked | Revert backend to dual-check mode; hotfix dashboard HMAC generator; redeploy in order |
-| Cursor pagination cache corruption | LOW — client-side only | Add `v2` sentinel to cache key in hotfix; `queryClient.clear()` is nuclear option |
-| Error envelope breaks unverified_email redirect | MEDIUM — security UX regression | Hotfix `fetchWithRetry` to check both `body?.code` and `body?.error?.code`; no backend change needed |
-| Global rate limit cooldown blocks user | LOW — resolves on page refresh | Page refresh resets module state; immediate fix is to narrow `skipGlobalCooldown` to reads |
-| SSE dual-instance messages | LOW — UX glitch only | Add generation counter to `useSSE`; deploy as non-breaking patch |
-| SSR forwards wrong cookies, 401 on page load | HIGH — auth broken for SSR pages | Revert SSR change to client-side fetch; fix `ssrBackendFetch` helper before retry |
+**Phase to address:** Campaign analytics hooks
 
 ---
 
-## Pitfall-to-Phase Mapping
+### Pitfall 9: centsToDisplay Duplicated Instead of Extracted to Shared Utility
 
-How roadmap phases should address these pitfalls.
+**What goes wrong:** The bonus system exports `centsToDisplay()` from `use-bonus.ts` (line 40-42). Campaign payouts also deal with cents. Developers either duplicate this function in `use-campaigns.ts` (code duplication) or import it from `use-bonus.ts` (cross-domain dependency). Either way, one system's currency formatting can diverge from the other.
 
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| CSRF HMAC alignment break (Pitfall 1) | CSRF HMAC alignment phase — first deploy | E2E test: all mutations succeed after backend Phase 37 deploys with dual-check active |
-| Cursor pagination cache corruption (Pitfall 2) | Cursor pagination migration phase | React Query DevTools: infinite scroll stops on `nextCursor === null`; no "[object Object]" in pagination |
-| SSR cookie name mismatch (Pitfall 3) | SSR cookie forwarding phase | Integration test: full page refresh on authenticated route returns 200, not 401 |
-| Error envelope shape mismatch (Pitfall 4) | Error envelope migration phase | Unit test `sanitizeError()` with both `{ error: "string" }` and `{ error: { code, message } }` shapes |
-| Rate limit global cooldown interference (Pitfall 5) | Rate limit 503/429 resilience phase | Test: trigger 429 on bot-status poll, verify account mutation succeeds immediately after |
-| SSE dual-instance race (Pitfall 6) | SSE lifecycle hardening phase | Manual test: rapidly switch tab visibility 10x, verify single EventSource in DevTools Network |
-| Infinite query N-page refetch (Pitfall 7) | React Query cache optimization phase | Network tab: after delete mutation, only 1 accounts request fires (not N for loaded pages) |
+**Prevention:**
+- Move `centsToDisplay()` to a shared utility file (e.g., `src/lib/format.ts`) before building campaign payouts
+- Both bonus and campaign hooks import from the shared location
+- This is a small pre-requisite refactor that prevents the campaign module from depending on the bonus module
+
+**Phase to address:** Pre-requisite refactor before campaign payout work
+
+---
+
+### Pitfall 10: Mutation Buttons Rendered for Non-Admin Users
+
+**What goes wrong:** The bonus system uses `requireGuildAdmin` middleware on the backend for mutations (create round, update payments). Campaign mutations (create, edit, status change, mark payout) also require admin permission. If the frontend renders mutation buttons to non-admin users, they get 403 errors on every action.
+
+**Prevention:**
+- The dashboard JWT contains guild permissions. Gate all campaign mutation UI (create, edit, status change, mark paid, bulk mark paid) behind admin permission check on the frontend
+- Read-only views (campaign list, campaign detail, analytics) should be accessible to all guild members
+- Check how the existing bonus "Create Round" button is conditionally rendered based on admin status and follow the same pattern
+- The 403 error from the backend should still show a friendly message via `sanitizeError` as a safety net, but the button should not render for non-admins
+
+**Phase to address:** Campaign UI components (all phases that render mutation buttons)
+
+---
+
+### Pitfall 11: Platform Rate Configuration Form Underestimated
+
+**What goes wrong:** Campaign create/edit forms include "platform rate configuration" -- per-platform payment rates (e.g., Instagram: $50/post, TikTok: $30/post). This is significantly more complex than the bonus round creation form (which only has `bonus_amount_cents` and a targets array). Developers underestimate the form state complexity: dynamic platform fields, currency input parsing, validation, and the create vs. edit form state divergence.
+
+**Prevention:**
+- Do NOT use uncontrolled inputs for currency fields -- cents conversion on blur is error-prone and creates jarring UX
+- Store all amounts in cents internally, display in dollars with `centsToDisplay()` (extracted to shared utility per Pitfall 9)
+- Use a controlled form pattern with explicit state for each platform rate
+- Validate before submit: all rates must be positive integers (cents), at least one platform rate must be set
+- Wire the `use-unsaved-changes.ts` hook for the edit form (already exists in the codebase)
+- Test edge cases: $0.01 (1 cent minimum), $999,999.99 (large amounts), negative values, non-numeric input, empty strings
+
+**Phase to address:** Campaign create/edit form
+
+---
+
+## Minor Pitfalls
+
+---
+
+### Pitfall 12: Campaign Export SSE Using Wrong SSE Pattern
+
+**What goes wrong:** The codebase has two SSE patterns:
+1. **`useExportProgress`** (`use-exports.ts` lines 164-199): Simple `EventSource` with `onmessage` parsing, closes on error. Short-lived stream for export progress.
+2. **`useSSE`** (`use-sse.ts`): Complex hook with heartbeat timeout, generation counter, visibility-change reconnection. Long-lived stream for bot status.
+
+Campaign export progress should use pattern 1 (simple EventSource) since export SSE streams are short-lived. Using pattern 2 adds unnecessary complexity and reconnection logic that fights with the naturally short-lived export stream.
+
+**Prevention:** Copy the `useExportProgress` pattern for campaign export progress. Do not introduce `useSSE` complexity for export progress.
+
+**Phase to address:** Campaign export UI
+
+---
+
+### Pitfall 13: Heavy Campaign Components Not Dynamically Imported
+
+**What goes wrong:** The codebase uses `next/dynamic` for `CreateRoundModal`, `LeaderboardTab`, and `EmailConfigSection` to reduce initial bundle size (per v1.2 performance optimization). Campaign create/edit forms with platform rate configuration and campaign analytics charts will be similarly heavy. Not lazy-loading them increases the initial bundle for the campaigns page.
+
+**Prevention:** Use `next/dynamic` for campaign create/edit modals and campaign analytics chart components. The campaign list view itself should NOT be dynamically imported (it is the primary content of the campaigns tab).
+
+**Phase to address:** Campaign UI component assembly
+
+---
+
+### Pitfall 14: Missing Audit Log Invalidation After Campaign Mutations
+
+**What goes wrong:** The existing system writes all state changes to `DashboardAuditLog` via backend middleware. Campaign mutations (create, status change, payout) also generate audit log entries on the backend. If campaign mutation hooks do not invalidate the audit log query, the audit log tab shows stale data -- users do not see their recent campaign actions until they manually refresh.
+
+**Prevention:**
+- After campaign mutations that the user would expect to see in audit trail (create, status change, mark paid), add `queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'audit-log'] })` to `onSuccess`
+- This matches the pattern used by other mutation hooks that trigger audit log writes
+- Do NOT create a separate audit mechanism for campaigns -- reuse the existing `use-audit-log.ts` hook and query keys
+
+**Phase to address:** Campaign hooks (add audit log invalidation to mutation onSuccess handlers)
+
+---
+
+### Pitfall 15: Campaign Detail Page Not Handling 404 for Deleted/Inaccessible Campaigns
+
+**What goes wrong:** A campaign can be in any state including Completed. If a user bookmarks a campaign URL and the campaign is later deleted (or the user loses guild access), the detail page shows a generic error boundary instead of a helpful "Campaign not found" message with a link back to the campaigns list.
+
+**Prevention:**
+- Campaign detail query should handle 404 explicitly: show a dedicated "Campaign not found" empty state with a "Back to Campaigns" link
+- Follow the pattern of how the guild detail page handles 404 (guild not found / no access)
+- Do not let 404 bubble to the error boundary -- it is not an "error," it is expected state
+
+**Phase to address:** Campaign detail UI
+
+---
+
+## Phase-Specific Warnings
+
+| Phase Topic | Likely Pitfall | Mitigation |
+|-------------|---------------|------------|
+| Proxy routes | Missing sanitizeError on some routes (P5) | Checklist of all 10 endpoints; template from bonus/rounds/route.ts |
+| Campaign types | Status lifecycle not modeled as state machine (P2) | Define VALID_TRANSITIONS map in types file |
+| Pre-requisite refactor | centsToDisplay duplication (P9) | Extract to src/lib/format.ts before campaign work begins |
+| Campaign hooks | Query key collision with bonus (P1) | campaignKeys factory with narrow invalidation |
+| Campaign hooks | Wrong pagination pattern (P7) | Use useInfiniteQuery, not accumulated state |
+| Campaign hooks | Missing audit log invalidation (P14) | Add audit-log invalidation to mutation onSuccess |
+| Campaign list UI | Tab overflow on mobile (P6) | Add overflow-x-auto to GuildTabs |
+| Campaign detail UI | 404 handling (P15) | Dedicated empty state, not error boundary |
+| Campaign detail UI | Race condition in payouts (P4) | Copy full optimistic update pattern from useUpdatePayment |
+| Campaign create/edit | Currency input complexity (P11) | Cents-based state, controlled inputs, thorough validation |
+| Campaign analytics | Wrong staleTime for active campaigns (P8) | Conditional staleTime based on campaign status |
+| Campaign export | Quota cache not updated (P3) | Reuse or mirror useCreateExport quota update pattern |
+| Campaign export | Wrong SSE pattern (P12) | Use useExportProgress pattern, not useSSE |
+| All mutation UIs | Non-admin sees mutation buttons (P10) | Gate behind admin permission check from JWT |
+| Bundle optimization | Heavy components not lazy-loaded (P13) | next/dynamic for create/edit modals and analytics charts |
+| Tech debt phase | Old envelope support removal | Verify no campaign routes depend on old extractErrorCode path in fetch-with-retry.ts |
 
 ---
 
 ## Sources
 
-- OWASP CSRF Prevention Cheat Sheet (Signed Double-Submit Cookie): https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html
-- csrf-csrf library (HMAC double-submit implementation): https://github.com/Psifi-Solutions/csrf-csrf
-- TanStack Query Infinite Queries docs: https://tanstack.com/query/latest/docs/framework/react/guides/infinite-queries
-- React Query staleTime vs gcTime: https://www.codemzy.com/blog/react-query-cachetime-staletime
-- Next.js CSP and nonce discussion (GitHub #54907): https://github.com/vercel/next.js/discussions/54907
-- Next.js SSR cookie handling: https://nextjs.org/docs/app/api-reference/functions/cookies
-- SSE memory leak in Express: https://github.com/expressjs/express/issues/2248
-- rate-limit-redis (Valkey support): https://github.com/express-rate-limit/rate-limit-redis
-- API backward compatibility (Google AIP-180): https://google.aip.dev/180
-- Cursor vs offset pagination: https://developer.zendesk.com/documentation/api-basics/pagination/comparing-cursor-pagination-and-offset-pagination/
-- Codebase inspection: src/lib/fetch-with-retry.ts, src/hooks/use-sse.ts, src/lib/server/error-sanitizer.ts, src/proxy.ts, src/hooks/use-tracking.ts
+- Direct codebase analysis of existing patterns:
+  - `src/hooks/use-bonus.ts` -- payment lifecycle, optimistic updates, query key factory, centsToDisplay
+  - `src/hooks/use-exports.ts` -- export quota management, SSE progress pattern
+  - `src/hooks/use-tracking.ts` -- cursor pagination with useInfiniteQuery, optimistic deletes
+  - `src/hooks/use-analytics.ts` -- analytics staleTime patterns (5min for stable data)
+  - `src/lib/fetch-with-retry.ts` -- CSRF injection, rate limit handling, retry logic
+  - `src/lib/server/error-sanitizer.ts` -- error sanitization for proxy routes, FRIENDLY_MESSAGES map
+  - `src/lib/api-error.ts` -- client-side error parsing
+  - `src/components/guild-tabs.tsx` -- tab navigation (5 tabs, no overflow handling)
+  - `src/proxy.ts` -- middleware CSRF validation, auth flow
+  - `src/app/api/guilds/[guildId]/bonus/rounds/route.ts` -- proxy route template
+  - `src/types/bonus.ts` -- type definitions for payment/payout domain
+- Project context from `.planning/PROJECT.md` -- v1.3 scope, 10 backend endpoints, status lifecycle
 
 ---
-*Pitfalls research for: Next.js 14 Dashboard — v1.2 Security Audit & Optimization (adding cursor pagination, SSR cookie forwarding, CSRF HMAC, rate limit resilience, error envelope migration, SSE hardening, React Query optimization)*
-*Researched: 2026-02-22*
+*Pitfalls research for: v1.3 Campaign System & Tech Debt -- campaign management UI, payout workflows, analytics, data export*
+*Researched: 2026-03-06*

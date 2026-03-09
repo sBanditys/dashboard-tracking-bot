@@ -1,426 +1,320 @@
-# Stack Research
+# Technology Stack
 
-**Domain:** Next.js 16 dashboard — v1.2 Security Audit & Optimization additions
-**Researched:** 2026-02-22
+**Project:** Dashboard v1.3 — Campaign System & Tech Debt
+**Researched:** 2026-03-06
 **Confidence:** HIGH
 
 ---
 
-## Context: What Already Exists
+## Verdict: No New Dependencies Required
 
-The dashboard already ships:
-
-| Already Installed | Version | Purpose |
-|-------------------|---------|---------|
-| next | 16.1.6 | App Router framework |
-| @tanstack/react-query | 5.90.20 | Server state (useInfiniteQuery already in use) |
-| zod | 4.3.6 | Runtime validation (already at v4 — breaking from v3) |
-| @next/bundle-analyzer | 16.1.6 | Webpack bundle analysis (already wired in next.config) |
-| react-intersection-observer | 10.0.2 | Infinite scroll sentinel |
-| tailwindcss | 3.4.1 | Styling |
-| playwright | 1.58.2 | E2E tests |
-| sonner | 2.0.7 | Toast notifications |
-| lucide-react | 0.564.0 | Icons |
-| recharts | 3.7.0 | Charts |
-
-**jose is NOT installed.** The project currently uses raw `atob()` to decode JWT payloads in proxy.ts and has no HMAC signing capability.
-
-**eventsource-parser is NOT installed.** SSE uses native EventSource API.
-
-The five v1.2 feature areas requiring new or changed stack decisions:
-1. CSRF HMAC alignment (backend Phase 37)
-2. Cursor pagination migration (backend Phase 39)
-3. SSR cookie forwarding / async APIs (QUAL-05/F-14)
-4. Rate limit + 503 resilience (already implemented in fetchWithRetry — verify 503 coverage)
-5. Bundle/performance optimization (cold starts, React Query cache tuning)
+The existing stack covers every capability needed for campaign management UI, analytics, payout workflows, and campaign export. This milestone is a feature build on established patterns, not a technology expansion.
 
 ---
 
-## Recommended Stack Additions
+## Current Stack (Validated, DO NOT Change)
 
-### 1. CSRF HMAC Token Signing
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Next.js | ^16 (App Router) | Framework, SSR, API proxy routes |
+| React | ^19 | UI rendering |
+| @tanstack/react-query | ^5.90.20 | Server state, caching, mutations, infinite scroll |
+| Tailwind CSS | ^3.4.1 | Styling (custom components, no library) |
+| Recharts | ^3.7.0 | Charts (BarChart, AreaChart already used for analytics) |
+| @headlessui/react | ^2.2.9 | Accessible modals, selects, transitions |
+| react-day-picker | ^9.13.0 | Date selection (already used in WeekPicker, DateRangePicker) |
+| date-fns | ^4.1.0 | Date formatting and manipulation |
+| lucide-react | ^0.564.0 | Icons |
+| sonner | ^2.0.7 | Toast notifications |
+| zod | ^4.3.6 | Client-side form validation |
+| react-intersection-observer | ^10.0.2 | Infinite scroll trigger |
+| clsx | ^2.1.1 | Conditional classnames |
 
-**Decision: Use native `crypto.subtle` (Web Crypto API) — no new library.**
+---
 
-The existing double-submit CSRF uses `crypto.randomUUID()` generating an unkeyed random string compared cookie-to-header. Backend Phase 37 aligns to HMAC-signed tokens: the token encodes `timestamp.signature` where the signature is `HMAC-SHA256(secret, timestamp)`.
+## What Each Campaign Feature Reuses
 
-`crypto.subtle` is available in Next.js 16 Edge Runtime (proxy.ts runs there) without any import. The pattern:
+### Campaign List (cursor pagination + status filtering)
 
-```typescript
-// In proxy.ts — no new imports needed
-async function signCsrfToken(secret: string): Promise<string> {
-  const timestamp = Date.now().toString();
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  const sig = await crypto.subtle.sign(
-    'HMAC',
-    key,
-    new TextEncoder().encode(timestamp)
-  );
-  const sigHex = Array.from(new Uint8Array(sig))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-  return `${timestamp}.${sigHex}`;
-}
+**Reuses:** Accumulated state pattern from `use-bonus.ts` (not `useInfiniteQuery`), cursor pagination from v1.2, status filter from `RoundFilter` pattern, `react-intersection-observer` for Load More.
 
-async function verifyCsrfToken(token: string, secret: string): Promise<boolean> {
-  const [timestamp, sig] = token.split('.');
-  if (!timestamp || !sig) return false;
-  // Replay protection: reject tokens older than 24h
-  if (Date.now() - Number(timestamp) > 86_400_000) return false;
-  const expected = await signCsrfToken(secret); // re-derive for comparison
-  // Use constant-time comparison via crypto.subtle.verify
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['verify']
-  );
-  return crypto.subtle.verify(
-    'HMAC',
-    key,
-    hexToUint8Array(sig),
-    new TextEncoder().encode(timestamp)
-  );
-}
+**Why not useInfiniteQuery:** The codebase deliberately uses manual accumulated state with cursor tracking (see `useBonusRounds`). This pattern gives finer control over filter resets and cache invalidation after mutations. Campaign list follows the same pattern for consistency.
+
+**Backend contract:**
+```
+GET /guilds/:guildId/campaigns?cursor=X&limit=20&status=Active
+Response: { campaigns: [...], nextCursor: string | null }
 ```
 
-**Why not `jose`:** jose v6 (current: 6.1.3) is a JWT library. CSRF HMAC signing does not need a JWT format. `crypto.subtle` is already in scope, zero bundle cost, and constant-time `verify()` is built in.
+### Campaign Detail + Analytics
 
-**Why not `csrf-csrf` or similar packages:** These Express-oriented libraries do not work in Next.js Edge Runtime without shimming. The pattern is simple enough to implement inline with Web Crypto API.
+**Reuses:** `useQuery` with `enabled` flag pattern (see `useBonusRoundDetail`), `Recharts` BarChart for participant earnings visualization, `centsToDisplay` helper for currency formatting, cursor pagination for participant list.
 
-**Confidence:** HIGH — `crypto.subtle` availability in Next.js Edge Runtime confirmed via official Next.js Edge Runtime API reference and multiple production examples (Vercel Slack signature verification guide).
+**Charts needed:** Horizontal BarChart for top earners by participant (pattern exists in `analytics-chart.tsx`). No new chart types required.
+
+**Backend contract:**
+```
+GET /guilds/:guildId/campaigns/:campaignId
+Response: { campaign: {..., _count: {posts, participants}}, totals: {totalEarnedCents, participantCount} }
+
+GET /guilds/:guildId/campaigns/:campaignId/analytics?cursor=X&limit=20
+Response: { participants: [{...participant, postCount}], nextCursor }
+```
+
+### Campaign Create/Edit Forms
+
+**Reuses:** `useMutation` with `onSuccess` invalidation pattern, `zod` for client-side validation (mirrors backend `createCampaignSchema`/`updateCampaignSchema`), `@headlessui/react` Dialog for modal forms, `sonner` toast for success/error feedback.
+
+**Form validation approach:** Use Zod schemas matching backend schemas. The codebase does NOT use a form library (no react-hook-form, no formik) -- it uses controlled components with local state and Zod `.safeParse()` on submit. Follow this pattern.
+
+**Backend contract:**
+```
+POST /guilds/:guildId/campaigns
+Body: { name, budgetCents, perUserCapCents, instagramRateCents?, tiktokRateCents?, youtubeRateCents? }
+Response: { campaign }  (201)
+
+PATCH /guilds/:guildId/campaigns/:campaignId
+Body: { name?, budgetCents?, perUserCapCents?, rules?, instagramRateCents?, ... }
+Response: { campaign }
+```
+
+### Campaign Status Lifecycle
+
+**Reuses:** Status badge component pattern (similar to export status badges), confirmation dialogs via Headless UI Dialog, mutation hooks with status-guard error handling (409 Conflict for invalid transitions).
+
+**Status transitions the UI must enforce:**
+- Draft -> Active (activate)
+- Active -> Paused (pause)
+- Paused -> Active (resume)
+- Active/Paused -> SubmissionsClosed (close submissions)
+- SubmissionsClosed -> Completed (complete)
+- Draft/Completed -> DELETE (soft delete, 409 for others)
+
+**IMPORTANT:** The backend `updateCampaignSchema` does NOT currently include `status` as a valid field. Status transitions may need a dedicated backend endpoint or the schema needs extending. This is a **blocker** that must be resolved before building the status lifecycle UI.
+
+### Payout Management
+
+**Reuses:** Optimistic update pattern from `useUpdatePayment` in `use-bonus.ts`, bulk mutation pattern from `useBulkUpdatePayments`, `use-selection.ts` hook for checkbox multi-select, offset-based pagination (payouts endpoint uses page/pageSize, not cursors).
+
+**Key difference from bonus payouts:** Campaign payouts use offset pagination (page/pageSize) unlike cursor-based pattern used elsewhere. The `useExportHistory` hook already demonstrates this pattern.
+
+**Backend contract:**
+```
+GET  /guilds/:guildId/campaigns/:campaignId/payouts?page=0&pageSize=20&userId=X
+Response: { participants: [{discordUserId, totalEarnedCents, isPaid, paidAt, paidAmountCents, paymentMethod}], pagination: {page, pageSize, totalCount} }
+
+POST /guilds/:guildId/campaigns/:campaignId/payouts/mark-paid
+Body: { discordUserId }
+Response: { success, amountCents, paymentMethod }
+
+POST /guilds/:guildId/campaigns/:campaignId/payouts/bulk
+Body: { userIds: string[] }  (max 50)
+Response: { success, paidCount, totalCents }
+
+GET  /guilds/:guildId/campaigns/:campaignId/payouts/history?page=1&pageSize=20&userId=X
+Response: { entries: [{id, timestamp, actorId, discordUserId, amountCents, paymentMethod}], pagination }
+```
+
+### Campaign Export
+
+**Reuses:** `useCreateExport` pattern for triggering async exports, `useExportProgress` SSE pattern for real-time progress, `useExportStatus` polling pattern as fallback.
+
+The backend campaign export uses the same `DataExport` table as general exports (via `createExport` with `exportType: 'campaign'`), so the existing SSE progress endpoint works without changes.
+
+**Backend contract:**
+```
+POST /guilds/:guildId/campaigns/:campaignId/export
+Body: { format: 'csv' | 'xlsx', scope: 'payment' | 'full' }
+Response: { exportId, status: 'queued' }  (202)
+
+GET  /guilds/:guildId/campaigns/:campaignId/export/:exportId
+Response: { exportId, status, downloadUrl?, expiresAt?, error? }
+```
 
 ---
 
-### 2. Cursor Pagination — useInfiniteQuery Migration
+## Libraries Explicitly NOT Needed
 
-**Decision: No new library. Migrate existing `useAccounts` and `usePosts` from `useQuery` (offset-based) to `useInfiniteQuery` with cursor.**
+| Library | Why NOT |
+|---------|---------|
+| react-hook-form | Codebase uses controlled components + Zod. Adding a form library for 2 forms (create/edit campaign) adds bundle size and breaks consistency with all other forms in the app. |
+| @tanstack/react-table | Campaign analytics is a simple list with 4-5 columns. Existing table patterns (bonus payments, audit log) use plain `<table>` with Tailwind. No sorting/resizing/virtualization needed. |
+| chart.js / visx / nivo | Recharts ^3.7.0 already handles all needed chart types. Campaign analytics needs BarChart (earnings by participant) which already exists. |
+| react-select | Headless UI Listbox already handles status filter dropdowns. Used throughout the app. |
+| xlsx / exceljs | Export is server-side (backend worker). Dashboard only triggers and tracks progress. |
+| dayjs / moment | date-fns ^4.1.0 already installed and used everywhere. |
+| @dnd-kit | No drag-and-drop needed for campaign management. |
+| framer-motion | Headless UI Transition handles all animation needs. Bundle cost not justified. |
 
-React Query v5 `useInfiniteQuery` (already installed at 5.90.20) supports cursor pagination natively. The v5 API requires `initialPageParam` (required, replaces `getNextPageParam` default), and `getNextPageParam` returns the cursor from the last page.
+---
+
+## New Patterns to Establish
+
+### 1. Status Transition Mutations
+
+The campaign status lifecycle (5 states, directional transitions) is new to the codebase. Establish a pattern:
 
 ```typescript
-// Migration: use-tracking.ts — useAccounts with cursor
-export function useAccountsCursor(guildId: string, limit: number = 25) {
-  return useInfiniteQuery({
-    queryKey: ['guild', guildId, 'accounts', 'cursor', limit],
-    queryFn: async ({ pageParam }) => {
-      const params = new URLSearchParams({ limit: limit.toString() });
-      if (pageParam) params.set('cursor', pageParam as string);
-      const response = await fetchWithRetry(
-        `/api/guilds/${guildId}/accounts?${params}`
-      );
-      if (!response.ok) throw new Error('Failed to fetch accounts');
-      return response.json() as Promise<AccountsCursorResponse>;
+// Pattern: status-aware mutation with guard
+export function useTransitionCampaign(guildId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ campaignId, status }: { campaignId: string; status: CampaignStatus }) => {
+      const res = await fetchWithRetry(
+        `/api/guilds/${guildId}/campaigns/${campaignId}`,
+        { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }) }
+      )
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.message || 'Failed to update campaign status')
+      }
+      return res.json()
     },
-    initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? null,
-    staleTime: 2 * 60 * 1000,
-    enabled: !!guildId,
-  });
-}
-```
-
-**Proxy route changes:** The `/api/guilds/[guildId]/accounts/route.ts` proxy must forward `?cursor=...` instead of `?page=...&limit=...` to the backend. No library change — just query parameter forwarding.
-
-**TypeScript type additions needed:**
-
-```typescript
-// types/tracking.ts — new cursor response shapes
-interface AccountsCursorResponse {
-  data: Account[];
-  nextCursor: string | null;
-  hasMore: boolean;
-}
-
-interface PostsCursorResponse {
-  data: Post[];
-  nextCursor: string | null;
-  hasMore: boolean;
-}
-```
-
-**Confidence:** HIGH — `useInfiniteQuery` v5 API verified via TanStack Query v5 official docs. `initialPageParam` is required in v5 (removed the v4 implicit default).
-
----
-
-### 3. SSR Cookie Forwarding — Async `cookies()` / `headers()`
-
-**Decision: No new library. Update Server Components and Route Handlers to use the async `cookies()` / `headers()` pattern required by Next.js 16.**
-
-In Next.js 16, `cookies()` and `headers()` are async functions. Synchronous access throws at runtime. The existing `backendFetch.ts` and `api-client.ts` already forward cookies via explicit `Authorization` headers from the proxy layer, so most routes are unaffected.
-
-The SSR cookie forwarding pattern for Route Handlers that need to read auth tokens server-side:
-
-```typescript
-// Pattern for SSR-aware route handlers (Next.js 16)
-import { cookies, headers } from 'next/headers';
-
-export async function GET(request: Request) {
-  const cookieStore = await cookies();          // await required in Next.js 16
-  const authToken = cookieStore.get('auth_token')?.value;
-  const requestHeaders = await headers();       // await required in Next.js 16
-
-  // Forward to backend with auth
-  const response = await backendFetch(BACKEND_URL + '/endpoint', {
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-      Cookie: `auth_token=${authToken}`,
+    onSuccess: (_data, { campaignId }) => {
+      queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'campaigns'] })
+      queryClient.invalidateQueries({ queryKey: ['guild', guildId, 'campaign', campaignId] })
     },
-  });
-  // ...
+  })
 }
 ```
 
-**Key constraint:** `cookies()` cannot be called in Server Components to SET cookies — only read. Setting cookies requires Route Handlers or Server Actions. This is already handled correctly in the existing architecture (proxy.ts sets cookies, route handlers only read them).
+**Blocker:** Backend `updateCampaignSchema` does not include `status`. Needs backend change or dedicated endpoint.
 
-**What specifically needs updating for QUAL-05/F-14:** The `backendFetch.ts` wrapper does not automatically forward the caller's auth cookie. For SSR route handlers that need to pass through the browser's session cookie to the backend (rather than relying on the Authorization header approach), a new `backendFetchWithCookies(request: Request)` helper that reads `await cookies()` and appends the session cookies is the right pattern.
+### 2. Offset Pagination Hook
 
-**Confidence:** HIGH — Next.js 16 async `cookies()` confirmed via official Next.js upgrade guide and Next.js 16 function reference docs.
-
----
-
-### 4. Error Envelope Migration
-
-**Decision: No new library. Update `error-sanitizer.ts` to parse backend v2.6 `{ error: { code, message } }` envelope.**
-
-Backend Phase 35 changed the error response shape from `{ message, code }` to `{ error: { code, message } }`. The existing `sanitizeError()` function in `src/lib/server/error-sanitizer.ts` reads `parsed.message || parsed.error` — it currently treats `error` as a string, not an object.
-
-The update is purely to the parsing logic in the existing `BackendError` interface:
+Campaign payouts use offset pagination (page/pageSize) unlike the cursor-based pattern used elsewhere. The `useExportHistory` hook already handles this:
 
 ```typescript
-// error-sanitizer.ts — updated BackendError interface
-interface BackendError {
-  message?: string;
-  code?: string;
-  stack?: string;
-  error?: string | { code?: string; message?: string }; // v2.6 shape
-  details?: unknown;
-  statusCode?: number;
-}
-
-// Updated extraction in sanitizeError():
-const errorObj = typeof parsed.error === 'object' ? parsed.error : null;
-const code = errorObj?.code ?? parsed.code;
-const backendMsg = errorObj?.message ?? parsed.message ??
-                   (typeof parsed.error === 'string' ? parsed.error : '');
-```
-
-**No library needed.** This is a TypeScript shape update to an existing utility.
-
-**Confidence:** HIGH — confirmed by codebase inspection of `error-sanitizer.ts` + project context describing backend Phase 35 `{ error: { code, message } }` envelope.
-
----
-
-### 5. Rate Limit + 503 Resilience
-
-**Decision: No new library. Verify and extend existing `fetchWithRetry.ts`.**
-
-The existing `fetchWithRetry.ts` already handles:
-- 429 with `Retry-After` header parsing (seconds and HTTP date formats)
-- Global cooldown via `globalRateLimitUntil`
-- Exponential backoff for 500, 502, 503, 504 via `RETRYABLE_SERVER_STATUSES`
-- CSRF retry on 403 `EBADCSRFTOKEN`
-- Auth refresh on 401
-
-What v1.2 needs to verify/extend:
-- 503 is already in `RETRYABLE_SERVER_STATUSES` — confirm the backoff applies correctly
-- The `skipGlobalCooldown` option lets callers opt out — confirm mutation methods also benefit from 503 retry (currently only `RETRYABLE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])` retry on server errors)
-- Consider whether POST/PUT/DELETE should retry on 503 (depends on idempotency key — `backendFetch.ts` adds `Idempotency-Key` headers, so retrying mutations is safe)
-
-**Recommendation:** Extend `RETRYABLE_METHODS` guard to also allow retry of idempotent mutations (those with `Idempotency-Key` header) on 503, OR expose a `retryMutations` config flag.
-
-**Confidence:** HIGH — codebase inspection confirms existing coverage. The gap is mutation retry on 503.
-
----
-
-### 6. SSE Lifecycle Hardening
-
-**Decision: No new library. Extend existing `use-sse.ts`.**
-
-The existing `useSSE` hook already handles:
-- Exponential backoff reconnection (2s, 4s, 8s... up to 60s)
-- Visibility change detection (close on hidden, reconnect on visible)
-- 50% jitter
-- Reconnect cooldown (5s default)
-- Cleanup on unmount
-
-Known gaps for v1.2 hardening:
-1. **Heartbeat timeout detection:** If the backend sends no message for N seconds, the connection may be silently stalled (TCP keepalive is not enough for SSE through proxies). Solution: add a heartbeat timer that triggers reconnect if no message received within `heartbeatTimeout` ms.
-2. **Duplicate EventSource instances:** The `connect()` function can be called before the previous EventSource is closed. Add a guard to close before creating new instance.
-3. **AbortController integration:** Next.js route handlers can use `request.signal` for abort, but the client-side EventSource does not support AbortController natively. The correct client pattern is `EventSource.close()` already in use.
-
-```typescript
-// use-sse.ts addition: heartbeat timeout
-const heartbeatTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-function resetHeartbeat() {
-  if (heartbeatTimerRef.current) clearTimeout(heartbeatTimerRef.current);
-  heartbeatTimerRef.current = setTimeout(() => {
-    // No message received within timeout — force reconnect
-    eventSourceRef.current?.close();
-    connect();
-  }, heartbeatTimeout); // configurable, default 45_000
-}
-```
-
-**Confidence:** HIGH — confirmed via codebase inspection of `use-sse.ts` + known SSE stall patterns from Next.js GitHub issues.
-
----
-
-### 7. Bundle + Performance Optimization
-
-**Decision: No new library. Configure `optimizePackageImports` in `next.config` and add `next experimental-analyze` for Turbopack-integrated analysis.**
-
-**A. `optimizePackageImports` config (highest impact)**
-
-`lucide-react` and `recharts` are both heavy barrel exports. Next.js 16 `optimizePackageImports` reduces cold starts by only loading actually-used modules.
-
-```typescript
-// next.config.ts — add to existing config
-const nextConfig = {
-  experimental: {
-    optimizePackageImports: ['lucide-react', 'recharts', 'date-fns'],
+// Existing pattern in use-exports.ts — reuse for campaign payouts
+useQuery<PayoutsResponse>({
+  queryKey: ['guild', guildId, 'campaign', campaignId, 'payouts', page, pageSize],
+  queryFn: async () => {
+    const response = await fetchWithRetry(
+      `/api/guilds/${guildId}/campaigns/${campaignId}/payouts?page=${page}&pageSize=${pageSize}`
+    )
+    if (!response.ok) throw new Error('Failed to fetch payouts')
+    return response.json()
   },
-  // ... existing config
-};
-```
-
-Measured improvement from Next.js/Vercel benchmarks: `lucide-react` drops from 1583 modules to 333 (2.8s build savings). On Vercel serverless, this translates to cold start reduction.
-
-**B. `next experimental-analyze` (Next.js 16.1 built-in)**
-
-Next.js 16.1 ships an integrated Turbopack-aware bundle analyzer that shows import chains and why modules are included. Use this instead of running `ANALYZE=true next build` for server bundle inspection.
-
-```bash
-npx next experimental-analyze
-```
-
-`@next/bundle-analyzer` remains useful for client-side webpack treemap visualization (already configured in `next.config`).
-
-**C. React Query cache tuning**
-
-The current QueryClient uses default `staleTime: 60_000` globally. For v1.2, apply per-query tuning:
-
-| Query | Recommended staleTime | Rationale |
-|-------|----------------------|-----------|
-| SSE-backed guild status | `Infinity` | SSE handles updates; never auto-refetch |
-| Guild list | `5 * 60_000` | Changes rarely |
-| Accounts/Posts (cursor) | `2 * 60_000` | Already set correctly |
-| Analytics | `10 * 60_000` | Expensive query, slow-changing |
-| Audit log | `30_000` | Changes frequently |
-
-The key pattern for SSE-backed queries:
-```typescript
-// Prevent React Query from background-refetching data managed by SSE
-useQuery({
-  queryKey: ['guild', guildId, 'status'],
-  queryFn: () => fetchCurrentStatus(guildId),
-  staleTime: Infinity,          // SSE invalidates manually
-  refetchOnWindowFocus: false,  // SSE handles real-time
-  refetchInterval: false,
+  staleTime: 2 * 60 * 1000,
+  enabled: !!guildId && !!campaignId,
 })
 ```
 
-**D. Dynamic imports for heavy page components**
+### 3. Currency Input Component
+
+Campaign forms require cents-based currency inputs (budgetCents, perUserCapCents, platform rates). The `centsToDisplay` helper exists in `use-bonus.ts` for display. For input, establish a dollars-to-cents conversion pattern:
 
 ```typescript
-// Lazy-load Recharts components — they are only needed on analytics page
-import dynamic from 'next/dynamic';
-const AnalyticsChart = dynamic(() => import('@/components/analytics/chart'), {
-  ssr: false,  // Charts are client-only
-  loading: () => <ChartSkeleton />,
-});
+// Pattern: user enters dollars, store cents
+const [budgetDollars, setBudgetDollars] = useState('')
+const budgetCents = Math.round(parseFloat(budgetDollars || '0') * 100)
 ```
 
-**Confidence:** HIGH — `optimizePackageImports` and benchmarks confirmed via Vercel official blog and Next.js docs. `next experimental-analyze` confirmed via Next.js 16.1 release notes.
+No library needed -- this is a simple controlled input with formatting.
 
 ---
 
-## Zod v4 Compatibility Note
+## Dashboard Proxy Routes to Create
 
-The project already runs `zod@4.3.6`. The existing code was written for v3 API. Key v4 changes that affect this codebase:
+12 new Next.js API proxy routes mapping to backend endpoints:
 
-| v3 Pattern | v4 Equivalent | Status |
-|-----------|--------------|--------|
-| `z.string().email()` | `z.email()` | May need audit |
-| `z.string().uuid()` | `z.uuid()` (RFC-strict) or `z.guid()` (v3-compat) | May need audit |
-| `error.errors` | `error.issues` | May need audit |
-| `invalid_type_error` param | use `error` param | May need audit |
-
-**Action:** Run a codebase audit for Zod v3 patterns that silently broke on v4. The `zod-v3-to-v4` codemod can assist.
-
-**Confidence:** HIGH — Zod v4 breaking changes confirmed via official Zod migration guide and changelog.
+| Dashboard Route | Backend Endpoint | Method |
+|----------------|------------------|--------|
+| `/api/guilds/[guildId]/campaigns` | `GET /guilds/:guildId/campaigns` | GET |
+| `/api/guilds/[guildId]/campaigns` | `POST /guilds/:guildId/campaigns` | POST |
+| `/api/guilds/[guildId]/campaigns/[campaignId]` | `GET /guilds/:guildId/campaigns/:campaignId` | GET |
+| `/api/guilds/[guildId]/campaigns/[campaignId]` | `PATCH /guilds/:guildId/campaigns/:campaignId` | PATCH |
+| `/api/guilds/[guildId]/campaigns/[campaignId]` | `DELETE /guilds/:guildId/campaigns/:campaignId` | DELETE |
+| `/api/guilds/[guildId]/campaigns/[campaignId]/analytics` | `GET /guilds/:guildId/campaigns/:campaignId/analytics` | GET |
+| `/api/guilds/[guildId]/campaigns/[campaignId]/payouts` | `GET /guilds/:guildId/campaigns/:campaignId/payouts` | GET |
+| `/api/guilds/[guildId]/campaigns/[campaignId]/payouts/history` | `GET /guilds/:guildId/campaigns/:campaignId/payouts/history` | GET |
+| `/api/guilds/[guildId]/campaigns/[campaignId]/payouts/mark-paid` | `POST /guilds/:guildId/campaigns/:campaignId/payouts/mark-paid` | POST |
+| `/api/guilds/[guildId]/campaigns/[campaignId]/payouts/bulk` | `POST /guilds/:guildId/campaigns/:campaignId/payouts/bulk` | POST |
+| `/api/guilds/[guildId]/campaigns/[campaignId]/export` | `POST /guilds/:guildId/campaigns/:campaignId/export` | POST |
+| `/api/guilds/[guildId]/campaigns/[campaignId]/export/[exportId]` | `GET /guilds/:guildId/campaigns/:campaignId/export/:exportId` | GET |
 
 ---
 
-## What NOT to Add
+## New Files to Create
 
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| `jose` for CSRF | CSRF does not need JWT format. Adds 40kb+ to Edge bundle. | `crypto.subtle` (built-in, zero bundle cost) |
-| `csrf-csrf` / `csrf-crypto` | Express-oriented, not Edge Runtime compatible without shimming. | `crypto.subtle` inline implementation |
-| `eventsource-parser` | Native EventSource handles JSON messages already. Only needed if backend sends named SSE event types that require parsing non-default events. | Native `EventSource.onmessage` — already in `use-sse.ts` |
-| `socket.io` or WebSocket library | SSE already in production; no bidirectional need. | Existing EventSource + `use-sse.ts` |
-| `axios` | Not Edge Runtime compatible; larger bundle than fetch. | Existing `fetchWithRetry` + `backendFetch` |
-| `swr` | React Query already in use; two caching layers conflict. | `@tanstack/react-query@5.90.20` (existing) |
-| `next-auth` / `auth.js` | API owns auth. Dashboard is a proxy consumer. | Existing custom JWT pattern |
-| `react-hook-form` | Forms are simple; Server Actions + Zod already used. | Existing pattern |
+### Types
+- `src/types/campaign.ts` -- Campaign, CampaignStatus, CampaignParticipant, CampaignPayout, CampaignExport types derived from backend response shapes
+
+### Hooks
+- `src/hooks/use-campaigns.ts` -- Query key factory, list/detail/analytics queries, CRUD mutations, status transitions, payout queries/mutations, export trigger
+
+### Pages
+- `src/app/(dashboard)/guilds/[guildId]/campaigns/page.tsx` -- Campaign list with status filter tabs
+- `src/app/(dashboard)/guilds/[guildId]/campaigns/[campaignId]/page.tsx` -- Campaign detail with tabbed sub-views (Overview, Analytics, Payouts, Export)
+
+### Components
+- `src/components/campaigns/campaign-card.tsx` -- List item card with status badge, budget bar, participant count
+- `src/components/campaigns/campaign-status-badge.tsx` -- Color-coded status badge (Draft=gray, Active=green, Paused=yellow, SubmissionsClosed=orange, Completed=blue)
+- `src/components/campaigns/campaign-form.tsx` -- Create/edit form with Zod validation (shared between create modal and edit view)
+- `src/components/campaigns/campaign-analytics.tsx` -- Participant earnings table + BarChart
+- `src/components/campaigns/campaign-payouts.tsx` -- Payout management table with mark-paid actions
+- `src/components/campaigns/payout-history.tsx` -- Payout audit trail timeline
+- `src/components/campaigns/campaign-export.tsx` -- Export trigger with format/scope selection + SSE progress
+
+### Proxy Routes (9 route files)
+- `src/app/api/guilds/[guildId]/campaigns/route.ts` -- GET list, POST create
+- `src/app/api/guilds/[guildId]/campaigns/[campaignId]/route.ts` -- GET detail, PATCH update, DELETE
+- `src/app/api/guilds/[guildId]/campaigns/[campaignId]/analytics/route.ts`
+- `src/app/api/guilds/[guildId]/campaigns/[campaignId]/payouts/route.ts`
+- `src/app/api/guilds/[guildId]/campaigns/[campaignId]/payouts/history/route.ts`
+- `src/app/api/guilds/[guildId]/campaigns/[campaignId]/payouts/mark-paid/route.ts`
+- `src/app/api/guilds/[guildId]/campaigns/[campaignId]/payouts/bulk/route.ts`
+- `src/app/api/guilds/[guildId]/campaigns/[campaignId]/export/route.ts`
+- `src/app/api/guilds/[guildId]/campaigns/[campaignId]/export/[exportId]/route.ts`
 
 ---
 
 ## Installation
 
-No new `npm install` required for the core v1.2 features. All changes are:
-- Code changes to existing files (`proxy.ts`, `error-sanitizer.ts`, `use-sse.ts`, `use-tracking.ts`)
-- Configuration changes to `next.config.ts` (optimizePackageImports)
-- New helper functions using built-in Web Crypto API
-
-If the team decides `jose` is needed for JWT verification in middleware (not currently used — proxy.ts uses `atob()` for expiry check only), it is the correct choice:
-
 ```bash
-# Only add if middleware needs full JWT verification (not just expiry peek)
-npm install jose@^6.1.3
+# No new packages needed
+# All campaign features are built with existing dependencies
 ```
 
 ---
 
-## Version Compatibility
+## Confidence Assessment
 
-| Package | Current | Compatible | Notes |
-|---------|---------|-----------|-------|
-| next | 16.1.6 | crypto.subtle (built-in) | Available in Edge Runtime since Next.js 12+ |
-| next | 16.1.6 | `experimental-analyze` | Available since Next.js 16.1 |
-| next | 16.1.6 | `await cookies()` / `await headers()` | Required in v16; sync throws |
-| @tanstack/react-query | 5.90.20 | `initialPageParam` (required) | v5 removed default; must be explicit |
-| zod | 4.3.6 | Breaking from v3 | `z.string().email()` → `z.email()`, `error.errors` → `error.issues` |
-| lucide-react | 0.564.0 | `optimizePackageImports` | Drops from 1583 to 333 modules in Next.js 16 |
-| recharts | 3.7.0 | `optimizePackageImports` | Drops from 1485 to 1317 modules |
+| Decision | Confidence | Rationale |
+|----------|------------|-----------|
+| No new dependencies | HIGH | Verified every feature against existing deps -- all capabilities present |
+| Recharts for analytics charts | HIGH | Already used in analytics page, BarChart pattern exists |
+| Controlled forms (no react-hook-form) | HIGH | Consistent with all existing forms in codebase |
+| Accumulated state pagination | HIGH | Established pattern in use-bonus.ts, proven across v1.1-v1.2 |
+| Offset pagination for payouts | HIGH | Backend returns page/pageSize, useExportHistory already handles this |
+| Zod for client validation | HIGH | Already in deps at ^4.3.6, backend uses zod for same schemas |
+| SSE for export progress | HIGH | Backend uses DataExport table, existing SSE progress infrastructure confirmed |
+
+---
+
+## Open Questions
+
+1. **Campaign status transitions (BLOCKER):** Backend `updateCampaignSchema` does NOT include `status` as a valid field. The frontend cannot trigger status changes (Draft -> Active, etc.) without either: (a) adding `status` to the PATCH schema with transition validation, or (b) creating a dedicated `POST /:campaignId/transition` endpoint. Must be resolved before building status lifecycle UI.
+
+2. **Navigation integration:** Where do campaigns appear in the guild sidebar? Recommended: new nav item between existing sections, with campaign count badge.
+
+3. **Campaign SSE progress:** The existing SSE progress endpoint at `/api/guilds/:guildId/exports/:exportId/progress` should work for campaign exports since they share the `DataExport` table. Needs verification during implementation.
+
+4. **Payout confirmation UX:** Should mark-paid require a confirmation dialog (like delete operations) or use optimistic update with undo toast (like bonus payments)? Recommend confirmation dialog since payments are financial and harder to reverse.
 
 ---
 
 ## Sources
 
-- [Next.js 16 `cookies()` / `headers()` function reference](https://nextjs.org/docs/app/api-reference/functions/cookies) — async pattern confirmed
-- [Next.js `optimizePackageImports` docs](https://nextjs.org/docs/app/api-reference/config/next-config-js/optimizePackageImports) — config and default packages
-- [Vercel: How we optimized package imports](https://vercel.com/blog/how-we-optimized-package-imports-in-next-js) — cold start benchmark numbers
-- [Next.js 16.1 release notes](https://nextjs.org/blog/next-16-1) — `next experimental-analyze` confirmed
-- [TanStack Query v5 useInfiniteQuery docs](https://tanstack.com/query/v5/docs/framework/react/reference/useInfiniteQuery) — `initialPageParam` requirement
-- [TanStack Query v5 infinite queries guide](https://tanstack.com/query/v5/docs/react/guides/infinite-queries) — cursor pagination pattern
-- [Web Crypto API SubtleCrypto sign() — MDN](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/sign) — HMAC implementation
-- [Verifying Slack signatures with SubtleCrypto in Vercel Edge Runtime](https://medium.com/@jackoddy/verifying-slack-signatures-using-web-crypto-subtlecrypto-in-vercels-edge-runtime-45c1a1d2b33b) — Edge Runtime HMAC pattern
-- [Next.js Edge Runtime API reference](https://nextjs.org/docs/app/api-reference/edge) — available APIs
-- [Zod v4 migration guide](https://zod.dev/v4/changelog) — breaking changes from v3
-- [OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html) — signed double-submit cookie pattern
-- [jose v6 npm](https://www.npmjs.com/package/jose) — v6.1.3 current; edge-compatible JWT/HMAC
+- Backend route files: `guildCampaigns.ts`, `guildCampaignPayouts.ts`, `guildCampaignExport.ts` (direct codebase read)
+- Prisma schema: `Campaign`, `CampaignPost`, `CampaignParticipant`, `CampaignPayment` models (direct read)
+- Dashboard hooks: `use-bonus.ts`, `use-exports.ts` patterns (direct read)
+- Dashboard types: `bonus.ts`, `export.ts` type shapes (direct read)
+- Package.json: Current dependency versions (direct read)
+- Established codebase patterns across 27,231 LOC (direct read)
 
 ---
 
-*Stack research for: v1.2 Security Audit & Optimization — Next.js 16 dashboard additions*
-*Researched: 2026-02-22*
+*Stack research for: v1.3 Campaign System & Tech Debt*
+*Researched: 2026-03-06*

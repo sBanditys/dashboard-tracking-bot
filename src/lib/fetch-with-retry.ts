@@ -127,19 +127,16 @@ function isAuthEndpoint(url: string): boolean {
 }
 
 /**
- * Extract error code from either backend envelope shape.
- * New shape: { error: { code } }, Old shape: { code }
- * TODO(v1.3): Remove old envelope support (body?.code path)
+ * Extract error code from the backend error envelope.
+ * Shape: { error: { code } }
  */
 function extractErrorCode(body: unknown): string | undefined {
   if (body === null || typeof body !== 'object') return undefined;
   const b = body as Record<string, unknown>;
-  // New shape: { error: { code } }
   if (typeof b.error === 'object' && b.error !== null) {
     return (b.error as Record<string, unknown>).code as string | undefined;
   }
-  // Old shape: { code }
-  return b.code as string | undefined;
+  return undefined;
 }
 
 function getCsrfToken(): string | undefined {

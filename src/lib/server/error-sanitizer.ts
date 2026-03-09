@@ -9,58 +9,26 @@
  *
  * Returns contextual error messages describing WHAT failed, while
  * preserving error codes needed for client-side logic.
+ *
+ * Backend uses the Stripe-inspired error envelope: { error: { code, message, requestId, details? } }
  */
-
-// New envelope shape from backend (Stripe-inspired)
-// TODO(v1.3): Remove old envelope support after backend fully migrates
-interface NewBackendErrorEnvelope {
-  error: {
-    code: string;
-    message: string;
-    requestId: string;
-    details?: unknown;
-  };
-}
-
-// Old envelope shape (flat) — existing BackendError interface covers this
-interface BackendError {
-  message?: string;
-  error?: string;
-  code?: string;
-  stack?: string;
-  details?: unknown;
-  statusCode?: number;
-}
 
 /**
- * Type guard: returns true if body matches the new nested error envelope shape.
+ * Extract error code and message from the backend error envelope.
+ * Shape: { error: { code, message } }
  */
-function isNewEnvelope(body: unknown): body is NewBackendErrorEnvelope {
-  return (
+function extractBackendError(body: unknown): { code?: string; message?: string } {
+  if (
     typeof body === 'object' &&
     body !== null &&
     'error' in body &&
     typeof (body as Record<string, unknown>).error === 'object' &&
     (body as Record<string, unknown>).error !== null
-  );
-}
-
-/**
- * Extract error code and message from either backend envelope shape.
- * New shape: { error: { code, message } }
- * Old shape: { error: string, code? }
- * TODO(v1.3): Remove old envelope support
- */
-function extractBackendError(body: unknown): { code?: string; message?: string } {
-  if (isNewEnvelope(body)) {
-    return { code: body.error.code, message: body.error.message };
+  ) {
+    const envelope = body as { error: { code: string; message: string } };
+    return { code: envelope.error.code, message: envelope.error.message };
   }
-  // Old flat shape
-  const old = (typeof body === 'object' && body !== null ? body : {}) as BackendError;
-  return {
-    code: old.code,
-    message: old.message || (typeof old.error === 'string' ? old.error : undefined),
-  };
+  return {};
 }
 
 export interface SanitizedError {

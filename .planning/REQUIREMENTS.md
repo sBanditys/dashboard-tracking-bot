@@ -41,8 +41,8 @@ Requirements for v1.3 Campaign System & Tech Debt. Each maps to roadmap phases.
 
 - [x] **DEBT-01**: Old error envelope support removed from fetch-with-retry.ts and error-sanitizer.ts
 - [x] **DEBT-02**: callbackUrl open redirect fixed with same-origin validation in callback/page.tsx
-- [ ] **DEBT-03**: ConnectionIssuesBanner wired to posts page
-- [ ] **DEBT-04**: validators.ts dead code removed
+- [x] **DEBT-03**: ConnectionIssuesBanner wired to posts page
+- [x] **DEBT-04**: validators.ts dead code removed
 
 ## Future Requirements
 
@@ -107,8 +107,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EXP-02 | Phase 29 | Pending |
 | DEBT-01 | Phase 24 | Complete |
 | DEBT-02 | Phase 24 | Complete |
-| DEBT-03 | Phase 24 | Pending |
-| DEBT-04 | Phase 24 | Pending |
+| DEBT-03 | Phase 24 | Complete |
+| DEBT-04 | Phase 24 | Complete |
 
 **Coverage:**
 - v1.3 requirements: 22 total

@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: 24 of 29 (Tech Debt & Shared Utilities)
-Plan: 1 of 2 in current phase (Plan 01 complete)
+Plan: 2 of 2 in current phase (Phase 24 complete)
 Status: Executing
-Last activity: 2026-03-09 -- Phase 24 Plan 01 complete (error envelope cleanup + auth redirect fix)
+Last activity: 2026-03-09 -- Phase 24 Plan 02 complete (dead code removal + shared utilities)
 
-Progress: [█░░░░░░░░░] 8% (v1.3) -- 84 total plans complete across all milestones
+Progress: [██████████] 100% (v1.3 Phase 24) -- 85 total plans complete across all milestones
 
 ## Milestones
 
@@ -42,12 +42,13 @@ Progress: [█░░░░░░░░░] 8% (v1.3) -- 84 total plans complete 
 ## Performance Metrics
 
 **Velocity (cumulative):**
-- Total plans completed: 84 (v1.0: 47, v1.1: 22, v1.2: 14, v1.3: 1)
+- Total plans completed: 85 (v1.0: 47, v1.1: 22, v1.2: 14, v1.3: 2)
 - Milestones shipped: 3
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 24-01 | Error envelope cleanup + auth redirect | 2min | 2 | 3 |
+| 24-02 | Dead code removal + shared utilities | 2min | 2 | 9 |
 
 *Updated after each plan completion*
 
@@ -58,6 +59,7 @@ Progress: [█░░░░░░░░░] 8% (v1.3) -- 84 total plans complete 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [24-02]: No re-export from use-bonus.ts -- clean break, all consumers import centsToDisplay from @/lib/format directly
 - [24-01]: Inlined isNewEnvelope type guard into extractBackendError (single use, clearer inline)
 - [24-01]: Silent redirect to / on invalid callbackUrl (no toast per user decision)
 - [v1.3 roadmap]: Tech debt phase (24) executes first to clean slate before campaign work
@@ -77,9 +79,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T16:03:07Z
-Stopped at: Completed 24-01-PLAN.md
-Resume file: .planning/phases/24-tech-debt-shared-utilities/24-02-PLAN.md
+Last session: 2026-03-09T16:03:36Z
+Stopped at: Completed 24-02-PLAN.md (Phase 24 complete)
+Resume file: .planning/phases/24-tech-debt-shared-utilities/24-02-SUMMARY.md
 
 ---
-*Last updated: 2026-03-09 (24-01 complete)*
+*Last updated: 2026-03-09 (24-02 complete, Phase 24 done)*

@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Campaign System & Tech Debt
 status: executing
-stopped_at: Completed 24-02-PLAN.md (Phase 24 complete)
-last_updated: "2026-03-09T16:06:55.302Z"
+stopped_at: Phase 25 context gathered
+last_updated: "2026-03-09T16:54:21.368Z"
 last_activity: 2026-03-09 -- Phase 24 Plan 02 complete (dead code removal + shared utilities)
 progress:
   total_phases: 6
@@ -79,9 +79,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T16:03:36Z
-Stopped at: Completed 24-02-PLAN.md (Phase 24 complete)
-Resume file: .planning/phases/24-tech-debt-shared-utilities/24-02-SUMMARY.md
+Last session: 2026-03-09T16:54:21.365Z
+Stopped at: Phase 25 context gathered
+Resume file: .planning/phases/25-campaign-types-proxy-routes-hooks/25-CONTEXT.md
 
 ---
 *Last updated: 2026-03-09 (24-02 complete, Phase 24 done)*

@@ -56,7 +56,7 @@ Full details: `milestones/v1.2-ROADMAP.md`
 
 </details>
 
-### 🚧 v1.3 Campaign System & Tech Debt (In Progress)
+### v1.3 Campaign System & Tech Debt (In Progress)
 
 **Milestone Goal:** Build the complete campaign management frontend consuming backend v2.7 campaign REST API (12 endpoints), and close all carried-forward tech debt from v1.2.
 
@@ -122,7 +122,10 @@ Plans:
   2. Admin can edit any of the 14 optional campaign fields and see changes reflected after save, with a toast on 409 conflict prompting refresh
   3. Admin can delete a Draft or Completed campaign with a confirmation dialog, and attempting to delete an Active/Paused campaign shows an explanation why it is not allowed
   4. Non-admin users do not see create, edit, or delete buttons
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 27-01-PLAN.md — Shared CampaignForm component, CreateCampaignModal, and list page create button
+- [ ] 27-02-PLAN.md — EditCampaignModal with 409 handling, delete with status guard on detail page
 
 ### Phase 28: Analytics & Payouts
 **Goal**: Users can view campaign performance data and admins can manage participant payments
@@ -178,10 +181,10 @@ Phases execute in numeric order: 24 → 25 → 26 → 27 → 28 → 29
 | 24. Tech Debt & Shared Utilities | 2/2 | Complete    | 2026-03-09 | - |
 | 25. Campaign Types, Proxy Routes & Hooks | 2/2 | Complete    | 2026-03-09 | - |
 | 26. Campaign List & Detail | 2/2 | Complete    | 2026-03-09 | - |
-| 27. Campaign Mutations | v1.3 | 0/0 | Not started | - |
+| 27. Campaign Mutations | v1.3 | 0/2 | Not started | - |
 | 28. Analytics & Payouts | v1.3 | 0/0 | Not started | - |
 | 29. Campaign Export | v1.3 | 0/0 | Not started | - |
 
 ---
 *Created: 2026-01-24*
-*Last updated: 2026-03-09 after Phase 26 planning*
+*Last updated: 2026-03-09 after Phase 27 planning*

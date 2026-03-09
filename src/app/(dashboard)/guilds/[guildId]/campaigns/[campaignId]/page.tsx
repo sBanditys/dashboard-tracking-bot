@@ -1,9 +1,11 @@
 'use client'
 
-import { use } from 'react'
+import { use, useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
-import { useCampaignDetail } from '@/hooks/use-campaigns'
+import { useRouter } from 'next/navigation'
+import { ChevronRight, Pencil, Trash2 } from 'lucide-react'
+import { useCampaignDetail, useDeleteCampaign } from '@/hooks/use-campaigns'
+import { useUser } from '@/hooks/use-user'
 import { centsToDisplay } from '@/lib/format'
 import { StatCard } from '@/components/stat-card'
 import { CampaignStatusBadge } from '@/components/campaigns/campaign-status-badge'
@@ -11,6 +13,8 @@ import { BudgetProgressBar } from '@/components/campaigns/budget-progress-bar'
 import { PlatformRateCards } from '@/components/campaigns/platform-rate-cards'
 import { CampaignSettings } from '@/components/campaigns/campaign-settings'
 import { CampaignDetailSkeleton } from '@/components/campaigns/campaign-detail-skeleton'
+import { EditCampaignModal } from '@/components/campaigns/edit-campaign-modal'
+import { ConfirmationModal } from '@/components/ui/confirmation-modal'
 
 interface PageProps {
   params: Promise<{ guildId: string; campaignId: string }>
@@ -19,6 +23,15 @@ interface PageProps {
 export default function CampaignDetailPage({ params }: PageProps) {
   const { guildId, campaignId } = use(params)
   const { data, isLoading, isError, refetch } = useCampaignDetail(guildId, campaignId)
+  const router = useRouter()
+  const { user } = useUser()
+  const deleteCampaign = useDeleteCampaign(guildId, campaignId)
+
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+
+  const guild = user?.guilds?.find((g) => g.id === guildId)
+  const isAdmin = guild !== undefined && (Number(guild.permissions) & 0x8) !== 0
 
   if (isLoading) {
     return <CampaignDetailSkeleton />
@@ -71,9 +84,33 @@ export default function CampaignDetailPage({ params }: PageProps) {
       </nav>
 
       {/* Header */}
-      <div className="flex items-center gap-3 mb-1">
-        <h1 className="text-2xl font-bold text-white">{campaign.name}</h1>
-        <CampaignStatusBadge status={campaign.status} />
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-white">{campaign.name}</h1>
+          <CampaignStatusBadge status={campaign.status} />
+        </div>
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-surface border border-border text-gray-300 hover:text-white hover:bg-surface-hover transition-colors"
+            >
+              <Pencil size={14} />
+              Edit
+            </button>
+            {(campaign.status === 'Draft' || campaign.status === 'Completed') && (
+              <button
+                type="button"
+                onClick={() => setDeleteOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-red-600/10 border border-red-600/20 text-red-400 hover:bg-red-600/20 transition-colors"
+              >
+                <Trash2 size={14} />
+                Delete
+              </button>
+            )}
+          </div>
+        )}
       </div>
       <p className="text-gray-400 text-sm mb-6">{campaign.brand.label}</p>
 
@@ -113,6 +150,37 @@ export default function CampaignDetailPage({ params }: PageProps) {
 
       {/* Campaign settings */}
       <CampaignSettings campaign={campaign} />
+
+      {/* Edit modal */}
+      {isAdmin && (
+        <EditCampaignModal
+          guildId={guildId}
+          campaignId={campaignId}
+          campaign={data.campaign}
+          version={campaign.version}
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+        />
+      )}
+
+      {/* Delete confirmation modal */}
+      {isAdmin && (
+        <ConfirmationModal
+          open={deleteOpen}
+          onClose={() => setDeleteOpen(false)}
+          title="Delete Campaign"
+          itemName={campaign.name}
+          isLoading={deleteCampaign.isPending}
+          onConfirm={() => {
+            deleteCampaign.mutate(undefined, {
+              onSuccess: () => {
+                setDeleteOpen(false)
+                router.push(`/guilds/${guildId}/campaigns`)
+              },
+            })
+          }}
+        />
+      )}
     </div>
   )
 }

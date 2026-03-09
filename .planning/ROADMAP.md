@@ -60,7 +60,7 @@ Full details: `milestones/v1.2-ROADMAP.md`
 
 **Milestone Goal:** Build the complete campaign management frontend consuming backend v2.7 campaign REST API (12 endpoints), and close all carried-forward tech debt from v1.2.
 
-- [ ] **Phase 24: Tech Debt & Shared Utilities** - Close v1.2 tech debt and extract shared utilities needed by campaign work
+- [x] **Phase 24: Tech Debt & Shared Utilities** - Close v1.2 tech debt and extract shared utilities needed by campaign work (completed 2026-03-09)
 - [ ] **Phase 25: Campaign Types, Proxy Routes & Hooks** - Data layer foundation: TypeScript types, 12 proxy routes, React Query hooks
 - [ ] **Phase 26: Campaign List & Detail** - Read-only campaign UI with cursor pagination, status filtering, and detail view
 - [ ] **Phase 27: Campaign Mutations** - Create, edit, and delete campaign forms with validation and status guards
@@ -169,7 +169,7 @@ Phases execute in numeric order: 24 → 25 → 26 → 27 → 28 → 29
 | 21. CSRF HMAC Signing | v1.2 | 1/1 | Complete | 2026-02-23 |
 | 22. Performance Optimization | v1.2 | 3/3 | Complete | 2026-03-04 |
 | 23. Security Audit Report | v1.2 | 1/1 | Complete | 2026-03-04 |
-| 24. Tech Debt & Shared Utilities | v1.3 | 0/2 | Planning | - |
+| 24. Tech Debt & Shared Utilities | 2/2 | Complete   | 2026-03-09 | - |
 | 25. Campaign Types, Proxy Routes & Hooks | v1.3 | 0/0 | Not started | - |
 | 26. Campaign List & Detail | v1.3 | 0/0 | Not started | - |
 | 27. Campaign Mutations | v1.3 | 0/0 | Not started | - |

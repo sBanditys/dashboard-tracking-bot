@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Campaign System & Tech Debt
-status: planning
-stopped_at: Phase 24 context gathered
-last_updated: "2026-03-09T15:48:18.638Z"
-last_activity: 2026-03-08 -- v1.3 roadmap created (6 phases, 22 requirements)
+status: executing
+stopped_at: Completed 24-02-PLAN.md
+last_updated: "2026-03-09T16:03:36Z"
+last_activity: 2026-03-09 -- Phase 24 Plan 02 complete (dead code removal + shared utilities)
 progress:
   total_phases: 6
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 2
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: 24 of 29 (Tech Debt & Shared Utilities)
-Plan: 0 of 0 in current phase
-Status: Ready to plan
-Last activity: 2026-03-08 -- v1.3 roadmap created (6 phases, 22 requirements)
+Plan: 1 of 2 in current phase (Plan 01 complete)
+Status: Executing
+Last activity: 2026-03-09 -- Phase 24 Plan 01 complete (error envelope cleanup + auth redirect fix)
 
-Progress: [░░░░░░░░░░] 0% (v1.3) -- 83 total plans complete across all milestones
+Progress: [█░░░░░░░░░] 8% (v1.3) -- 84 total plans complete across all milestones
 
 ## Milestones
 
@@ -42,8 +42,12 @@ Progress: [░░░░░░░░░░] 0% (v1.3) -- 83 total plans complete 
 ## Performance Metrics
 
 **Velocity (cumulative):**
-- Total plans completed: 83 (v1.0: 47, v1.1: 22, v1.2: 14)
+- Total plans completed: 84 (v1.0: 47, v1.1: 22, v1.2: 14, v1.3: 1)
 - Milestones shipped: 3
+
+| Phase | Plan | Duration | Tasks | Files |
+|-------|------|----------|-------|-------|
+| 24-01 | Error envelope cleanup + auth redirect | 2min | 2 | 3 |
 
 *Updated after each plan completion*
 
@@ -54,6 +58,8 @@ Progress: [░░░░░░░░░░] 0% (v1.3) -- 83 total plans complete 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [24-01]: Inlined isNewEnvelope type guard into extractBackendError (single use, clearer inline)
+- [24-01]: Silent redirect to / on invalid callbackUrl (no toast per user decision)
 - [v1.3 roadmap]: Tech debt phase (24) executes first to clean slate before campaign work
 - [v1.3 roadmap]: Extract centsToDisplay to shared src/lib/format.ts before campaign payout work (Pitfall 9)
 - [v1.3 roadmap]: Campaign status transition UI explicitly out of scope (backend lacks status in updateCampaignSchema)
@@ -71,9 +77,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T15:48:18.636Z
-Stopped at: Phase 24 context gathered
-Resume file: .planning/phases/24-tech-debt-shared-utilities/24-CONTEXT.md
+Last session: 2026-03-09T16:03:07Z
+Stopped at: Completed 24-01-PLAN.md
+Resume file: .planning/phases/24-tech-debt-shared-utilities/24-02-PLAN.md
 
 ---
-*Last updated: 2026-03-08 (v1.3 roadmap created)*
+*Last updated: 2026-03-09 (24-01 complete)*

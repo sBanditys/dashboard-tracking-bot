@@ -39,8 +39,8 @@ Requirements for v1.3 Campaign System & Tech Debt. Each maps to roadmap phases.
 
 ### Tech Debt
 
-- [ ] **DEBT-01**: Old error envelope support removed from fetch-with-retry.ts and error-sanitizer.ts
-- [ ] **DEBT-02**: callbackUrl open redirect fixed with same-origin validation in callback/page.tsx
+- [x] **DEBT-01**: Old error envelope support removed from fetch-with-retry.ts and error-sanitizer.ts
+- [x] **DEBT-02**: callbackUrl open redirect fixed with same-origin validation in callback/page.tsx
 - [ ] **DEBT-03**: ConnectionIssuesBanner wired to posts page
 - [ ] **DEBT-04**: validators.ts dead code removed
 
@@ -87,34 +87,34 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CAMP-01 | — | Pending |
-| CAMP-02 | — | Pending |
-| CAMP-03 | — | Pending |
-| CAMP-04 | — | Pending |
-| CAMP-05 | — | Pending |
-| CAMP-06 | — | Pending |
-| CAMP-07 | — | Pending |
-| CAMP-08 | — | Pending |
-| CAMP-09 | — | Pending |
-| ANAL-01 | — | Pending |
-| ANAL-02 | — | Pending |
-| PAY-01 | — | Pending |
-| PAY-02 | — | Pending |
-| PAY-03 | — | Pending |
-| PAY-04 | — | Pending |
-| PAY-05 | — | Pending |
-| EXP-01 | — | Pending |
-| EXP-02 | — | Pending |
-| DEBT-01 | — | Pending |
-| DEBT-02 | — | Pending |
-| DEBT-03 | — | Pending |
-| DEBT-04 | — | Pending |
+| CAMP-01 | Phase 26 | Pending |
+| CAMP-02 | Phase 26 | Pending |
+| CAMP-03 | Phase 26 | Pending |
+| CAMP-04 | Phase 26 | Pending |
+| CAMP-05 | Phase 27 | Pending |
+| CAMP-06 | Phase 27 | Pending |
+| CAMP-07 | Phase 27 | Pending |
+| CAMP-08 | Phase 26 | Pending |
+| CAMP-09 | Phase 26 | Pending |
+| ANAL-01 | Phase 28 | Pending |
+| ANAL-02 | Phase 28 | Pending |
+| PAY-01 | Phase 28 | Pending |
+| PAY-02 | Phase 28 | Pending |
+| PAY-03 | Phase 28 | Pending |
+| PAY-04 | Phase 28 | Pending |
+| PAY-05 | Phase 28 | Pending |
+| EXP-01 | Phase 29 | Pending |
+| EXP-02 | Phase 29 | Pending |
+| DEBT-01 | Phase 24 | Complete |
+| DEBT-02 | Phase 24 | Complete |
+| DEBT-03 | Phase 24 | Pending |
+| DEBT-04 | Phase 24 | Pending |
 
 **Coverage:**
 - v1.3 requirements: 22 total
-- Mapped to phases: 0
-- Unmapped: 22
+- Mapped to phases: 22
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-08*
-*Last updated: 2026-03-08 after initial definition*
+*Last updated: 2026-03-08 after roadmap creation (traceability complete)*

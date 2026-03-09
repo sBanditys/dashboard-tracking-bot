@@ -108,7 +108,10 @@ Plans:
   3. User can click a campaign to see detail view with summary counters (total earned, participants, posts, budget remaining)
   4. Campaign status is displayed as a color-coded badge on both list cards and detail view (Draft=gray, Active=green, Paused=yellow, SubmissionsClosed=orange, Completed=blue)
   5. Campaign detail shows platform rate cards with icons and a budget utilization progress bar with color thresholds
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 26-01-PLAN.md — Shared campaign components, status filter, and list page with infinite scroll
+- [ ] 26-02-PLAN.md — Campaign detail page with counters, budget bar, rate cards, and settings
 
 ### Phase 27: Campaign Mutations
 **Goal**: Admins can create, configure, and clean up campaigns through the dashboard
@@ -174,11 +177,11 @@ Phases execute in numeric order: 24 → 25 → 26 → 27 → 28 → 29
 | 23. Security Audit Report | v1.2 | 1/1 | Complete | 2026-03-04 |
 | 24. Tech Debt & Shared Utilities | 2/2 | Complete    | 2026-03-09 | - |
 | 25. Campaign Types, Proxy Routes & Hooks | 2/2 | Complete    | 2026-03-09 | - |
-| 26. Campaign List & Detail | v1.3 | 0/0 | Not started | - |
+| 26. Campaign List & Detail | v1.3 | 0/2 | Not started | - |
 | 27. Campaign Mutations | v1.3 | 0/0 | Not started | - |
 | 28. Analytics & Payouts | v1.3 | 0/0 | Not started | - |
 | 29. Campaign Export | v1.3 | 0/0 | Not started | - |
 
 ---
 *Created: 2026-01-24*
-*Last updated: 2026-03-09 after Phase 25 planning*
+*Last updated: 2026-03-09 after Phase 26 planning*

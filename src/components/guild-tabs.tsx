@@ -12,6 +12,7 @@ interface GuildTabsProps {
 const tabs = [
     { name: 'Overview', href: '' },
     { name: 'Brands', href: '/brands' },
+    { name: 'Campaigns', href: '/campaigns' },
     { name: 'Accounts', href: '/accounts' },
     { name: 'Posts', href: '/posts' },
     { name: 'Analytics', href: '/analytics' },

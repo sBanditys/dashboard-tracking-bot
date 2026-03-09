@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Campaign System & Tech Debt
-status: completed
-stopped_at: Phase 27 context gathered
-last_updated: "2026-03-09T21:49:20.890Z"
-last_activity: 2026-03-09 -- Phase 26 complete (campaign detail page with budget bar, rate cards, settings)
+status: in-progress
+stopped_at: Completed 27-01-PLAN.md
+last_updated: "2026-03-09T22:07:00.000Z"
+last_activity: 2026-03-09 -- Phase 27 plan 01 complete (campaign create form + modal + admin guard)
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 7
+  completed_plans: 7
   percent: 100
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Server admins can access their tracking data and bot status through a reliable web interface -- independent of bot uptime.
-**Current focus:** Phase 26 - Campaign List & Detail
+**Current focus:** Phase 27 - Campaign Mutations
 
 ## Current Position
 
-Phase: 26 of 29 (Campaign List & Detail)
-Plan: 2 of 2 in current phase
-Status: Phase 26 Complete
-Last activity: 2026-03-09 -- Phase 26 complete (campaign detail page with budget bar, rate cards, settings)
+Phase: 27 of 29 (Campaign Mutations)
+Plan: 1 of 3 in current phase
+Status: Plan 27-01 Complete
+Last activity: 2026-03-09 -- Phase 27 plan 01 complete (campaign create form + modal + admin guard)
 
-Progress: [██████████] 100% (v1.3 Phase 26) -- 89 total plans complete across all milestones
+Progress: [██████████] 100% (v1.3 Phase 27) -- 90 total plans complete across all milestones
 
 ## Milestones
 
@@ -42,7 +42,7 @@ Progress: [██████████] 100% (v1.3 Phase 26) -- 89 total plan
 ## Performance Metrics
 
 **Velocity (cumulative):**
-- Total plans completed: 89 (v1.0: 47, v1.1: 22, v1.2: 14, v1.3: 6)
+- Total plans completed: 90 (v1.0: 47, v1.1: 22, v1.2: 14, v1.3: 7)
 - Milestones shipped: 3
 
 | Phase | Plan | Duration | Tasks | Files |
@@ -53,6 +53,7 @@ Progress: [██████████] 100% (v1.3 Phase 26) -- 89 total plan
 | 25-02 | Campaign hooks (12 hooks + key factory) | 2min | 1 | 1 |
 | 26-01 | Campaign list page + 4 shared components | 2min | 2 | 6 |
 | 26-02 | Campaign detail page + 4 detail components | 2min | 2 | 5 |
+| 27-01 | Campaign create form + modal + admin guard | 3min | 2 | 3 |
 
 *Updated after each plan completion*
 
@@ -63,6 +64,7 @@ Progress: [██████████] 100% (v1.3 Phase 26) -- 89 total plan
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [27-01]: CampaignForm uses string state for dollar inputs with Math.round conversion on submit; edit mode diffs for minimal PATCH
 - [26-01]: Removed ConnectionIssuesBanner from error state (requires isError+hasData, renders null on initial load failure)
 - [25-01]: camelCase field naming in campaign types to match backend wire format (not snake_case like bonus/tracking)
 - [24-02]: No re-export from use-bonus.ts -- clean break, all consumers import centsToDisplay from @/lib/format directly
@@ -88,9 +90,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09T21:49:20.888Z
-Stopped at: Phase 27 context gathered
-Resume file: .planning/phases/27-campaign-mutations/27-CONTEXT.md
+Last session: 2026-03-09T22:07:00.000Z
+Stopped at: Completed 27-01-PLAN.md
+Resume file: .planning/phases/27-campaign-mutations/27-01-SUMMARY.md
 
 ---
-*Last updated: 2026-03-09 (26-02 complete)*
+*Last updated: 2026-03-09 (27-01 complete)*

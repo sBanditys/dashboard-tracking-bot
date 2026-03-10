@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, Pencil, Trash2, Search } from 'lucide-react'
+import { ChevronRight, Download, Pencil, Trash2, Search } from 'lucide-react'
 import { useCampaignDetail, useDeleteCampaign } from '@/hooks/use-campaigns'
 import { useUser } from '@/hooks/use-user'
 import { centsToDisplay } from '@/lib/format'
@@ -14,6 +14,7 @@ import { PlatformRateCards } from '@/components/campaigns/platform-rate-cards'
 import { CampaignSettings } from '@/components/campaigns/campaign-settings'
 import { CampaignDetailSkeleton } from '@/components/campaigns/campaign-detail-skeleton'
 import { EditCampaignModal } from '@/components/campaigns/edit-campaign-modal'
+import { ExportCampaignModal } from '@/components/campaigns/export-campaign-modal'
 import { ConfirmationModal } from '@/components/ui/confirmation-modal'
 import { AnalyticsTab } from '@/components/campaigns/analytics-tab'
 import { PayoutsTab } from '@/components/campaigns/payouts-tab'
@@ -34,6 +35,8 @@ export default function CampaignDetailPage({ params }: PageProps) {
 
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
+  const [exportId, setExportId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<CampaignTab>('analytics')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -110,6 +113,16 @@ export default function CampaignDetailPage({ params }: PageProps) {
         </div>
         {isAdmin && (
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setExportOpen(true)}
+              disabled={!!exportId}
+              title={exportId ? 'Export in progress' : undefined}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-surface border border-border text-gray-300 hover:text-white hover:bg-surface-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download size={14} />
+              Export
+            </button>
             <button
               type="button"
               onClick={() => setEditOpen(true)}
@@ -258,6 +271,22 @@ export default function CampaignDetailPage({ params }: PageProps) {
                 router.push(`/guilds/${guildId}/campaigns`)
               },
             })
+          }}
+        />
+      )}
+
+      {/* Export modal */}
+      {isAdmin && (
+        <ExportCampaignModal
+          open={exportOpen}
+          onClose={() => setExportOpen(false)}
+          guildId={guildId}
+          campaignId={campaignId}
+          exportId={exportId}
+          onExportStarted={(id) => setExportId(id)}
+          onExportDone={() => {
+            setExportId(null)
+            setExportOpen(false)
           }}
         />
       )}

@@ -64,7 +64,7 @@ Full details: `milestones/v1.2-ROADMAP.md`
 - [x] **Phase 25: Campaign Types, Proxy Routes & Hooks** - Data layer foundation: TypeScript types, 12 proxy routes, React Query hooks (completed 2026-03-09)
 - [x] **Phase 26: Campaign List & Detail** - Read-only campaign UI with cursor pagination, status filtering, and detail view (completed 2026-03-09)
 - [x] **Phase 27: Campaign Mutations** - Create, edit, and delete campaign forms with validation and status guards (completed 2026-03-09)
-- [ ] **Phase 28: Analytics & Payouts** - Participant earnings table, payout management with mark-paid and bulk operations
+- [x] **Phase 28: Analytics & Payouts** - Participant earnings table, payout management with mark-paid and bulk operations (completed 2026-03-10)
 - [ ] **Phase 29: Campaign Export** - Campaign data export with format/scope selection and SSE progress tracking
 
 ## Phase Details
@@ -185,7 +185,7 @@ Phases execute in numeric order: 24 → 25 → 26 → 27 → 28 → 29
 | 25. Campaign Types, Proxy Routes & Hooks | 2/2 | Complete    | 2026-03-09 | - |
 | 26. Campaign List & Detail | 2/2 | Complete    | 2026-03-09 | - |
 | 27. Campaign Mutations | 2/2 | Complete    | 2026-03-09 | - |
-| 28. Analytics & Payouts | 1/2 | In Progress|  | - |
+| 28. Analytics & Payouts | 2/2 | Complete   | 2026-03-10 | - |
 | 29. Campaign Export | v1.3 | 0/0 | Not started | - |
 
 ---

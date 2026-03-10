@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Campaign System & Tech Debt
 status: completed
-stopped_at: Completed 28-01-PLAN.md
-last_updated: "2026-03-10T15:13:25.291Z"
+stopped_at: Completed 28-02-PLAN.md
+last_updated: "2026-03-10T15:20:21.676Z"
 last_activity: 2026-03-09 -- Phase 27 plan 02 complete (edit/delete campaign with admin guards)
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
   percent: 100
 ---
 
@@ -58,6 +58,7 @@ Progress: [██████████] 100% (v1.3 Phase 27) -- 91 total plan
 
 *Updated after each plan completion*
 | Phase 28-01 PAnalytics tab + tab infrastructure | 5min | 2 tasks | 4 files |
+| Phase 28-analytics-payouts P02 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,8 @@ Recent decisions affecting current work:
 - [Phase 26-02]: Used grid-rows CSS transition for collapsible settings (no JS height calculation)
 - [Phase 28-01]: ConfirmationModal extended with description/confirmClassName/loadingLabel props (backward compatible) for non-delete use cases in Plan 02
 - [Phase 28-01]: Analytics query key fixed to include userId for correct cache invalidation on search filter changes
+- [Phase 28-02]: PayoutsTab uses custom table (not DataTable) because DataTable does not support checkbox columns
+- [Phase 28-02]: useBulkMarkPaid fixed to send { userIds } not { discordUserIds } to match backend bulkMarkPaidBodySchema
 
 ### Pending Todos
 
@@ -95,8 +98,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-10T15:13:25.289Z
-Stopped at: Completed 28-01-PLAN.md
+Last session: 2026-03-10T15:20:21.674Z
+Stopped at: Completed 28-02-PLAN.md
 Resume file: None
 
 ---

@@ -206,6 +206,7 @@ export default function CampaignDetailPage({ params }: PageProps) {
             guildId={guildId}
             campaignId={campaignId}
             userId={debouncedSearch || undefined}
+            onClearSearch={() => setSearch('')}
           />
         )}
         {activeTab === 'payouts' && (
@@ -214,6 +215,7 @@ export default function CampaignDetailPage({ params }: PageProps) {
             campaignId={campaignId}
             isAdmin={isAdmin}
             userId={debouncedSearch || undefined}
+            onClearSearch={() => setSearch('')}
           />
         )}
         {activeTab === 'history' && (
@@ -221,6 +223,7 @@ export default function CampaignDetailPage({ params }: PageProps) {
             guildId={guildId}
             campaignId={campaignId}
             userId={debouncedSearch || undefined}
+            onClearSearch={() => setSearch('')}
           />
         )}
       </div>

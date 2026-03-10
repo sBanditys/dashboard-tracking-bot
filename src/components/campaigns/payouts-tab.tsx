@@ -12,13 +12,14 @@ interface PayoutsTabProps {
   campaignId: string
   isAdmin: boolean
   userId?: string
+  onClearSearch?: () => void
 }
 
 type StatusFilter = 'all' | 'unpaid' | 'paid'
 
 const MAX_SELECTION = 50
 
-export function PayoutsTab({ guildId, campaignId, isAdmin, userId }: PayoutsTabProps) {
+export function PayoutsTab({ guildId, campaignId, isAdmin, userId, onClearSearch }: PayoutsTabProps) {
   const [page, setPage] = useState(0)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('unpaid')
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -158,7 +159,7 @@ export function PayoutsTab({ guildId, campaignId, isAdmin, userId }: PayoutsTabP
 
       {/* Table */}
       {userId && !isLoading && filtered.length === 0 ? (
-        <NoResults query={userId} onClear={() => {}} />
+        <NoResults query={userId} onClear={onClearSearch ?? (() => {})} />
       ) : filtered.length === 0 ? (
         <div className="bg-surface border border-border rounded-sm p-8 text-center">
           <p className="text-gray-400">No participants yet</p>

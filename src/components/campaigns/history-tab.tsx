@@ -11,6 +11,7 @@ interface HistoryTabProps {
   guildId: string
   campaignId: string
   userId?: string
+  onClearSearch?: () => void
 }
 
 function formatTimestamp(timestamp: string): string {
@@ -43,7 +44,7 @@ const columns = [
   },
 ]
 
-export function HistoryTab({ guildId, campaignId, userId }: HistoryTabProps) {
+export function HistoryTab({ guildId, campaignId, userId, onClearSearch }: HistoryTabProps) {
   const [page, setPage] = useState(1)
 
   const { data, isLoading } = usePayoutHistory(guildId, campaignId, page, 20, userId)
@@ -59,7 +60,7 @@ export function HistoryTab({ guildId, campaignId, userId }: HistoryTabProps) {
   const totalPages = Math.ceil(totalCount / pageSize) || 1
 
   if (userId && !isLoading && entries.length === 0) {
-    return <NoResults query={userId} onClear={() => {}} />
+    return <NoResults query={userId} onClear={onClearSearch ?? (() => {})} />
   }
 
   return (

@@ -12,6 +12,7 @@ interface AnalyticsTabProps {
   guildId: string
   campaignId: string
   userId?: string
+  onClearSearch?: () => void
 }
 
 const columns = [
@@ -32,7 +33,7 @@ const columns = [
   },
 ]
 
-export function AnalyticsTab({ guildId, campaignId, userId }: AnalyticsTabProps) {
+export function AnalyticsTab({ guildId, campaignId, userId, onClearSearch }: AnalyticsTabProps) {
   const {
     data,
     isLoading,
@@ -52,7 +53,7 @@ export function AnalyticsTab({ guildId, campaignId, userId }: AnalyticsTabProps)
   const participants = data?.pages.flatMap((p) => p.participants) ?? []
 
   if (userId && !isLoading && participants.length === 0) {
-    return <NoResults query={userId} onClear={() => {}} />
+    return <NoResults query={userId} onClear={onClearSearch ?? (() => {})} />
   }
 
   return (

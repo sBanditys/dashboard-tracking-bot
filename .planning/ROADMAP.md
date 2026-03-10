@@ -65,7 +65,7 @@ Full details: `milestones/v1.2-ROADMAP.md`
 - [x] **Phase 26: Campaign List & Detail** - Read-only campaign UI with cursor pagination, status filtering, and detail view (completed 2026-03-09)
 - [x] **Phase 27: Campaign Mutations** - Create, edit, and delete campaign forms with validation and status guards (completed 2026-03-09)
 - [x] **Phase 28: Analytics & Payouts** - Participant earnings table, payout management with mark-paid and bulk operations (completed 2026-03-10)
-- [ ] **Phase 29: Campaign Export** - Campaign data export with format/scope selection and SSE progress tracking
+- [ ] **Phase 29: Campaign Export** - Campaign data export with format/scope selection and polling progress tracking
 
 ## Phase Details
 
@@ -148,8 +148,10 @@ Plans:
 **Requirements**: EXP-01, EXP-02
 **Success Criteria** (what must be TRUE):
   1. Admin can trigger a campaign export by selecting format (CSV/XLSX) and scope (payment/full), receiving a queued confirmation
-  2. User can see export progress via SSE updates and receives a download link when the export completes
-**Plans**: TBD
+  2. User can see export progress via polling updates and receives a download link when the export completes
+**Plans**: 1 plan
+Plans:
+- [ ] 29-01-PLAN.md — ExportCampaignModal component and campaign detail page integration
 
 ## Progress
 
@@ -186,8 +188,8 @@ Phases execute in numeric order: 24 → 25 → 26 → 27 → 28 → 29
 | 26. Campaign List & Detail | 2/2 | Complete    | 2026-03-09 | - |
 | 27. Campaign Mutations | 2/2 | Complete    | 2026-03-09 | - |
 | 28. Analytics & Payouts | 2/2 | Complete    | 2026-03-10 | - |
-| 29. Campaign Export | v1.3 | 0/0 | Not started | - |
+| 29. Campaign Export | v1.3 | 0/1 | Not started | - |
 
 ---
 *Created: 2026-01-24*
-*Last updated: 2026-03-10 after Phase 28 planning*
+*Last updated: 2026-03-10 after Phase 29 planning*

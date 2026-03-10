@@ -16,6 +16,8 @@ import { CampaignDetailSkeleton } from '@/components/campaigns/campaign-detail-s
 import { EditCampaignModal } from '@/components/campaigns/edit-campaign-modal'
 import { ConfirmationModal } from '@/components/ui/confirmation-modal'
 import { AnalyticsTab } from '@/components/campaigns/analytics-tab'
+import { PayoutsTab } from '@/components/campaigns/payouts-tab'
+import { HistoryTab } from '@/components/campaigns/history-tab'
 
 interface PageProps {
   params: Promise<{ guildId: string; campaignId: string }>
@@ -201,10 +203,19 @@ export default function CampaignDetailPage({ params }: PageProps) {
           />
         )}
         {activeTab === 'payouts' && (
-          <div className="text-gray-400 text-center py-8">Payouts tab coming soon</div>
+          <PayoutsTab
+            guildId={guildId}
+            campaignId={campaignId}
+            isAdmin={isAdmin}
+            userId={debouncedSearch || undefined}
+          />
         )}
         {activeTab === 'history' && (
-          <div className="text-gray-400 text-center py-8">History tab coming soon</div>
+          <HistoryTab
+            guildId={guildId}
+            campaignId={campaignId}
+            userId={debouncedSearch || undefined}
+          />
         )}
       </div>
 

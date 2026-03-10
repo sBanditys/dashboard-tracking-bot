@@ -219,7 +219,11 @@ export function useCampaignExportStatus(
       return res.json()
     },
     enabled: !!guildId && !!campaignId && !!exportId,
-    refetchInterval: 3000,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status
+      if (status === 'completed' || status === 'failed') return false
+      return 3000
+    },
   })
 }
 

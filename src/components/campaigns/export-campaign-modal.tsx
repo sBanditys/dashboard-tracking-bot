@@ -61,8 +61,10 @@ export function ExportCampaignModal({
       setModalView('complete')
     } else if (status === 'failed') {
       setModalView('error')
+      // Clear persisted exportId so refreshes don't re-poll a failed export
+      localStorage.removeItem(`export-${campaignId}`)
     }
-  }, [exportStatus.data])
+  }, [exportStatus.data, campaignId])
 
   async function handleExport() {
     setQuotaError(false)

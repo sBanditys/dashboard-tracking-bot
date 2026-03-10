@@ -36,10 +36,18 @@ export default function CampaignDetailPage({ params }: PageProps) {
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
-  const [exportId, setExportId] = useState<string | null>(null)
+  const [exportId, setExportId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem(`export-${campaignId}`) ?? null
+  })
   const [activeTab, setActiveTab] = useState<CampaignTab>('analytics')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  // Auto-open export modal if there's a persisted in-progress export
+  useEffect(() => {
+    if (exportId) setExportOpen(true)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300)
@@ -283,9 +291,13 @@ export default function CampaignDetailPage({ params }: PageProps) {
           guildId={guildId}
           campaignId={campaignId}
           exportId={exportId}
-          onExportStarted={(id) => setExportId(id)}
+          onExportStarted={(id) => {
+            setExportId(id)
+            localStorage.setItem(`export-${campaignId}`, id)
+          }}
           onExportDone={() => {
             setExportId(null)
+            localStorage.removeItem(`export-${campaignId}`)
             setExportOpen(false)
           }}
         />

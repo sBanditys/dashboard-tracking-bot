@@ -161,6 +161,12 @@ export default function CampaignDetailPage({ params }: PageProps) {
         budgetCents={campaign.budgetCents}
       />
 
+      {/* Platform rates */}
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-white mb-3">Platform Rates</h2>
+        <PlatformRateCards campaign={campaign} />
+      </div>
+
       {/* Search */}
       <div className="mb-4">
         <div className="relative">
@@ -169,7 +175,7 @@ export default function CampaignDetailPage({ params }: PageProps) {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by user ID..."
+            placeholder="Search by user ID or username..."
             className="w-full bg-surface border border-border rounded-md px-3 py-2 pl-9 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-accent-purple"
           />
         </div>
@@ -217,12 +223,6 @@ export default function CampaignDetailPage({ params }: PageProps) {
             userId={debouncedSearch || undefined}
           />
         )}
-      </div>
-
-      {/* Platform rates */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-white mb-3">Platform Rates</h2>
-        <PlatformRateCards campaign={campaign} />
       </div>
 
       {/* Campaign settings */}

@@ -431,7 +431,7 @@ export function useBulkMarkPaid(guildId: string, campaignId: string) {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ discordUserIds }),
+          body: JSON.stringify({ userIds: discordUserIds }),
         }
       )
       if (!res.ok) {

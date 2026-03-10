@@ -65,7 +65,7 @@ Full details: `milestones/v1.2-ROADMAP.md`
 - [x] **Phase 26: Campaign List & Detail** - Read-only campaign UI with cursor pagination, status filtering, and detail view (completed 2026-03-09)
 - [x] **Phase 27: Campaign Mutations** - Create, edit, and delete campaign forms with validation and status guards (completed 2026-03-09)
 - [x] **Phase 28: Analytics & Payouts** - Participant earnings table, payout management with mark-paid and bulk operations (completed 2026-03-10)
-- [ ] **Phase 29: Campaign Export** - Campaign data export with format/scope selection and polling progress tracking
+- [x] **Phase 29: Campaign Export** - Campaign data export with format/scope selection and polling progress tracking (completed 2026-03-10)
 
 ## Phase Details
 
@@ -188,7 +188,7 @@ Phases execute in numeric order: 24 → 25 → 26 → 27 → 28 → 29
 | 26. Campaign List & Detail | 2/2 | Complete    | 2026-03-09 | - |
 | 27. Campaign Mutations | 2/2 | Complete    | 2026-03-09 | - |
 | 28. Analytics & Payouts | 2/2 | Complete    | 2026-03-10 | - |
-| 29. Campaign Export | v1.3 | 0/1 | Not started | - |
+| 29. Campaign Export | 1/1 | Complete   | 2026-03-10 | - |
 
 ---
 *Created: 2026-01-24*

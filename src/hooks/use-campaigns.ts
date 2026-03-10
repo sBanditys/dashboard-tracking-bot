@@ -39,8 +39,8 @@ export const campaignKeys = {
     ['guild', guildId, 'campaigns', 'list', status ?? 'all'] as const,
   detail: (guildId: string, campaignId: string) =>
     ['guild', guildId, 'campaigns', 'detail', campaignId] as const,
-  analytics: (guildId: string, campaignId: string) =>
-    ['guild', guildId, 'campaigns', 'detail', campaignId, 'analytics'] as const,
+  analytics: (guildId: string, campaignId: string, userId?: string) =>
+    ['guild', guildId, 'campaigns', 'detail', campaignId, 'analytics', userId] as const,
   payouts: (guildId: string, campaignId: string, page: number, userId?: string) =>
     ['guild', guildId, 'campaigns', 'detail', campaignId, 'payouts', page, userId] as const,
   payoutHistory: (guildId: string, campaignId: string, page: number, userId?: string) =>
@@ -120,7 +120,7 @@ export function useCampaignAnalytics(
   userId?: string
 ) {
   return useInfiniteQuery({
-    queryKey: campaignKeys.analytics(guildId, campaignId),
+    queryKey: campaignKeys.analytics(guildId, campaignId, userId),
     queryFn: async ({ pageParam }) => {
       const params = new URLSearchParams({ limit: '20' })
       if (pageParam) params.set('cursor', pageParam)

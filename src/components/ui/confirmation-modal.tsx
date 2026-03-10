@@ -11,6 +11,9 @@ interface ConfirmationModalProps {
   itemName: string
   isLoading?: boolean
   confirmLabel?: string
+  description?: React.ReactNode
+  confirmClassName?: string
+  loadingLabel?: string
 }
 
 export function ConfirmationModal({
@@ -21,6 +24,9 @@ export function ConfirmationModal({
   itemName,
   isLoading = false,
   confirmLabel = 'Delete',
+  description,
+  confirmClassName,
+  loadingLabel = 'Deleting...',
 }: ConfirmationModalProps) {
   return (
     <Dialog open={open} onClose={onClose} className="relative z-50">
@@ -35,8 +41,12 @@ export function ConfirmationModal({
           </DialogTitle>
 
           <Description className="text-gray-300">
-            Are you sure you want to delete{' '}
-            <span className="text-white font-medium">{itemName}</span>?
+            {description ?? (
+              <>
+                Are you sure you want to delete{' '}
+                <span className="text-white font-medium">{itemName}</span>?
+              </>
+            )}
           </Description>
 
           <div className="flex gap-3 justify-end pt-2">
@@ -58,11 +68,11 @@ export function ConfirmationModal({
               disabled={isLoading}
               className={cn(
                 'px-4 py-2 text-sm font-medium rounded-md transition-colors',
-                'bg-red-600 hover:bg-red-700 text-white',
+                confirmClassName ?? 'bg-red-600 hover:bg-red-700 text-white',
                 'disabled:opacity-50 disabled:cursor-not-allowed'
               )}
             >
-              {isLoading ? 'Deleting...' : confirmLabel}
+              {isLoading ? loadingLabel : confirmLabel}
             </button>
           </div>
         </DialogPanel>

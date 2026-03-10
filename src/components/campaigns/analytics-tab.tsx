@@ -17,7 +17,8 @@ interface AnalyticsTabProps {
 const columns = [
   {
     key: 'discordUserId',
-    header: 'User ID',
+    header: 'User',
+    render: (p: AnalyticsParticipant) => p.username ?? p.discordUserId,
   },
   {
     key: 'postCount',

@@ -29,10 +29,12 @@ const columns = [
   {
     key: 'actorId',
     header: 'Admin',
+    render: (e: PayoutHistoryEntry) => e.actorUsername ?? e.actorId,
   },
   {
     key: 'discordUserId',
     header: 'Participant',
+    render: (e: PayoutHistoryEntry) => e.username ?? e.discordUserId,
   },
   {
     key: 'amountCents',

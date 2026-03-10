@@ -102,7 +102,7 @@ export function PayoutsTab({ guildId, campaignId, isAdmin, userId }: PayoutsTabP
           <thead className="bg-background/50">
             <tr>
               {isAdmin && <th className="px-4 py-3 w-10" />}
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">User ID</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">User</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Earned</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
               {isAdmin && <th className="px-4 py-3 w-24" />}
@@ -181,7 +181,7 @@ export function PayoutsTab({ guildId, campaignId, isAdmin, userId }: PayoutsTabP
                     </th>
                   )}
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    User ID
+                    User
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Earned
@@ -211,7 +211,7 @@ export function PayoutsTab({ guildId, campaignId, isAdmin, userId }: PayoutsTabP
                         />
                       </td>
                     )}
-                    <td className="px-4 py-3 text-sm text-gray-300">{p.discordUserId}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300">{p.username ?? p.discordUserId}</td>
                     <td className="px-4 py-3 text-sm text-gray-300">{centsToDisplay(p.totalEarnedCents)}</td>
                     <td className="px-4 py-3">
                       {p.isPaid ? (
@@ -294,7 +294,7 @@ export function PayoutsTab({ guildId, campaignId, isAdmin, userId }: PayoutsTabP
             )
           }}
           title="Mark as Paid"
-          itemName={markPaidTarget.discordUserId}
+          itemName={markPaidTarget.username ?? markPaidTarget.discordUserId}
           isLoading={markPaid.isPending}
           confirmLabel="Mark Paid"
           confirmClassName="bg-accent-purple hover:bg-accent-purple/90"
@@ -302,7 +302,7 @@ export function PayoutsTab({ guildId, campaignId, isAdmin, userId }: PayoutsTabP
           description={
             <>
               Mark{' '}
-              <span className="text-white font-medium">{markPaidTarget.discordUserId}</span> as
+              <span className="text-white font-medium">{markPaidTarget.username ?? markPaidTarget.discordUserId}</span> as
               paid for{' '}
               <span className="text-white font-medium">
                 {centsToDisplay(markPaidTarget.totalEarnedCents)}

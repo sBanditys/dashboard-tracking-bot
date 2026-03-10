@@ -77,6 +77,7 @@ export interface CampaignsResponse {
 
 export interface AnalyticsParticipant {
   discordUserId: string
+  username: string | null
   totalEarnedCents: number
   postCount: number
 }
@@ -92,6 +93,7 @@ export interface AnalyticsResponse {
 
 export interface PayoutParticipant {
   discordUserId: string
+  username: string | null
   totalEarnedCents: number
   paymentMethod: string | null
   isPaid: boolean
@@ -112,7 +114,9 @@ export interface PayoutHistoryEntry {
   id: string
   timestamp: string
   actorId: string
+  actorUsername: string | null
   discordUserId: string
+  username: string | null
   amountCents: number
   paymentMethod: string | null
 }

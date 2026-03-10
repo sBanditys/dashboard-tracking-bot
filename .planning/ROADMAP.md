@@ -137,7 +137,10 @@ Plans:
   3. Admin can mark a single participant as paid with a confirmation dialog, and the UI updates optimistically (rolling back on error)
   4. Admin can select up to 50 participants via checkboxes and bulk mark them as paid, with a success toast showing paid count and total amount
   5. User can view an offset-paginated payout history audit trail showing who marked whom as paid, when, and for how much
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 28-01-PLAN.md — Tab bar, search input, analytics tab with infinite scroll, ConfirmationModal extension
+- [ ] 28-02-PLAN.md — Payouts tab with checkbox selection and mark-paid, history tab with audit trail
 
 ### Phase 29: Campaign Export
 **Goal**: Admins can export campaign data for external reporting and accounting
@@ -182,9 +185,9 @@ Phases execute in numeric order: 24 → 25 → 26 → 27 → 28 → 29
 | 25. Campaign Types, Proxy Routes & Hooks | 2/2 | Complete    | 2026-03-09 | - |
 | 26. Campaign List & Detail | 2/2 | Complete    | 2026-03-09 | - |
 | 27. Campaign Mutations | 2/2 | Complete    | 2026-03-09 | - |
-| 28. Analytics & Payouts | v1.3 | 0/0 | Not started | - |
+| 28. Analytics & Payouts | v1.3 | 0/2 | Not started | - |
 | 29. Campaign Export | v1.3 | 0/0 | Not started | - |
 
 ---
 *Created: 2026-01-24*
-*Last updated: 2026-03-09 after Phase 27 planning*
+*Last updated: 2026-03-10 after Phase 28 planning*

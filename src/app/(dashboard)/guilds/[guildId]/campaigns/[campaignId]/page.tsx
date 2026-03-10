@@ -1,9 +1,9 @@
 'use client'
 
-import { use, useState } from 'react'
+import { use, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, Pencil, Trash2 } from 'lucide-react'
+import { ChevronRight, Pencil, Trash2, Search } from 'lucide-react'
 import { useCampaignDetail, useDeleteCampaign } from '@/hooks/use-campaigns'
 import { useUser } from '@/hooks/use-user'
 import { centsToDisplay } from '@/lib/format'
@@ -15,10 +15,13 @@ import { CampaignSettings } from '@/components/campaigns/campaign-settings'
 import { CampaignDetailSkeleton } from '@/components/campaigns/campaign-detail-skeleton'
 import { EditCampaignModal } from '@/components/campaigns/edit-campaign-modal'
 import { ConfirmationModal } from '@/components/ui/confirmation-modal'
+import { AnalyticsTab } from '@/components/campaigns/analytics-tab'
 
 interface PageProps {
   params: Promise<{ guildId: string; campaignId: string }>
 }
+
+type CampaignTab = 'analytics' | 'payouts' | 'history'
 
 export default function CampaignDetailPage({ params }: PageProps) {
   const { guildId, campaignId } = use(params)
@@ -29,6 +32,14 @@ export default function CampaignDetailPage({ params }: PageProps) {
 
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<CampaignTab>('analytics')
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(timer)
+  }, [search])
 
   const guild = user?.guilds?.find((g) => g.id === guildId)
   const isAdmin = guild !== undefined && (Number(guild.permissions) & 0x8) !== 0
@@ -68,6 +79,12 @@ export default function CampaignDetailPage({ params }: PageProps) {
 
   const { campaign, totals } = data
   const budgetRemaining = Math.max(campaign.budgetCents - totals.totalEarnedCents, 0)
+
+  const tabs: { id: CampaignTab; label: string }[] = [
+    { id: 'analytics', label: 'Analytics' },
+    { id: 'payouts', label: 'Payouts' },
+    { id: 'history', label: 'History' },
+  ]
 
   return (
     <div>
@@ -141,6 +158,55 @@ export default function CampaignDetailPage({ params }: PageProps) {
         totalEarnedCents={totals.totalEarnedCents}
         budgetCents={campaign.budgetCents}
       />
+
+      {/* Search */}
+      <div className="mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by user ID..."
+            className="w-full bg-surface border border-border rounded-md px-3 py-2 pl-9 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-accent-purple"
+          />
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 mb-4">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={
+              activeTab === tab.id
+                ? 'px-4 py-2 text-sm font-medium rounded-full bg-accent-purple text-white shadow-sm transition-colors'
+                : 'px-4 py-2 text-sm font-medium rounded-full text-gray-400 hover:text-gray-200 transition-colors'
+            }
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <div className="mb-6">
+        {activeTab === 'analytics' && (
+          <AnalyticsTab
+            guildId={guildId}
+            campaignId={campaignId}
+            userId={debouncedSearch || undefined}
+          />
+        )}
+        {activeTab === 'payouts' && (
+          <div className="text-gray-400 text-center py-8">Payouts tab coming soon</div>
+        )}
+        {activeTab === 'history' && (
+          <div className="text-gray-400 text-center py-8">History tab coming soon</div>
+        )}
+      </div>
 
       {/* Platform rates */}
       <div className="mb-6">

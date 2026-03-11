@@ -51,7 +51,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const url = new URL(request.url)
     const queryString = url.search
-    const response = await backendFetch(`${API_URL}/api/v1/guilds/${guildId}/trash/${itemId}${queryString}`, {
+    const response = await backendFetch(`${API_URL}/api/v1/guilds/${guildId}/trash/${encodeURIComponent(itemId)}${queryString}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,

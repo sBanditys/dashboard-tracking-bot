@@ -114,7 +114,7 @@ export function useRestoreItem(guildId: string) {
 
     return useMutation({
         mutationFn: async (params: { itemId: string; dataType: 'accounts' | 'posts' }) => {
-            const response = await fetchWithRetry(`/api/guilds/${guildId}/trash/${params.itemId}/restore`, {
+            const response = await fetchWithRetry(`/api/guilds/${guildId}/trash/${encodeURIComponent(params.itemId)}/restore`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -159,7 +159,7 @@ export function usePermanentDelete(guildId: string) {
     return useMutation({
         mutationFn: async (params: { itemId: string; dataType: 'accounts' | 'posts' }) => {
             const response = await fetchWithRetry(
-                `/api/guilds/${guildId}/trash/${params.itemId}?dataType=${params.dataType}`,
+                `/api/guilds/${guildId}/trash/${encodeURIComponent(params.itemId)}?dataType=${params.dataType}`,
                 {
                     method: 'DELETE',
                 }

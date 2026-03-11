@@ -25,7 +25,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       // Restore endpoint does not require a body; ignore parse errors for empty bodies.
     }
 
-    const response = await backendFetch(`${API_URL}/api/v1/guilds/${guildId}/trash/${itemId}/restore`, {
+    const response = await backendFetch(`${API_URL}/api/v1/guilds/${guildId}/trash/${encodeURIComponent(itemId)}/restore`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

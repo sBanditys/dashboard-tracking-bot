@@ -17,6 +17,16 @@ const nextConfig = {
                 hostname: 'cdn.discordapp.com',
                 pathname: '/avatars/**',
             },
+            {
+                protocol: 'https',
+                hostname: '**.s3.amazonaws.com',
+                pathname: '/profiles/**',
+            },
+            {
+                protocol: 'https',
+                hostname: '**.s3.**.amazonaws.com',
+                pathname: '/profiles/**',
+            },
         ],
     },
     async headers() {

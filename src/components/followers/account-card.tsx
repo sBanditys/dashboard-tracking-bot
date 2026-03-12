@@ -33,6 +33,12 @@ function formatFollowerCount(count: number): string {
   return count.toLocaleString('en-US')
 }
 
+function formatCompact(count: number): string {
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`
+  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`
+  return count.toLocaleString('en-US')
+}
+
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—'
   try {
@@ -67,17 +73,28 @@ function GrowthBadge({ growth, className }: GrowthBadgeProps) {
   )
 }
 
-function ProfilePhoto({ account, platformColor }: { account: AccountFollowerData; platformColor: string }) {
+function ProfilePhoto({
+  account,
+  platformColor,
+  size = 'sm',
+}: {
+  account: AccountFollowerData
+  platformColor: string
+  size?: 'sm' | 'lg'
+}) {
   const [imgError, setImgError] = useState(false)
+  const px = size === 'lg' ? 80 : 40
+  const cls = size === 'lg' ? 'w-20 h-20' : 'w-10 h-10'
+  const textCls = size === 'lg' ? 'text-2xl' : 'text-sm'
 
   if (account.profilePhotoUrl && !imgError) {
     return (
-      <div className="w-10 h-10 rounded-full overflow-hidden border border-[#404040]">
+      <div className={cn(cls, 'rounded-full overflow-hidden border border-[#404040]')}>
         <Image
           src={account.profilePhotoUrl}
           alt={account.username}
-          width={40}
-          height={40}
+          width={px}
+          height={px}
           className="object-cover w-full h-full"
           unoptimized
           onError={() => setImgError(true)}
@@ -88,7 +105,7 @@ function ProfilePhoto({ account, platformColor }: { account: AccountFollowerData
 
   return (
     <div
-      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold border border-[#404040]"
+      className={cn(cls, 'rounded-full flex items-center justify-center text-white font-semibold border border-[#404040]', textCls)}
       style={{ backgroundColor: platformColor }}
     >
       {account.username.charAt(0).toUpperCase()}
@@ -135,20 +152,18 @@ export function AccountCard({
   return (
     <div
       className={cn(
-        'bg-[#2d2d2d] border border-[#404040] rounded-lg px-4 py-3 transition-colors',
+        'bg-[#2d2d2d] border border-[#404040] rounded-lg transition-colors',
         !isPending && 'cursor-pointer hover:bg-[#363636]',
         isPending && 'opacity-60'
       )}
       onClick={handleCardClick}
     >
-      {/* Main row */}
-      <div className="flex items-center gap-3">
-        {/* Profile photo */}
+      {/* Collapsed row */}
+      <div className="flex items-center gap-3 px-4 py-3">
         <div className="flex-shrink-0">
           <ProfilePhoto account={account} platformColor={platformColor} />
         </div>
 
-        {/* Username + platform */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <a
@@ -172,7 +187,6 @@ export function AccountCard({
           )}
         </div>
 
-        {/* Follower count + growth badge */}
         <div className="flex-shrink-0 text-right">
           {isPending ? (
             <span className="text-xs font-medium bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">
@@ -188,7 +202,6 @@ export function AccountCard({
           )}
         </div>
 
-        {/* Sparkline */}
         {!isPending && (
           <div className="flex-shrink-0 w-20">
             <FollowerSparkline data={sparklineData} />
@@ -196,53 +209,105 @@ export function AccountCard({
         )}
       </div>
 
-      {/* Expanded content */}
+      {/* Expanded profile card */}
       {expanded && !isPending && (
         <div
-          className="mt-3 pt-3 border-t border-[#404040] space-y-2"
+          className="border-t border-[#404040] px-4 py-4"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-400">
-            <span className="font-medium text-gray-300">30d growth:</span>
-            <span><GrowthBadge growth={account.growth30d} /></span>
-            <span className="font-medium text-gray-300">Last scraped:</span>
-            <span>{formatDate(account.followersLastScrapedAt)}</span>
-            <span className="font-medium text-gray-300">Tracking since:</span>
-            <span>{formatDate(account.trackingSince)}</span>
-            {account.platformPostCount != null && (
-              <>
-                <span className="font-medium text-gray-300">Posts (platform):</span>
-                <span>{account.platformPostCount.toLocaleString()}</span>
-              </>
-            )}
+          <div className="flex gap-5">
+            {/* Large profile photo */}
+            <div className="flex-shrink-0">
+              <ProfilePhoto account={account} platformColor={platformColor} size="lg" />
+            </div>
+
+            {/* Profile info */}
+            <div className="flex-1 min-w-0">
+              {/* Username + platform */}
+              <div className="flex items-center gap-2">
+                <a
+                  href={getProfileUrl(account.platform, account.username)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-lg font-semibold text-white hover:underline"
+                >
+                  {account.username}
+                </a>
+                <PlatformIcon platform={account.platform} size="w-5 h-5" />
+              </div>
+
+              {/* Display name */}
+              {account.displayName && (
+                <p className="text-sm text-gray-400 mt-0.5">{account.displayName}</p>
+              )}
+
+              {/* Stats row — Instagram-style horizontal */}
+              <div className="flex items-center gap-5 mt-3">
+                {account.platformPostCount != null && (
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-white">{formatCompact(account.platformPostCount)}</p>
+                    <p className="text-xs text-gray-400">posts</p>
+                  </div>
+                )}
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-white">{formatCompact(account.followerCount!)}</p>
+                  <p className="text-xs text-gray-400">followers</p>
+                </div>
+                {account.growth7d && account.growth7d.dataQuality !== 'pending' && (
+                  <div className="text-center">
+                    <p className="text-sm font-semibold" style={{ color: account.growth7d.delta >= 0 ? '#22c55e' : '#ef4444' }}>
+                      {account.growth7d.delta >= 0 ? '+' : ''}{formatCompact(account.growth7d.delta)}
+                    </p>
+                    <p className="text-xs text-gray-400">7d growth</p>
+                  </div>
+                )}
+                {account.growth30d && account.growth30d.dataQuality !== 'pending' && (
+                  <div className="text-center">
+                    <p className="text-sm font-semibold" style={{ color: account.growth30d.delta >= 0 ? '#22c55e' : '#ef4444' }}>
+                      {account.growth30d.delta >= 0 ? '+' : ''}{formatCompact(account.growth30d.delta)}
+                    </p>
+                    <p className="text-xs text-gray-400">30d growth</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Biography */}
+              {account.biography && (
+                <p className="text-xs text-gray-300 mt-3 whitespace-pre-line line-clamp-4">{account.biography}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom details row */}
+          <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[#404040] text-xs text-gray-400 flex-wrap">
             {account.postStats && (
               <>
-                <span className="font-medium text-gray-300">Posts (tracked):</span>
-                <span>{account.postStats.total.toLocaleString()}</span>
-                <span className="font-medium text-gray-300">Posts (7d):</span>
-                <span>{account.postStats.last7d.toLocaleString()}</span>
-                <span className="font-medium text-gray-300">Posts (30d):</span>
-                <span>{account.postStats.last30d.toLocaleString()}</span>
+                <span><span className="text-gray-300 font-medium">{account.postStats.total}</span> tracked</span>
+                <span><span className="text-gray-300 font-medium">{account.postStats.last7d}</span> posts 7d</span>
+                <span><span className="text-gray-300 font-medium">{account.postStats.last30d}</span> posts 30d</span>
               </>
             )}
+            {account.followersLastScrapedAt && (
+              <span>Scraped {formatDate(account.followersLastScrapedAt)}</span>
+            )}
+            {account.trackingSince && (
+              <span>Since {formatDate(account.trackingSince)}</span>
+            )}
+            {onRefresh && (
+              <button
+                onClick={handleRefreshClick}
+                disabled={isRefreshing}
+                className={cn(
+                  'ml-auto flex items-center gap-1.5 text-xs px-3 py-1 rounded border border-[#404040]',
+                  'text-gray-300 hover:text-white hover:border-[#6b7280] transition-colors',
+                  'disabled:opacity-50 disabled:cursor-not-allowed'
+                )}
+              >
+                <RefreshCw className={cn('w-3 h-3', isRefreshing && 'animate-spin')} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh'}
+              </button>
+            )}
           </div>
-          {account.biography && (
-            <p className="text-xs text-gray-400 italic line-clamp-3">{account.biography}</p>
-          )}
-          {onRefresh && (
-            <button
-              onClick={handleRefreshClick}
-              disabled={isRefreshing}
-              className={cn(
-                'mt-2 flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border border-[#404040]',
-                'text-gray-300 hover:text-white hover:border-[#6b7280] transition-colors',
-                'disabled:opacity-50 disabled:cursor-not-allowed'
-              )}
-            >
-              <RefreshCw className={cn('w-3 h-3', isRefreshing && 'animate-spin')} />
-              {isRefreshing ? 'Refreshing...' : 'Refresh'}
-            </button>
-          )}
         </div>
       )}
     </div>

@@ -162,6 +162,9 @@ export function AccountCard({
             </a>
             <PlatformIcon platform={account.platform} size="w-4 h-4" />
           </div>
+          {account.displayName && (
+            <p className="text-xs text-gray-400 truncate">{account.displayName}</p>
+          )}
           {isPending && account.trackingSince && (
             <p className="text-xs text-gray-400 mt-0.5">
               Tracking since {formatDate(account.trackingSince)}
@@ -206,9 +209,15 @@ export function AccountCard({
             <span>{formatDate(account.followersLastScrapedAt)}</span>
             <span className="font-medium text-gray-300">Tracking since:</span>
             <span>{formatDate(account.trackingSince)}</span>
+            {account.platformPostCount != null && (
+              <>
+                <span className="font-medium text-gray-300">Posts (platform):</span>
+                <span>{account.platformPostCount.toLocaleString()}</span>
+              </>
+            )}
             {account.postStats && (
               <>
-                <span className="font-medium text-gray-300">Posts (total):</span>
+                <span className="font-medium text-gray-300">Posts (tracked):</span>
                 <span>{account.postStats.total.toLocaleString()}</span>
                 <span className="font-medium text-gray-300">Posts (7d):</span>
                 <span>{account.postStats.last7d.toLocaleString()}</span>

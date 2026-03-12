@@ -21,6 +21,8 @@ export interface AccountFollowerData {
   trackingSince: string | null;
   postStats?: { total: number; last7d: number; last30d: number } | null;
   biography?: string | null;
+  displayName?: string | null;
+  platformPostCount?: number | null;
   created_at: string;
 }
 

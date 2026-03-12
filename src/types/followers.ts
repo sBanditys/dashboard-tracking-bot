@@ -19,6 +19,7 @@ export interface AccountFollowerData {
   growth7d: GrowthDelta | null;
   growth30d: GrowthDelta | null;
   trackingSince: string | null;
+  postStats?: { total: number; last7d: number; last30d: number } | null;
   created_at: string;
 }
 

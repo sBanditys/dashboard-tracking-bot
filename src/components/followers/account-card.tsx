@@ -15,6 +15,20 @@ const PLATFORM_COLORS: Record<string, string> = {
   youtube: '#FF0000',
 }
 
+function getProfileUrl(platform: string, username: string): string {
+  const clean = username.replace(/^@/, '')
+  switch (platform.toLowerCase()) {
+    case 'instagram':
+      return `https://www.instagram.com/${clean}/`
+    case 'tiktok':
+      return `https://www.tiktok.com/@${clean}`
+    case 'youtube':
+      return `https://www.youtube.com/@${clean}`
+    default:
+      return '#'
+  }
+}
+
 function formatFollowerCount(count: number): string {
   return count.toLocaleString('en-US')
 }
@@ -137,7 +151,15 @@ export function AccountCard({
         {/* Username + platform */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-medium text-white truncate">{account.username}</span>
+            <a
+              href={getProfileUrl(account.platform, account.username)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-white truncate hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {account.username}
+            </a>
             <PlatformIcon platform={account.platform} size="w-4 h-4" />
           </div>
           {isPending && account.trackingSince && (
@@ -184,6 +206,16 @@ export function AccountCard({
             <span>{formatDate(account.followersLastScrapedAt)}</span>
             <span className="font-medium text-gray-300">Tracking since:</span>
             <span>{formatDate(account.trackingSince)}</span>
+            {account.postStats && (
+              <>
+                <span className="font-medium text-gray-300">Posts (total):</span>
+                <span>{account.postStats.total.toLocaleString()}</span>
+                <span className="font-medium text-gray-300">Posts (7d):</span>
+                <span>{account.postStats.last7d.toLocaleString()}</span>
+                <span className="font-medium text-gray-300">Posts (30d):</span>
+                <span>{account.postStats.last30d.toLocaleString()}</span>
+              </>
+            )}
           </div>
           {onRefresh && (
             <button

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import type { GroupFollowerStats, AccountFollowerData } from '@/types/followers'
@@ -44,6 +45,33 @@ interface StackedAvatarsProps {
   maxVisible?: number
 }
 
+function StackedAvatar({ account, platformColor }: { account: AccountFollowerData; platformColor: string }) {
+  const [imgError, setImgError] = useState(false)
+
+  if (account.profilePhotoUrl && !imgError) {
+    return (
+      <Image
+        src={account.profilePhotoUrl}
+        alt={account.username}
+        width={32}
+        height={32}
+        className="object-cover w-full h-full"
+        unoptimized
+        onError={() => setImgError(true)}
+      />
+    )
+  }
+
+  return (
+    <div
+      className="w-full h-full flex items-center justify-center text-white text-xs font-semibold"
+      style={{ backgroundColor: platformColor }}
+    >
+      {account.username.charAt(0).toUpperCase()}
+    </div>
+  )
+}
+
 function StackedAvatars({ accounts, maxVisible = 5 }: StackedAvatarsProps) {
   const visibleAccounts = accounts.slice(0, maxVisible)
   const overflow = accounts.length - maxVisible
@@ -59,23 +87,7 @@ function StackedAvatars({ accounts, maxVisible = 5 }: StackedAvatarsProps) {
             style={{ marginLeft: index === 0 ? 0 : '-8px', zIndex: visibleAccounts.length - index }}
             title={account.username}
           >
-            {account.profilePhotoUrl ? (
-              <Image
-                src={account.profilePhotoUrl}
-                alt={account.username}
-                width={32}
-                height={32}
-                className="object-cover w-full h-full"
-                unoptimized
-              />
-            ) : (
-              <div
-                className="w-full h-full flex items-center justify-center text-white text-xs font-semibold"
-                style={{ backgroundColor: platformColor }}
-              >
-                {account.username.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <StackedAvatar account={account} platformColor={platformColor} />
           </div>
         )
       })}

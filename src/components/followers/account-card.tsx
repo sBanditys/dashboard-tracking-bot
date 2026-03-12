@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { format, parseISO } from 'date-fns'
 import { RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { PlatformIcon } from '@/components/platform-icon'
 import type { AccountFollowerData, FollowerSnapshot, GrowthDelta } from '@/types/followers'
 import { FollowerSparkline } from './follower-sparkline'
 
@@ -12,12 +13,6 @@ const PLATFORM_COLORS: Record<string, string> = {
   instagram: '#E4405F',
   tiktok: '#00f2ea',
   youtube: '#FF0000',
-}
-
-const PLATFORM_LABELS: Record<string, string> = {
-  instagram: 'IG',
-  tiktok: 'TT',
-  youtube: 'YT',
 }
 
 function formatFollowerCount(count: number): string {
@@ -58,6 +53,35 @@ function GrowthBadge({ growth, className }: GrowthBadgeProps) {
   )
 }
 
+function ProfilePhoto({ account, platformColor }: { account: AccountFollowerData; platformColor: string }) {
+  const [imgError, setImgError] = useState(false)
+
+  if (account.profilePhotoUrl && !imgError) {
+    return (
+      <div className="w-10 h-10 rounded-full overflow-hidden border border-[#404040]">
+        <Image
+          src={account.profilePhotoUrl}
+          alt={account.username}
+          width={40}
+          height={40}
+          className="object-cover w-full h-full"
+          unoptimized
+          onError={() => setImgError(true)}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold border border-[#404040]"
+      style={{ backgroundColor: platformColor }}
+    >
+      {account.username.charAt(0).toUpperCase()}
+    </div>
+  )
+}
+
 interface AccountCardProps {
   account: AccountFollowerData
   snapshots?: FollowerSnapshot[]
@@ -84,7 +108,6 @@ export function AccountCard({
     : []
 
   const platformColor = PLATFORM_COLORS[account.platform] ?? '#6b7280'
-  const platformLabel = PLATFORM_LABELS[account.platform] ?? account.platform.toUpperCase()
 
   const handleCardClick = () => {
     if (!isPending) setExpanded((prev) => !prev)
@@ -108,37 +131,14 @@ export function AccountCard({
       <div className="flex items-center gap-3">
         {/* Profile photo */}
         <div className="flex-shrink-0">
-          {account.profilePhotoUrl ? (
-            <div className="w-10 h-10 rounded-full overflow-hidden border border-[#404040]">
-              <Image
-                src={account.profilePhotoUrl}
-                alt={account.username}
-                width={40}
-                height={40}
-                className="object-cover w-full h-full"
-                unoptimized
-              />
-            </div>
-          ) : (
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold border border-[#404040]"
-              style={{ backgroundColor: platformColor }}
-            >
-              {account.username.charAt(0).toUpperCase()}
-            </div>
-          )}
+          <ProfilePhoto account={account} platformColor={platformColor} />
         </div>
 
         {/* Username + platform */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-medium text-white truncate">{account.username}</span>
-            <span
-              className="text-xs font-bold px-1 rounded flex-shrink-0"
-              style={{ color: platformColor, backgroundColor: `${platformColor}20` }}
-            >
-              {platformLabel}
-            </span>
+            <PlatformIcon platform={account.platform} size="w-4 h-4" />
           </div>
           {isPending && account.trackingSince && (
             <p className="text-xs text-gray-400 mt-0.5">

@@ -27,7 +27,7 @@ export function buildCspHeader(nonce: string): string {
     // unsafe-inline required for NProgress, global-error, and component inline styles
     "style-src 'self' 'unsafe-inline'",
     // Discord CDN for avatars, S3 for profile photos, plus blob/data for potential image handling
-    "img-src 'self' blob: data: https://cdn.discordapp.com https://*.s3.*.amazonaws.com",
+    "img-src 'self' blob: data: https://cdn.discordapp.com https://tracking-data-bot.s3.eu-north-1.amazonaws.com",
     "font-src 'self' https://fonts.gstatic.com",
     "connect-src 'self' wss:",
     "object-src 'none'",

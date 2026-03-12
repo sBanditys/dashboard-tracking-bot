@@ -158,63 +158,32 @@ export function AccountCard({
       )}
       onClick={handleCardClick}
     >
-      {/* Collapsed row */}
-      <div className="flex items-center gap-3 px-4 py-3">
-        <div className="flex-shrink-0">
-          <ProfilePhoto account={account} platformColor={platformColor} />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <a
-              href={getProfileUrl(account.platform, account.username)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium text-white truncate hover:underline"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {account.username}
-            </a>
-            <PlatformIcon platform={account.platform} size="w-4 h-4" />
+      {/* Pending state */}
+      {isPending && (
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="flex-shrink-0">
+            <ProfilePhoto account={account} platformColor={platformColor} />
           </div>
-          {account.displayName && (
-            <p className="text-xs text-gray-400 truncate">{account.displayName}</p>
-          )}
-          {isPending && account.trackingSince && (
-            <p className="text-xs text-gray-400 mt-0.5">
-              Tracking since {formatDate(account.trackingSince)}
-            </p>
-          )}
-        </div>
-
-        <div className="flex-shrink-0 text-right">
-          {isPending ? (
-            <span className="text-xs font-medium bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">
-              Pending
-            </span>
-          ) : (
-            <>
-              <p className="text-sm font-semibold text-white">
-                {formatFollowerCount(account.followerCount!)}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-medium text-white truncate">{account.username}</span>
+              <PlatformIcon platform={account.platform} size="w-4 h-4" />
+            </div>
+            {account.trackingSince && (
+              <p className="text-xs text-gray-400 mt-0.5">
+                Tracking since {formatDate(account.trackingSince)}
               </p>
-              <GrowthBadge growth={account.growth7d} />
-            </>
-          )}
-        </div>
-
-        {!isPending && (
-          <div className="flex-shrink-0 w-20">
-            <FollowerSparkline data={sparklineData} />
+            )}
           </div>
-        )}
-      </div>
+          <span className="text-xs font-medium bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">
+            Pending
+          </span>
+        </div>
+      )}
 
-      {/* Expanded profile card */}
-      {expanded && !isPending && (
-        <div
-          className="border-t border-[#404040] px-4 py-4"
-          onClick={(e) => e.stopPropagation()}
-        >
+      {/* Profile card */}
+      {!isPending && (
+        <div className="px-4 py-4">
           <div className="flex gap-5">
             {/* Large profile photo */}
             <div className="flex-shrink-0">

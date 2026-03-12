@@ -265,7 +265,7 @@ export default function FollowersPage() {
       ) : selectedGroupAccounts.length === 0 ? (
         <p className="text-gray-400">No accounts in this group.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
           {selectedGroupAccounts.map((account) => (
             <AccountCard
               key={account.id}

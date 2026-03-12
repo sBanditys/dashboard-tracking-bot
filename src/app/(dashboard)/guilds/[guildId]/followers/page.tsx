@@ -68,7 +68,7 @@ export default function FollowersPage() {
   const { data: brandsData, isLoading: brandsLoading } = useBrands(guildId)
 
   // Fetch all accounts (includes follower fields from Phase 54)
-  const { data: accountsData, isLoading: accountsLoading } = useAccountsInfinite(guildId, 200)
+  const { data: accountsData, isLoading: accountsLoading } = useAccountsInfinite(guildId, 100)
 
   // Flatten all pages of accounts — cast to AccountFollowerData since Phase 54 added follower fields
   const allAccounts: AccountFollowerData[] = (accountsData?.pages ?? []).flatMap(

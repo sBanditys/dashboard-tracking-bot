@@ -23,6 +23,7 @@ export interface AccountFollowerData {
   biography?: string | null;
   displayName?: string | null;
   platformPostCount?: number | null;
+  externalUrl?: string | null;
   created_at: string;
 }
 

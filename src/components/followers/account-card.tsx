@@ -244,6 +244,18 @@ export function AccountCard({
               {account.biography && (
                 <p className="text-xs text-gray-300 mt-3 whitespace-pre-line line-clamp-4">{account.biography}</p>
               )}
+
+              {/* Link in bio */}
+              {account.externalUrl && (
+                <a
+                  href={account.externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-400 hover:underline mt-1 block truncate"
+                >
+                  {account.externalUrl.replace(/^https?:\/\//, '')}
+                </a>
+              )}
             </div>
           </div>
 

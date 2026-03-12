@@ -217,6 +217,9 @@ export function AccountCard({
               </>
             )}
           </div>
+          {account.biography && (
+            <p className="text-xs text-gray-400 italic line-clamp-3">{account.biography}</p>
+          )}
           {onRefresh && (
             <button
               onClick={handleRefreshClick}

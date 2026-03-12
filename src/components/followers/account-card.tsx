@@ -201,7 +201,7 @@ export function AccountCard({
         >
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-400">
             <span className="font-medium text-gray-300">30d growth:</span>
-            <GrowthBadge growth={account.growth30d} />
+            <span><GrowthBadge growth={account.growth30d} /></span>
             <span className="font-medium text-gray-300">Last scraped:</span>
             <span>{formatDate(account.followersLastScrapedAt)}</span>
             <span className="font-medium text-gray-300">Tracking since:</span>

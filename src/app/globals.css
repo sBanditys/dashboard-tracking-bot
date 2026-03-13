@@ -149,6 +149,10 @@
     border-color: var(--surface-border) !important;
   }
 
+  .border-surface {
+    border-color: var(--surface-bg) !important;
+  }
+
   .text-white {
     color: var(--text-primary) !important;
   }

@@ -194,7 +194,7 @@ export default function FollowersPage() {
       </button>
 
       {/* Group summary header */}
-      <div className="bg-[#2d2d2d] border border-[#404040] rounded-lg p-5">
+      <div className="bg-surface border border-border rounded-lg p-5">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">{selectedGroup?.label}</h1>

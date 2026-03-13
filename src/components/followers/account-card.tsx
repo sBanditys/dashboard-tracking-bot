@@ -89,7 +89,7 @@ function ProfilePhoto({
 
   if (account.profilePhotoUrl && !imgError) {
     return (
-      <div className={cn(cls, 'rounded-full overflow-hidden border border-[#404040]')}>
+      <div className={cn(cls, 'rounded-full overflow-hidden border border-border')}>
         <Image
           src={account.profilePhotoUrl}
           alt={account.username}
@@ -105,7 +105,7 @@ function ProfilePhoto({
 
   return (
     <div
-      className={cn(cls, 'rounded-full flex items-center justify-center text-white font-semibold border border-[#404040]', textCls)}
+      className={cn(cls, 'rounded-full flex items-center justify-center text-white font-semibold border border-border', textCls)}
       style={{ backgroundColor: platformColor }}
     >
       {account.username.charAt(0).toUpperCase()}
@@ -152,8 +152,8 @@ export function AccountCard({
   return (
     <div
       className={cn(
-        'bg-[#2d2d2d] border border-[#404040] rounded-lg transition-colors',
-        !isPending && 'cursor-pointer hover:bg-[#363636]',
+        'bg-surface border border-border rounded-lg transition-colors',
+        !isPending && 'cursor-pointer hover:bg-surface',
         isPending && 'opacity-60'
       )}
       onClick={handleCardClick}
@@ -260,7 +260,7 @@ export function AccountCard({
           </div>
 
           {/* Bottom details row */}
-          <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[#404040] text-xs text-gray-400 flex-wrap">
+          <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border text-xs text-gray-400 flex-wrap">
             {account.postStats && (
               <>
                 <span><span className="text-gray-300 font-medium">{account.postStats.total}</span> tracked</span>
@@ -279,8 +279,8 @@ export function AccountCard({
                 onClick={handleRefreshClick}
                 disabled={isRefreshing}
                 className={cn(
-                  'ml-auto flex items-center gap-1.5 text-xs px-3 py-1 rounded border border-[#404040]',
-                  'text-gray-300 hover:text-white hover:border-[#6b7280] transition-colors',
+                  'ml-auto flex items-center gap-1.5 text-xs px-3 py-1 rounded border border-border',
+                  'text-gray-300 hover:text-white hover:border-border transition-colors',
                   'disabled:opacity-50 disabled:cursor-not-allowed'
                 )}
               >

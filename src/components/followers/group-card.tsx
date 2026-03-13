@@ -83,7 +83,7 @@ function StackedAvatars({ accounts, maxVisible = 5 }: StackedAvatarsProps) {
         return (
           <div
             key={account.id}
-            className="w-8 h-8 rounded-full border-2 border-[#2d2d2d] overflow-hidden flex-shrink-0"
+            className="w-8 h-8 rounded-full border-2 border-surface overflow-hidden flex-shrink-0"
             style={{ marginLeft: index === 0 ? 0 : '-8px', zIndex: visibleAccounts.length - index }}
             title={account.username}
           >
@@ -93,7 +93,7 @@ function StackedAvatars({ accounts, maxVisible = 5 }: StackedAvatarsProps) {
       })}
       {overflow > 0 && (
         <div
-          className="w-8 h-8 rounded-full border-2 border-[#2d2d2d] bg-[#404040] flex items-center justify-center flex-shrink-0 text-xs text-gray-300 font-medium"
+          className="w-8 h-8 rounded-full border-2 border-surface bg-surface-hover flex items-center justify-center flex-shrink-0 text-xs text-gray-300 font-medium"
           style={{ marginLeft: '-8px', zIndex: 0 }}
         >
           +{overflow}
@@ -113,7 +113,7 @@ interface GroupCardProps {
 export function GroupCard({ group, stats, accounts, onClick }: GroupCardProps) {
   return (
     <div
-      className="bg-[#2d2d2d] border border-[#404040] rounded-lg p-4 cursor-pointer hover:bg-[#363636] transition-colors"
+      className="bg-surface border border-border rounded-lg p-4 cursor-pointer hover:bg-surface transition-colors"
       onClick={onClick}
     >
       {/* Group name + brand */}

@@ -47,6 +47,7 @@ export interface Account {
         next_refresh: string | null
     } | null
     created_at: string
+    deactivatedAt?: string | null
     // Follower tracking fields (populated by Phase 54 API extension)
     followerCount?: number | null
     profilePhotoUrl?: string | null

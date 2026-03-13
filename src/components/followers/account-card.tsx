@@ -282,7 +282,7 @@ export function AccountCard({
               </>
             )}
             {account.followersLastScrapedAt && (
-              <span>Scraped {formatDate(account.followersLastScrapedAt)}</span>
+              <span>Refreshed {formatDate(account.followersLastScrapedAt)}</span>
             )}
             {account.trackingSince && (
               <span>Since {formatDate(account.trackingSince)}</span>

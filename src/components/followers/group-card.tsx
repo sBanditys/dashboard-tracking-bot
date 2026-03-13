@@ -104,7 +104,7 @@ function StackedAvatars({ accounts, maxVisible = 5 }: StackedAvatarsProps) {
 }
 
 interface GroupCardProps {
-  group: { id: string; label: string; brandLabel: string }
+  group: { id: string; label: string; brandLabel: string; isMain?: boolean }
   stats: GroupFollowerStats | null
   accounts: AccountFollowerData[]
   onClick: () => void
@@ -118,7 +118,10 @@ export function GroupCard({ group, stats, accounts, onClick }: GroupCardProps) {
     >
       {/* Group name + brand */}
       <div className="mb-3">
-        <p className="text-sm font-semibold text-white">{group.label}</p>
+        <p className="text-sm font-semibold text-white">
+          {group.isMain && <span className="mr-1">⭐</span>}
+          {group.label}
+        </p>
         <p className="text-xs text-gray-400 mt-0.5">{group.brandLabel}</p>
       </div>
 

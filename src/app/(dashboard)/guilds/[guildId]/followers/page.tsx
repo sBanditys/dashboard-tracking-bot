@@ -26,6 +26,7 @@ interface FlatGroup {
   label: string
   brandLabel: string
   brandId: string
+  isMain: boolean
 }
 
 function extractGroups(brands: Brand[]): FlatGroup[] {
@@ -37,6 +38,7 @@ function extractGroups(brands: Brand[]): FlatGroup[] {
         label: group.label,
         brandLabel: brand.label,
         brandId: brand.id,
+        isMain: group.isMain ?? false,
       })
     }
   }
@@ -205,7 +207,11 @@ export default function FollowersPage() {
           <p className="text-gray-400">No groups found. Create account groups to track followers.</p>
         ) : (
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {groups.map((group) => {
+            {[...groups].sort((a, b) => {
+              if (a.isMain && !b.isMain) return -1
+              if (!a.isMain && b.isMain) return 1
+              return 0
+            }).map((group) => {
               const stats = groupStatsMap.get(group.id) ?? null
               const groupAccounts = allAccounts.filter(
                 (a) => a.group === group.label && a.brand === group.brandLabel
@@ -311,19 +317,66 @@ export default function FollowersPage() {
         <AccountCardSkeleton count={4} />
       ) : selectedGroupAccounts.length === 0 ? (
         <p className="text-gray-400">No accounts in this group.</p>
-      ) : (
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {selectedGroupAccounts.map((account) => (
-            <AccountCard
-              key={account.id}
-              account={account}
-              snapshots={snapshotsMap.get(account.id)}
-              onRefresh={(accountId) => scrapeAccount(accountId)}
-              isRefreshing={isScraping && scrapingAccountId === account.id}
-            />
-          ))}
-        </div>
-      )}
+      ) : (() => {
+        const mainAccounts = selectedGroupAccounts.filter((a) => a.isMain ?? false)
+        const sideAccounts = selectedGroupAccounts.filter((a) => !(a.isMain ?? false))
+
+        if (mainAccounts.length === 0) {
+          // No main accounts — render flat grid (unchanged layout)
+          return (
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {selectedGroupAccounts.map((account) => (
+                <AccountCard
+                  key={account.id}
+                  account={account}
+                  snapshots={snapshotsMap.get(account.id)}
+                  onRefresh={(accountId) => scrapeAccount(accountId)}
+                  isRefreshing={isScraping && scrapingAccountId === account.id}
+                />
+              ))}
+            </div>
+          )
+        }
+
+        return (
+          <div className="space-y-4">
+            {/* Main accounts section */}
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">⭐ Main Accounts</p>
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {mainAccounts.map((account) => (
+                <AccountCard
+                  key={account.id}
+                  account={account}
+                  snapshots={snapshotsMap.get(account.id)}
+                  onRefresh={(accountId) => scrapeAccount(accountId)}
+                  isRefreshing={isScraping && scrapingAccountId === account.id}
+                />
+              ))}
+            </div>
+
+            {/* Divider (only if both sections exist) */}
+            {sideAccounts.length > 0 && <hr className="border-border" />}
+
+            {/* Side accounts section */}
+            {sideAccounts.length > 0 && (
+              <>
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Side Accounts</p>
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                  {sideAccounts.map((account) => (
+                    <AccountCard
+                      key={account.id}
+                      account={account}
+                      snapshots={snapshotsMap.get(account.id)}
+                      onRefresh={(accountId) => scrapeAccount(accountId)}
+                      isRefreshing={isScraping && scrapingAccountId === account.id}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )
+      })()}
     </div>
   )
 }

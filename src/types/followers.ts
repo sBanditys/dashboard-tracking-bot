@@ -26,6 +26,9 @@ export interface AccountFollowerData {
   externalUrl?: string | null;
   deactivatedAt?: string | null;
   created_at: string;
+  isMain?: boolean;
+  groupIsMain?: boolean;
+  groupId?: string | null;
 }
 
 export interface GroupFollowerStats {
@@ -35,6 +38,7 @@ export interface GroupFollowerStats {
   accountsWithData: number;
   growth7d: { delta: number; percent: number; accountsWithData: number } | null;
   growth30d: { delta: number; percent: number; accountsWithData: number } | null;
+  isMain?: boolean;
 }
 
 export interface FollowerSnapshot {

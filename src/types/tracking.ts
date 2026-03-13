@@ -16,6 +16,7 @@ export interface AccountGroup {
     discord_channel_id: string | null
     account_count: number
     post_count: number
+    isMain?: boolean
 }
 
 export interface Brand {
@@ -60,6 +61,9 @@ export interface Account {
     displayName?: string | null
     platformPostCount?: number | null
     externalUrl?: string | null
+    isMain?: boolean
+    groupIsMain?: boolean
+    groupId?: string | null
 }
 
 export interface AccountsResponse {
@@ -88,6 +92,8 @@ export interface Post {
     group: string | null
     last_checked_at: string | null
     metrics: PostMetrics | null
+    groupIsMain?: boolean
+    groupId?: string | null
 }
 
 export interface PostsResponse {

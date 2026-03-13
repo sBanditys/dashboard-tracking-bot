@@ -151,6 +151,7 @@ export default function FollowersPage() {
     ? (totalGrowth7d / (totalFollowers - totalGrowth7d)) * 100
     : 0
   const totalPostsTracked = allAccounts.reduce((sum, a) => sum + (a.postStats?.total ?? 0), 0)
+  const totalPlatformPosts = allAccounts.reduce((sum, a) => sum + (a.platformPostCount ?? 0), 0)
   const accountsWithData = allAccounts.filter((a) => a.followerCount !== null).length
 
   // --- Group overview view ---
@@ -162,7 +163,7 @@ export default function FollowersPage() {
         {/* Overall summary banner */}
         {!isLoading && allAccounts.length > 0 && (
           <div className="bg-surface border border-border rounded-lg p-5">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
               <div>
                 <p className="text-2xl font-bold text-white">{totalFollowers.toLocaleString('en-US')}</p>
                 <p className="text-xs text-gray-400 mt-0.5">total followers</p>
@@ -177,6 +178,10 @@ export default function FollowersPage() {
                 <p className="text-xs text-gray-400 mt-0.5">
                   7d growth{totalGrowth7dPercent !== 0 && ` (${totalGrowth7d > 0 ? '+' : ''}${totalGrowth7dPercent.toFixed(1)}%)`}
                 </p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{totalPlatformPosts.toLocaleString('en-US')}</p>
+                <p className="text-xs text-gray-400 mt-0.5">platform posts</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">{totalPostsTracked.toLocaleString('en-US')}</p>

@@ -144,11 +144,53 @@ export default function FollowersPage() {
 
   const isLoading = brandsLoading || accountsLoading
 
+  // --- Compute overall totals from account-level data ---
+  const totalFollowers = allAccounts.reduce((sum, a) => sum + (a.followerCount ?? 0), 0)
+  const totalGrowth7d = allAccounts.reduce((sum, a) => sum + (a.growth7d?.delta ?? 0), 0)
+  const totalGrowth7dPercent = totalFollowers > 0
+    ? (totalGrowth7d / (totalFollowers - totalGrowth7d)) * 100
+    : 0
+  const totalPostsTracked = allAccounts.reduce((sum, a) => sum + (a.postStats?.total ?? 0), 0)
+  const accountsWithData = allAccounts.filter((a) => a.followerCount !== null).length
+
   // --- Group overview view ---
   if (selectedGroupId === null) {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold text-white">Followers</h1>
+
+        {/* Overall summary banner */}
+        {!isLoading && allAccounts.length > 0 && (
+          <div className="bg-surface border border-border rounded-lg p-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div>
+                <p className="text-2xl font-bold text-white">{totalFollowers.toLocaleString('en-US')}</p>
+                <p className="text-xs text-gray-400 mt-0.5">total followers</p>
+              </div>
+              <div>
+                <p
+                  className="text-2xl font-bold"
+                  style={{ color: totalGrowth7d > 0 ? '#22c55e' : totalGrowth7d < 0 ? '#ef4444' : 'var(--text-primary)' }}
+                >
+                  {totalGrowth7d > 0 ? '+' : ''}{totalGrowth7d.toLocaleString('en-US')}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  7d growth{totalGrowth7dPercent !== 0 && ` (${totalGrowth7d > 0 ? '+' : ''}${totalGrowth7dPercent.toFixed(1)}%)`}
+                </p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{totalPostsTracked.toLocaleString('en-US')}</p>
+                <p className="text-xs text-gray-400 mt-0.5">posts tracked</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{allAccounts.length}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  accounts ({accountsWithData} with data)
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">

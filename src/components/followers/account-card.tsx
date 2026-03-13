@@ -129,6 +129,7 @@ export function AccountCard({
   const [expanded, setExpanded] = useState(true)
 
   const isPending = account.followerCount === null
+  const isDeactivated = !!account.deactivatedAt
 
   // Prepare sparkline data — API returns newest first, reverse to oldest-first
   const sparklineData = snapshots
@@ -175,9 +176,16 @@ export function AccountCard({
               </p>
             )}
           </div>
-          <span className="text-xs font-medium bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">
-            Pending
-          </span>
+          <div className="flex flex-col items-end gap-1">
+            <span className="text-xs font-medium bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">
+              Pending
+            </span>
+            {isDeactivated && (
+              <span className="text-xs font-medium bg-red-500/20 text-red-400 px-2 py-0.5 rounded">
+                Deactivated
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -203,6 +211,11 @@ export function AccountCard({
                   {account.username}
                 </a>
                 <PlatformIcon platform={account.platform} size="w-5 h-5" />
+                {isDeactivated && (
+                  <span className="text-xs font-medium bg-red-500/20 text-red-400 px-2 py-0.5 rounded">
+                    Deactivated
+                  </span>
+                )}
               </div>
 
               {/* Display name */}

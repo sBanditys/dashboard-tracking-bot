@@ -24,6 +24,7 @@ export interface AccountFollowerData {
   displayName?: string | null;
   platformPostCount?: number | null;
   externalUrl?: string | null;
+  deactivatedAt?: string | null;
   created_at: string;
 }
 

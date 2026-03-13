@@ -2,6 +2,8 @@
  * Tracking-related types (brands, accounts, posts)
  */
 
+import type { GrowthDelta } from './followers'
+
 export interface CursorPagination {
     next_cursor: string | null
     has_more: boolean
@@ -45,6 +47,18 @@ export interface Account {
         next_refresh: string | null
     } | null
     created_at: string
+    // Follower tracking fields (populated by Phase 54 API extension)
+    followerCount?: number | null
+    profilePhotoUrl?: string | null
+    followersLastScrapedAt?: string | null
+    growth7d?: GrowthDelta | null
+    growth30d?: GrowthDelta | null
+    trackingSince?: string | null
+    postStats?: { total: number; last7d: number; last30d: number } | null
+    biography?: string | null
+    displayName?: string | null
+    platformPostCount?: number | null
+    externalUrl?: string | null
 }
 
 export interface AccountsResponse {

@@ -72,7 +72,7 @@ export default function FollowersPage() {
 
   // Flatten all pages of accounts — cast to AccountFollowerData since Phase 54 added follower fields
   const allAccounts: AccountFollowerData[] = (accountsData?.pages ?? []).flatMap(
-    (page) => page.accounts as unknown as AccountFollowerData[]
+    (page) => page.accounts as AccountFollowerData[]
   )
 
   // Flatten groups from all brands

@@ -100,23 +100,30 @@ async function refreshTokensFromMiddleware(
 }
 
 /**
- * Extract the JTI (JWT ID) from the dashboard's auth_token cookie.
- * Used to session-bind HMAC CSRF tokens.
- * Returns null if the cookie is absent, malformed, or has no jti field.
+ * Extract the JTI (JWT ID) from a raw JWT token string.
+ * Returns null if the token is malformed or has no jti field.
  */
-function extractJtiFromAuthToken(request: NextRequest): string | null {
+function extractJtiFromToken(tokenValue: string): string | null {
   try {
-    const tokenValue = request.cookies.get('auth_token')?.value;
-    if (!tokenValue) return null;
     const parts = tokenValue.split('.');
     if (parts.length < 2) return null;
-    // Decode base64url payload
     const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
     const payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf-8'));
     return typeof payload.jti === 'string' ? payload.jti : null;
   } catch {
     return null;
   }
+}
+
+/**
+ * Extract the JTI (JWT ID) from the dashboard's auth_token cookie.
+ * Used to session-bind HMAC CSRF tokens.
+ * Returns null if the cookie is absent, malformed, or has no jti field.
+ */
+function extractJtiFromAuthToken(request: NextRequest): string | null {
+  const tokenValue = request.cookies.get('auth_token')?.value;
+  if (!tokenValue) return null;
+  return extractJtiFromToken(tokenValue);
 }
 
 /**
@@ -161,7 +168,7 @@ async function generateHmacCsrfToken(jti: string | null): Promise<string> {
 function setCsrfCookie(response: NextResponse, token: string): void {
   response.cookies.set('csrf_token', token, {
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     httpOnly: false, // Client JS must read the token to send in header
     path: '/',
   });
@@ -256,8 +263,12 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  // Always set a fresh CSRF token cookie (HMAC-signed when secret + jti available)
-  const jti = extractJtiFromAuthToken(request);
+  // Always set a fresh CSRF token cookie (HMAC-signed when secret + jti available).
+  // After a proactive refresh, extract the JTI from the new access token so the
+  // CSRF token is bound to the current session, not the expired one.
+  const jti = refreshedTokens
+    ? extractJtiFromToken(refreshedTokens.accessToken)
+    : extractJtiFromAuthToken(request);
   const csrfToken = await generateHmacCsrfToken(jti);
   setCsrfCookie(response, csrfToken);
 

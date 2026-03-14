@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import { useParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { useQueries } from '@tanstack/react-query'
@@ -65,6 +65,16 @@ export default function FollowersPage() {
   const guildId = params.guildId as string
 
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
+  const scrollPositionRef = useRef<number>(0)
+
+  // Restore scroll position when returning to group overview, scroll to top when entering detail
+  useLayoutEffect(() => {
+    if (selectedGroupId === null && scrollPositionRef.current > 0) {
+      window.scrollTo(0, scrollPositionRef.current)
+    } else if (selectedGroupId !== null) {
+      window.scrollTo(0, 0)
+    }
+  }, [selectedGroupId])
 
   // Fetch brands (for group metadata)
   const { data: brandsData, isLoading: brandsLoading } = useBrands(guildId)
@@ -222,7 +232,10 @@ export default function FollowersPage() {
                   group={group}
                   stats={stats}
                   accounts={groupAccounts}
-                  onClick={() => setSelectedGroupId(group.id)}
+                  onClick={() => {
+                    scrollPositionRef.current = window.scrollY
+                    setSelectedGroupId(group.id)
+                  }}
                 />
               )
             })}

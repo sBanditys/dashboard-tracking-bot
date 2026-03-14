@@ -68,11 +68,14 @@ export default function FollowersPage() {
   const scrollPositionRef = useRef<number>(0)
 
   // Restore scroll position when returning to group overview, scroll to top when entering detail
+  // The scrollable container is <main> (overflow-auto in dashboard layout), not the window
   useLayoutEffect(() => {
+    const main = document.querySelector('main')
+    if (!main) return
     if (selectedGroupId === null && scrollPositionRef.current > 0) {
-      window.scrollTo(0, scrollPositionRef.current)
+      main.scrollTo(0, scrollPositionRef.current)
     } else if (selectedGroupId !== null) {
-      window.scrollTo(0, 0)
+      main.scrollTo(0, 0)
     }
   }, [selectedGroupId])
 
@@ -233,7 +236,8 @@ export default function FollowersPage() {
                   stats={stats}
                   accounts={groupAccounts}
                   onClick={() => {
-                    scrollPositionRef.current = window.scrollY
+                    const main = document.querySelector('main')
+                    scrollPositionRef.current = main?.scrollTop ?? 0
                     setSelectedGroupId(group.id)
                   }}
                 />
